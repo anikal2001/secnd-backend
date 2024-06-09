@@ -54,8 +54,6 @@ Also, be sure to have `git` available in your PATH, `npm` might need it (You can
 | GET | / | get all products |
 | GET | /:id | get a specific product |
 | POST | / | add new product |
-| DELETE | /:id | delete product |
-| PUT | /:id | update product |
 
 
 ### User
@@ -66,9 +64,7 @@ Also, be sure to have `git` available in your PATH, `npm` might need it (You can
 | GET | /:id | get a specific user |
 | POST | /register | create new user |
 | POST | /login | authenticate user |
-| DELETE | /:id | delete user |
-| PUT | /:id | update user |
-| PUT | /change-password/:id | change password |
+
 
 ---
 
@@ -76,18 +72,17 @@ Also, be sure to have `git` available in your PATH, `npm` might need it (You can
 ## Collections
 
 ### User
-```javascript
+
     name: String,
     email: String,
     password: String
-```    
+    
 
 ### Product
-```javascript
+
     name:String,
     description: String,
     price: Number,
     colors: Array,
     sizes: Array
-``` 
    
