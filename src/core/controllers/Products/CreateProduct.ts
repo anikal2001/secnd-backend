@@ -1,5 +1,4 @@
 import { Product } from '../../entity/product.model';
-import { getRepository } from 'typeorm';
 
 interface CreateProductRequest {
     name: string;
@@ -9,11 +8,18 @@ interface CreateProductRequest {
 }
 
 class CreateProduct {
-    async execute(createProductRequest: CreateProductRequest): Promise<Product> {
-        const productRepository = getRepository(Product);
-        const newProduct = productRepository.create(createProductRequest);
 
-        await productRepository.save(newExample);
+    private productRepository;
+
+    // TODO: Update type according to typeorm
+    constructor(productRepository: any) {
+        this.productRepository = productRepository;
+    }
+
+    async execute(createProductRequest: CreateProductRequest): Promise<Product> {
+        const newProduct = this.productRepository.create(createProductRequest);
+
+        await this.productRepository.save(newProduct);
         return newProduct;
     }
 }

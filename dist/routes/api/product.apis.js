@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const tslib_1 = require("tslib");
+const express_1 = tslib_1.__importDefault(require("express"));
+const product_controller_1 = require("../../api/controllers/product.controller");
+const router = express_1.default.Router();
+const productController = new product_controller_1.ProductController();
+router.get('/', productController.getAllProducts);
+router.post('/', productController.addProduct);
+router.get('/:id', productController.getSpecificProduct);
+router.delete('/:id', productController.deleteProduct);
+router.put('/:id', productController.updateProduct);
+exports.default = router;

@@ -7,7 +7,6 @@ import { Transaction } from './transaction.entity';
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: number;
-
   @Column()
   firstName!: string;
 
@@ -16,6 +15,9 @@ export class User extends BaseEntity {
 
   @Column()
   email!: string;
+
+  @Column({ nullable: true })
+  username!: string;
 
   @Column()
   password!: string;

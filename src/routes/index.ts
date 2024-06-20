@@ -13,7 +13,7 @@ const limiter = RateLimit({
 // apply rate limiter to all requests
 router.use(limiter)
 
-router.use('/user', userRouter)
-router.use('/product', productRouter)
+router.use('/users', userRouter)
+router.use('/products', productRouter)
 
 export default router

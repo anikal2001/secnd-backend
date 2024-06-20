@@ -1,6 +1,9 @@
-import { Request, Response } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import { UserService } from '../../infrastructure/services/user.service'
 import { UserType } from '../../types/user'
+import { Get, Post } from '../decorators/methods'
+import { Middleware } from '../decorators/middleware'
+import { validateUserFields } from '../middleware/user.middleware'
 
 export class UserController {
   private userService: UserService
@@ -8,6 +11,11 @@ export class UserController {
   constructor() {
     this.userService = new UserService()
   }
+
+  //@ts-expect-error Error from validation middleware
+  @Middleware(validateUserFields)
+  //@ts-expect-error Error from validation middleware
+  @Post('/users')
   public createUser = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password, firstName, lastName, country, city, address, postalCode, phone, avatar }: UserType = req.body

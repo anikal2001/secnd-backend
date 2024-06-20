@@ -27,10 +27,22 @@ export const transactionController = {
     },
 
     createTransaction: async (req: Request, res: Response): Promise<void> => {
-        const { user, amount, type, status, transactionDate } = req.body as TransactionData;
-        const newTransaction = new Transaction();
-        newTransaction = { user, amount, type, status, transactionDate };
-
+        const { user, amount, type, status, transactionDate } = req.body as Transaction;
+        // const newTransaction = new Transaction({
+        //     user,
+        //     amount,
+        //     type,
+        //     status,
+        //     transactionDate
+        // });
+        const TransactionRepository = AppDataSource.getRepository(Transaction);
+        const newTransaction = TransactionRepository.create({
+            user,
+            amount,
+            type,
+            status,
+            transactionDate
+        });
         try {
             const savedTransaction = await newTransaction.save();
             res.status(201).json(savedTransaction);

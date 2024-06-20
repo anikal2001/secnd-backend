@@ -1,9 +1,9 @@
 import { Product } from '../../entity/product.model';
-import { getRepository } from 'typeorm';
+import AppDataSource from '../../../infrastructure/db/database';
 
 class ListProducts {
     async execute(): Promise<Product[]> {
-        const productRepository = getRepository(Product);
+        const productRepository = AppDataSource.getRepository(Product);
         return productRepository.find();
     }
 }

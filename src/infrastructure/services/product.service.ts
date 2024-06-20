@@ -17,7 +17,7 @@ export class ProductService {
         await ProductRepository.insert(product);
         return product;
     }
-
+    // TODO: Clean up the updateProduct method and add more functionality
     async updateProduct(id: string, productData: Product): Promise<Product | null> {
         const product = await ProductRepository.findOne({ where: { id } });
         if (!product) return null;

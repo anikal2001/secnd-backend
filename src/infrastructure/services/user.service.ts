@@ -8,11 +8,9 @@ export class UserService {
         if (existingUser) {
             throw new Error('User already exists with the provided email address.');
         }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = UserRepository.create({
             email,
-            password: hashedPassword,
+            password,
             firstName,
             lastName,
             country,

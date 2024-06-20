@@ -1,3 +1,5 @@
+import { ProductColors, ProductTags } from '../utils/products.enums';
+
 export type ProductType = {
     id: string;
     name: string;
