@@ -4,44 +4,44 @@ import { User } from './user.model'; // Assuming User entity is defined elsewher
 
 @Entity()
 export class Order {
-    @PrimaryGeneratedColumn('uuid')
-    id!: number;
+  @PrimaryGeneratedColumn('uuid')
+  id!: number;
 
-    @ManyToOne(() => User, user => user.orders)
-    @JoinTable()
-    customer!: User;
+  @ManyToOne(() => User, (user) => user.orders)
+  @JoinTable()
+  customer!: User;
 
-    @OneToMany(() => OrderItem, orderItem => orderItem.order)
-    orderItems!: OrderItem[];
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.order)
+  orderItems!: OrderItem[];
 
-    @Column()
-    totalAmount!: number;
+  @Column()
+  totalAmount!: number;
 
-    @Column({
-        type: 'enum',
-        enum: ['recieved', 'pending', 'shipped', 'delivered', 'cancelled'],
-        default: 'pending'
-    })
-    status!: string;
+  @Column({
+    type: 'enum',
+    enum: ['recieved', 'pending', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending',
+  })
+  status!: string;
 
-    @Column()
-    paymentMethod!: string;
+  @Column()
+  paymentMethod!: string;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
 
-    @UpdateDateColumn()
-    updatedAt!: Date;
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }
 
 @Entity()
 export class OrderItem {
-    @PrimaryGeneratedColumn()
-    id!: number;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-    @ManyToOne(() => Order, order => order.orderItems)
-    order!: Order;
+  @ManyToOne(() => Order, (order) => order.orderItems)
+  order!: Order;
 
-    @ManyToOne(() => Product)
-    product!: Product;
+  @ManyToOne(() => Product)
+  product!: Product;
 }

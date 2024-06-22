@@ -35,7 +35,6 @@ export class Product extends BaseEntity {
   })
   tags!: ProductTags;
 
-
   @Column()
   brand!: string;
 
@@ -50,5 +49,4 @@ export class Product extends BaseEntity {
 
   @Column('simple-array')
   imageUrls!: string[];
-
 }

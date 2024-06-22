@@ -1,16 +1,15 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, BaseEntity } from 'typeorm';
 import { User } from './user.model';
 
-
 export enum TransactionType {
   DEPOSIT = 'deposit',
-  PAYMENT = 'payment'
+  PAYMENT = 'payment',
 }
 
 export enum TransactionStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
-  FAILED = 'failed'
+  FAILED = 'failed',
 }
 
 @Entity()
@@ -18,7 +17,7 @@ export class Transaction extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: number;
 
-  @ManyToOne(() => User, (user: { transactions: Transaction; }) => user.transactions)
+  @ManyToOne(() => User, (user: { transactions: Transaction }) => user.transactions)
   @JoinColumn({ name: 'userId' })
   user!: User;
 
@@ -28,18 +27,17 @@ export class Transaction extends BaseEntity {
   @Column({
     type: 'enum',
     enum: TransactionType,
-    default: TransactionType.DEPOSIT
+    default: TransactionType.DEPOSIT,
   })
   type!: TransactionType;
 
   @Column({
     type: 'enum',
     enum: TransactionStatus,
-    default: TransactionStatus.PENDING
+    default: TransactionStatus.PENDING,
   })
   status!: TransactionStatus;
 
   @Column('timestamp')
   transactionDate!: Date;
-
 }

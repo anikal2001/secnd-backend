@@ -4,17 +4,17 @@ import { Product } from './product.model';
 
 @Entity()
 export class Colors {
-    @PrimaryColumn('uuid')
-    productId!: number;
+  @PrimaryColumn('uuid')
+  productId!: number;
 
-    @Column({
-        type: 'enum',
-        enum: ProductColors,
-        array: true
-    })
-    colors!: ProductColors[];
+  @Column({
+    type: 'enum',
+    enum: ProductColors,
+    array: true,
+  })
+  colors!: ProductColors[];
 
-    @ManyToOne(() => Product, product => product.colors)
-    @JoinColumn({ name: 'productId' })
-    product!: Product;
+  @ManyToOne(() => Product, (product) => product.colors)
+  @JoinColumn({ name: 'productId' })
+  product!: Product;
 }

@@ -15,7 +15,7 @@ export class ProductController {
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
-  }
+  };
 
   public getAllProducts = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -24,7 +24,7 @@ export class ProductController {
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
-  }
+  };
 
   public getSpecificProduct = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -37,7 +37,7 @@ export class ProductController {
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
-  }
+  };
   public getProductById = async (req: Request, res: Response): Promise<void> => {
     try {
       const product = await this.productService.getProductById(req.params.id);
@@ -49,7 +49,7 @@ export class ProductController {
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
-  }
+  };
 
   public createProduct = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -58,7 +58,7 @@ export class ProductController {
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
-  }
+  };
 
   public updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -71,7 +71,7 @@ export class ProductController {
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
-  }
+  };
 
   public deleteProduct = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -84,5 +84,5 @@ export class ProductController {
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
-  }
+  };
 }

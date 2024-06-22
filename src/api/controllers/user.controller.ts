@@ -1,69 +1,67 @@
-import { Request, Response, NextFunction } from 'express'
-import { UserService } from '../../infrastructure/services/user.service'
-import { UserType } from '../../types/user'
-import { Get, Post } from '../decorators/methods'
-import { Middleware } from '../decorators/middleware'
-import { validateUserFields } from '../middleware/user.middleware'
+import { Request, Response, NextFunction } from 'express';
+import { UserService } from '../../infrastructure/services/user.service';
+import { UserType } from '../../types/user';
+import { Get, Post } from '../decorators/methods';
+import { Middleware } from '../decorators/middleware';
+import { validateUserFields } from '../middleware/user.middleware';
 
 export class UserController {
-  private userService: UserService
+  private userService: UserService;
 
   constructor() {
-    this.userService = new UserService()
+    this.userService = new UserService();
   }
 
-  //@ts-expect-error Error from validation middleware
   @Middleware(validateUserFields)
-  //@ts-expect-error Error from validation middleware
   @Post('/users')
   public createUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password, firstName, lastName, country, city, address, postalCode, phone, avatar }: UserType = req.body
-      const user = await this.userService.createUser(email, password, firstName, lastName, country, city, address, postalCode, phone, avatar)
-      res.status(200).json(user)
+      const { email, password, firstName, lastName, country, city, address, postalCode, phone, avatar }: UserType = req.body;
+      const user = await this.userService.createUser(email, password, firstName, lastName, country, city, address, postalCode, phone, avatar);
+      res.status(200).json(user);
     } catch (error: any) {
-      res.status(400).json({ message: error.message })
+      res.status(400).json({ message: error.message });
     }
-  }
+  };
   public getAllUsers = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const users = await this.userService.getAllUsers()
-      res.json(users)
+      const users = await this.userService.getAllUsers();
+      res.json(users);
     } catch (error: any) {
-      res.status(500).json({ message: error.message })
+      res.status(500).json({ message: error.message });
     }
-  }
+  };
   public updateUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const updatedUser = await this.userService.updateUser(Number(req.params.id), req.body)
+      const updatedUser = await this.userService.updateUser(Number(req.params.id), req.body);
       if (updatedUser) {
-        res.json(updatedUser)
+        res.json(updatedUser);
       } else {
-        res.status(404).json({ message: 'User not found' })
+        res.status(404).json({ message: 'User not found' });
       }
     } catch (error: any) {
-      res.status(500).json({ message: error.message })
+      res.status(500).json({ message: error.message });
     }
-  }
+  };
   public loginUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password } = req.body
-      const token = await this.userService.authenticateUser(email, password)
-      res.json({ token })
+      const { email, password } = req.body;
+      const token = await this.userService.authenticateUser(email, password);
+      res.json({ token });
     } catch (error: any) {
-      res.status(400).json({ message: error.message })
+      res.status(400).json({ message: error.message });
     }
-  }
+  };
   public changePassword = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { currentPassword, newPassword, confirmPassword } = req.body
-      const id = Number(req.params.id)
-      const message = await this.userService.changePassword(id, currentPassword, newPassword, confirmPassword)
-      res.json({ message })
+      const { currentPassword, newPassword, confirmPassword } = req.body;
+      const id = Number(req.params.id);
+      const message = await this.userService.changePassword(id, currentPassword, newPassword, confirmPassword);
+      res.json({ message });
     } catch (error: any) {
-      res.status(400).json({ message: error.message })
+      res.status(400).json({ message: error.message });
     }
-  }
+  };
 }
 
 // const createUser = async (req: Request, res: Response) => {
@@ -89,7 +87,6 @@ export class UserController {
 //     user.phone = req.body.phone
 //     if (req.body.avatar) user.avatar = req.body.avatar
 //     else user.avatar = ''
-
 
 //     await user.save()
 
@@ -125,5 +122,3 @@ export class UserController {
 //     res.status(500).json({ message: 'Internal server error: ', err })
 //   }
 // }
-
-

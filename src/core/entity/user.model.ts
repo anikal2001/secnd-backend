@@ -22,7 +22,7 @@ export class User extends BaseEntity {
   @Column()
   password!: string;
 
-  @OneToMany(() => Product, product => product.id)
+  @OneToMany(() => Product, (product) => product.id)
   cart!: string;
 
   @Column({ nullable: true })
@@ -58,10 +58,10 @@ export class User extends BaseEntity {
   @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updatedAt!: Date;
 
-  @OneToMany(() => Order, order => order.customer)
+  @OneToMany(() => Order, (order) => order.customer)
   orders!: Order[];
 
-  @OneToMany(() => Transaction, transaction => transaction.user)
+  @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions!: Transaction[];
 
   @Column({ default: false })
