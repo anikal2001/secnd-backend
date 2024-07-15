@@ -12,8 +12,8 @@ export class UserController {
     this.userService = new UserService();
   }
 
-  @Middleware(validateUserFields)
-  @Post('/users')
+  // @Middleware(validateUserFields)
+  // @Post('/users')
   public createUser = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password, firstName, lastName, country, city, address, postalCode, phone, avatar }: UserType = req.body;

@@ -18,5 +18,4 @@ export type UserType = {
   updatedAt: Date;
   orders: Order[];
   transactions: Transaction[];
-  isSeller: boolean;
 };

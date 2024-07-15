@@ -70,7 +70,7 @@ export class UserService {
     return 'Password updated successfully.';
   }
 
-  async updateUser(id: number, user: any) {
+  async updateUserPreferences(id: number, user: any) {
     const existingUser = await UserRepository.findById(id);
     if (!existingUser) {
       throw new Error('User not found.');

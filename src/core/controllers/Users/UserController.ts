@@ -15,13 +15,21 @@ class UserController {
   }
   @Middleware(validateUserFields)
   @Middleware(hashPassword)
-  async execute(req: Request, res: Response): Promise<void> {
+  async createUser(req: Request, res: Response): Promise<void> {
     try {
       const { email, password, firstName, lastName, country, city, address, postalCode, phone, avatar }: UserType = req.body;
       const user = await this.userService.createUser(email, password, firstName, lastName, country, city, address, postalCode, phone, avatar);
       res.status(200).json(user);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
+    }
+  } 
+  async getAllUsers(_req: Request, res: Response): Promise<void> {
+    try {
+      const users = await this.userService.getAllUsers();
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   }
 }
