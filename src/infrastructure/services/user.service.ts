@@ -1,7 +1,25 @@
 import { UserRepository } from '../repositories/UserRepository';
+import { AddressRepository } from '../repositories/AddressRepository';
 import * as bcrypt from 'bcrypt';
+import { Country, Provinces } from '../../utils/users.enums';
+import AppwriteClient from '../../config'
+import { UserPreferences } from '../../types/user';
+const sdk = require('node-appwrite');
 
 export class UserService {
+  private AppWriteClient: any;
+  private Users: any;
+
+
+  constructor() {
+    const { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY } = process.env
+    this.AppWriteClient = new sdk.Client()
+    .setEndpoint(APPWRITE_ENDPOINT) // Your API Endpoint
+    .setProject(APPWRITE_PROJECT_ID) // Your project ID
+    .setKey(APPWRITE_API_KEY) // Your secret API key
+      .setSelfSigned() // Use only on dev mode with a self-signed SSL cert
+    this.Users = new sdk.Users(this.AppWriteClient)
+  }
   async createUser(
     email: string,
     password: string,
@@ -18,14 +36,19 @@ export class UserService {
     if (existingUser) {
       throw new Error('User already exists with the provided email address.');
     }
+    // const newAddress = AddressRepository.create({
+    //   country: Country.CANADA,
+    //   province: Provinces.ONTARIO,
+    //   city,
+    //   address,
+    //   postalCode,
+    //   phone,
+    // });
     const newUser = UserRepository.create({
       email,
       password,
       firstName,
       lastName,
-      country,
-      city,
-      address,
       postalCode,
       phone,
       avatar,
@@ -34,53 +57,35 @@ export class UserService {
     return await UserRepository.save(newUser);
   }
 
-  async authenticateUser(email: string, password: string) {
-    const user = await UserRepository.findByEmail(email);
-    if (!user) {
-      throw new Error('User not found.');
-    }
-
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      throw new Error('Invalid credentials.');
-    }
-
-    // Assume a function that generates a JWT token
-    return 'generated-jwt-token'; // Simulated token for example purposes
+  async getUserPreferences(userId: string){
+    return await this.Users.getPrefs(userId)
   }
 
-  async changePassword(id: number, currentPassword: string, newPassword: string, confirmPassword: string) {
-    const user = await UserRepository.findById(id);
-    if (!user) {
-      throw new Error('User not found.');
-    }
-
-    const isValid = await bcrypt.compare(currentPassword, user.password);
-    if (!isValid) {
-      throw new Error('Invalid credentials.');
-    }
-
-    if (newPassword !== confirmPassword) {
-      throw new Error('New password and confirm password do not match.');
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await UserRepository.save(user);
-
-    return 'Password updated successfully.';
+  async updateUserPreferences(id: string, preferences: UserPreferences) {
+    return await this.Users.updatePrefs(id, preferences)
   }
 
-  async updateUserPreferences(id: number, user: any) {
-    const existingUser = await UserRepository.findById(id);
-    if (!existingUser) {
-      throw new Error('User not found.');
-    }
+  async updateUserPassword(id: string, newPassword: string) {
+    return await this.Users.updatePassword(id, newPassword)
+  }
 
-    const updatedUser = UserRepository.merge(existingUser, user);
-    return await UserRepository.save(updatedUser);
+  async updateUserEmail(id: string, email: string) {
+    return await this.Users.updateEmail(id, email)
+  }
+
+  async updateUserName(id: string, name: string) {
+    return await this.Users.updateName(id, name)
+  }
+
+  async getUserById(id: string) {
+    return await this.Users.get(id);
   }
 
   async getAllUsers() {
-    return await UserRepository.find();
+    return await this.Users.list()
+  }
+
+  async removeUser(id: string) {
+    return await this.Users.deleteIdentity(id);
   }
 }

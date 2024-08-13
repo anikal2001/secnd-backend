@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ProductService } from '../../infrastructure/services/product.service';
+import { ProductService } from '../../../infrastructure/services/product.service';
 
 export class ProductController {
   static productService: ProductService = new ProductService();
@@ -80,9 +80,9 @@ export class ProductController {
 
   public deleteProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-      const result = await ProductController.productService.deleteProduct(req.params.id);
+      const result = await ProductController.productService.deleteProduct(req.body.id);
       if (result) {
-        res.status(204).send();
+        res.status(200).send(result);
       } else {
         res.status(404).json({ message: 'Product not found' });
       }

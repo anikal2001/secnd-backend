@@ -1,10 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, BaseEntity, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, BaseEntity } from 'typeorm';
 import { Order } from './order.model';
 import { Product } from './product.model';
-import { Transaction } from './transaction.entity';
+import { Transaction } from './transaction.model';
+import Address from './address.model';
 
 @Entity({ name: 'users_table' })
-export class User extends BaseEntity {
+export abstract class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: number;
   @Column()
@@ -30,9 +31,6 @@ export class User extends BaseEntity {
 
   @Column({ nullable: true })
   city!: string;
-
-  @Column({ nullable: true })
-  address!: string;
 
   @Column({ nullable: true })
   postalCode!: string;
@@ -66,4 +64,8 @@ export class User extends BaseEntity {
 
   @Column({ default: false })
   isSeller!: boolean;
+
+  // OneToMany(() =>
+  // @Column({ nullable: true })
+  // favouriteProducts!: Product[];
 }

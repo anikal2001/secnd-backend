@@ -1,17 +1,18 @@
 import { ProductColors, ProductTags } from '../utils/products.enums';
 
 export type ProductType = {
-  id: string;
   name: string;
   description: string;
+  seller: string;
   price: number;
-  colors: ProductColors;
+  primaryColors: ProductColors[];
+  secondaryColors: ProductColors[];
   size: string;
   category: string;
   condition: string;
-  tags: ProductTags;
+  tags: ProductTags[];
   brand: string;
-  material: string;
+  material: string[];
   gender: string;
   seller: string;
   imageUrls: string[];

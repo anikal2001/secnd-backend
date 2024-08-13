@@ -14,7 +14,8 @@ export class Colors {
   })
   colors!: ProductColors[];
 
-  @ManyToOne(() => Product, (product) => product.colors)
+  @ManyToOne(() => Product, (product) => product.primaryColors)
+  @ManyToOne(() => Product, (product) => product.secondaryColors)
   @JoinColumn({ name: 'productId' })
   product!: Product;
 }

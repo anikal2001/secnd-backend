@@ -19,3 +19,9 @@ export type UserType = {
   orders: Order[];
   transactions: Transaction[];
 };
+
+
+export type UserPreferences = {
+  isOnboarded: boolean;
+  isSeller: boolean;
+}

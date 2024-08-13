@@ -1,51 +1,57 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from 'typeorm';
-import { ProductColors, ProductTags } from '../../utils/products.enums';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, OneToOne } from 'typeorm';
+import { ProductColors, ProductGender, ProductSize, ProductTags } from '../../utils/products.enums';
+
 @Entity({ name: 'products_table' })
 export class Product extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+    id!: string;
 
   @Column()
-  name!: string;
+    name!: string;
 
   @Column()
-  description!: string;
+    description!: string;
 
   @Column('float')
   price!: number;
 
+  @Column({ nullable: true })
   @Column({
     type: 'enum',
     enum: ProductColors,
   })
-  colors!: ProductColors;
+  primaryColors!: [ProductColors];
+
+  @Column({ nullable: true })
+  @Column({
+    type: 'enum',
+    enum: ProductColors,
+  })
+    secondaryColors!: [ProductColors];
 
   @Column()
-  size!: string;
+    size!: ProductSize;
 
   @Column()
-  category!: string;
+    category!: string;
 
   @Column()
-  condition!: string;
+    condition!: string;
 
   @Column({
     type: 'enum',
     enum: ProductTags,
   })
-  tags!: ProductTags;
+    tags!: ProductTags;
 
   @Column()
-  brand!: string;
+    brand!: string;
 
   @Column()
-  material!: string;
+    material!: string;
 
   @Column()
-  gender!: string;
-
-  @Column()
-  seller!: string;
+    gender!: ProductGender;
 
   @Column('simple-array')
   imageUrls!: string[];

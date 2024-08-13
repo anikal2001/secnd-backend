@@ -1,9 +1,22 @@
-import { Entity, ChildEntity, OneToMany } from 'typeorm';
+import { Entity, ChildEntity, OneToMany, Column } from 'typeorm';
 import { Product } from './product.model';
 import { User } from './user.model';
+import Address from './address.model';
 
-@ChildEntity()
+@Entity()
 export class Seller extends User {
-    @OneToMany(() => Product, (product: { seller: Seller; }) => product.seller)
-    products!: Product[];
+  @OneToMany(() => Product, (product: { seller: Seller }) => product.seller)
+  products!: Product[];
+
+  @Column()
+  StoreName!: string;
+
+  @Column()
+  StoreDescription!: string;
+
+  @Column()
+  StoreLogo!: string;
+
+  @Column()
+  StoreAddress!: Address;
 }

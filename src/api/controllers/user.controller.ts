@@ -31,18 +31,18 @@ export class UserController {
       res.status(500).json({ message: error.message });
     }
   };
-  public updateUser = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const updatedUser = await this.userService.updateUser(Number(req.params.id), req.body);
-      if (updatedUser) {
-        res.json(updatedUser);
-      } else {
-        res.status(404).json({ message: 'User not found' });
-      }
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  };
+  // public updateUser = async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const updatedUser = await this.userService.updateUser(Number(req.params.id), req.body);
+  //     if (updatedUser) {
+  //       res.json(updatedUser);
+  //     } else {
+  //       res.status(404).json({ message: 'User not found' });
+  //     }
+  //   } catch (error: any) {
+  //     res.status(500).json({ message: error.message });
+  //   }
+  // };
   public loginUser = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body;
@@ -62,6 +62,16 @@ export class UserController {
       res.status(400).json({ message: error.message });
     }
   };
+  // public updatePreferences = async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const id = Number(req.params.id);
+  //     const preferences = req.body;
+  //     const updatedUser = await this.userService.updatePreferences(id, preferences);
+  //     res.json(updatedUser);
+  //   } catch (error: any) {
+  //     res.status(400).json({ message: error.message });
+  //   }
+  // };
 }
 
 // const createUser = async (req: Request, res: Response) => {
