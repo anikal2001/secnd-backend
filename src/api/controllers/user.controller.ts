@@ -43,20 +43,19 @@ export class UserController {
   //     res.status(500).json({ message: error.message });
   //   }
   // };
-  public loginUser = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { email, password } = req.body;
-      const token = await this.userService.authenticateUser(email, password);
-      res.json({ token });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  };
+  // public loginUser = async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const { email, password } = req.body;
+  //     const token = await this.userService.authenticateUser(email, password);
+  //     res.json({ token });
+  //   } catch (error: any) {
+  //     res.status(400).json({ message: error.message });
+  //   }
+  // };
   public changePassword = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { currentPassword, newPassword, confirmPassword } = req.body;
-      const id = Number(req.params.id);
-      const message = await this.userService.changePassword(id, currentPassword, newPassword, confirmPassword);
+      const { id, newPassword} = req.body;
+      const message = await this.userService.updateUserPassword(id, newPassword);
       res.json({ message });
     } catch (error: any) {
       res.status(400).json({ message: error.message });
