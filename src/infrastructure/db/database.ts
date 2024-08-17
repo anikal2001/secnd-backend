@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-// import dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import { User } from '../../core/entity/user.model';
 import { Product } from '../../core/entity/product.model';
-// dotenv.config();
+dotenv.config();
 
 const { PGHOST, PGDATABASE, PGPASSWORD, PGUSER, ENDPOINT_ID } = process.env;
 const AppDataSource = new DataSource({
@@ -14,8 +14,9 @@ const AppDataSource = new DataSource({
   database: PGDATABASE,
   ssl: true,
   logging: true,
-  entities: ['src/core/entity/*.ts', __dirname + '/../**/*.entity.{js,ts}', User, Product],
+  entities: ['src/core/entity/*.ts', __dirname + '/../**/*.entity.{js,ts}'],
   synchronize: true,
+  dropSchema: true,
 });
 
 export default AppDataSource;

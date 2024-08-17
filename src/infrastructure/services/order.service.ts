@@ -9,7 +9,7 @@ export class OrderService {
   }
 
   async getAllOrders(): Promise<Order[]> {
-    return await this.orderRepository.find();
+    return await this.orderRepository.find() as Order[];
   }
 
   async getOrderById(id: string): Promise<OrderItemType[]> {
@@ -17,9 +17,9 @@ export class OrderService {
     return order ? order.orderItems : [];
   }
 
-  async createOrder(orderData: OrderType): Promise<Order> {
+  async createOrder(orderData: OrderType): Promise<Order | undefined> {
     const order = this.orderRepository.create({ ...orderData, id: Number(orderData.id) });
     await this.orderRepository.insert(order);
-    return order;
+    return order as Order;
   }
 }

@@ -71,3 +71,30 @@ export enum ProductTags {
   Trendy = 'Trendy',
   Other = 'Other',
 }
+
+const measurements = {
+    Shirt: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Sleeve Length', 'Fit'],
+    Pants: ['Waist', 'Hip', 'Rise', 'Inseam', 'Length', 'Leg Opening'],
+    Dress: ['Bust', 'Waist', 'Hip', 'Length', 'Sleeve Length', 'Fit'],
+    Skirt: ['Waist', 'Hip', 'Length', 'Fit'],
+    Jacket: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Coat: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Suit: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Blazer: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Sweater: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Cardigan: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Top: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Blouse: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Tshirt: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Fit'],
+    Tanktop: ['Chest', 'Shoulder', 'Length', 'Fit'],
+    Jumpsuit: ['Chest', 'Waist', 'Hip', 'Length', 'Fit'],
+}
+
+
+
+export enum FitTypes {
+  Slim = 'Slim',
+  Regular = 'Regular',
+  Loose = 'Loose',
+  Oversized = 'Oversized',
+}

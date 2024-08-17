@@ -1,58 +1,53 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, OneToOne } from 'typeorm';
-import { ProductColors, ProductGender, ProductSize, ProductTags } from '../../utils/products.enums';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, ManyToMany, JoinTable } from'typeorm';
+import { ProductCategory } from'./product_category.model';
+import { Seller } from'./seller.model';
+import { ProductColors as Colour } from'./color.model';
+import { ProductAttribute } from'./product_attribute.model';
+import { Tag } from'./tags.model';
+import { ProductItem } from'./product_item.model';
 
-@Entity({ name: 'products_table' })
-export class Product extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-    id!: string;
+@Entity()
+export class Product {
+    @PrimaryGeneratedColumn()
+    product_id: number;
 
-  @Column()
-    name!: string;
+    @Column()
+    name: string;
 
-  @Column()
-    description!: string;
+    @Column()
+    description: string;
 
-  @Column('float')
-  price!: number;
+    @Column('float')
+    price: number;
 
-  @Column({ nullable: true })
-  @Column({
-    type: 'enum',
-    enum: ProductColors,
-  })
-  primaryColors!: [ProductColors];
+    @ManyToOne(() =>Colour, colour => colour.primaryProducts)
+    primaryColor: Colour;
 
-  @Column({ nullable: true })
-  @Column({
-    type: 'enum',
-    enum: ProductColors,
-  })
-    secondaryColors!: [ProductColors];
+    @ManyToOne(() =>Colour, colour => colour.secondaryProducts)
+    secondaryColor: Colour;
 
-  @Column()
-    size!: ProductSize;
+    @Column()
+    listed_size: string;
 
-  @Column()
-    category!: string;
+    // @ManyToOne(() =>ProductCategory, category => category.product_category_id)
+    // product_category: ProductCategory;
 
-  @Column()
-    condition!: string;
+    @Column()
+    brand: string;
 
-  @Column({
-    type: 'enum',
-    enum: ProductTags,
-  })
-    tags!: ProductTags;
+    @Column()
+    gender: string;
 
-  @Column()
-    brand!: string;
+    @ManyToOne(() =>Seller, seller => seller.seller_id)
+    seller: Seller;
 
-  @Column()
-    material!: string;
+    @ManyToMany(() =>Tag, tag => tag.products)
+    @JoinTable()
+    tags: Tag[];
 
-  @Column()
-    gender!: ProductGender;
+    @OneToMany(() =>ProductAttribute, attribute => attribute.product)
+    attributes: ProductAttribute[];
 
-  @Column('simple-array')
-  imageUrls!: string[];
+    @OneToMany(() =>ProductItem, item => item.product)
+    items: ProductItem[];
 }

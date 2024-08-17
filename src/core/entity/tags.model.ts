@@ -1,20 +1,14 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
-import { ProductTags } from '../../utils/products.enums';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from'typeorm';
 import { Product } from './product.model';
 
 @Entity()
-export class Tags {
-  @PrimaryColumn('uuid')
-  productId!: number;
+export class Tag {
+    @PrimaryGeneratedColumn()
+    tag_id: number;
 
-  @Column({
-    type: 'enum',
-    enum: ProductTags,
-    array: true,
-  })
-  tags!: ProductTags[];
+    @Column()
+    tag_name: string;
 
-  @ManyToOne(() => Product, (product) => product.tags)
-  @JoinColumn({ name: 'productId' })
-  product!: Product;
+    @ManyToMany(() =>Product, product => product.tags)
+    products: Product[];
 }

@@ -23,7 +23,7 @@ export abstract class User extends BaseEntity {
   @Column()
   password!: string;
 
-  @OneToMany(() => Product, (product) => product.id)
+  // @OneToMany(() => Product, (product) => product.id)
   cart!: string;
 
   @Column({ nullable: true })

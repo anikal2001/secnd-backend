@@ -1,4 +1,4 @@
-import { ProductColors, ProductTags } from '../utils/products.enums';
+import { ProductColors, ProductSize, ProductTags } from '../utils/products.enums';
 
 export type ProductType = {
   name: string;
@@ -7,7 +7,7 @@ export type ProductType = {
   price: number;
   primaryColors: ProductColors[];
   secondaryColors: ProductColors[];
-  size: string;
+  size: ProductSize;
   category: string;
   condition: string;
   tags: ProductTags[];

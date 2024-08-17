@@ -4,20 +4,18 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import config from './config';
 import routes from './routes/index';
-// import dotenv from 'dotenv';
 import errorMiddleware from './api/middleware/error.middleware';
 
 const PORT = config.port || 8080;
 
 
-// dotenv.config()
 
 const app: Application = express();
 
 
 
 // connect to database
-// config.connect();
+config.connect();
 
 // middlewares
 app.use(express.json());

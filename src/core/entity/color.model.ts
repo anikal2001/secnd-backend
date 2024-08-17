@@ -1,21 +1,19 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
-import { ProductColors } from '../../utils/products.enums';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Product } from './product.model';
 
 @Entity()
-export class Colors {
-  @PrimaryColumn('uuid')
-  productId!: number;
+export class ProductColors {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;  // Primary key
 
-  @Column({
-    type: 'enum',
-    enum: ProductColors,
-    array: true,
-  })
-  colors!: ProductColors[];
+  @Column({ unique: true })
+  name!: string;  // Unique constraint on name
 
-  @ManyToOne(() => Product, (product) => product.primaryColors)
-  @ManyToOne(() => Product, (product) => product.secondaryColors)
-  @JoinColumn({ name: 'productId' })
-  product!: Product;
+  @OneToMany(() =>Product, product => product.primaryColor)
+  primaryProducts: Product[];
+
+  @OneToMany(() =>Product, product => product.secondaryColor)
+  secondaryProducts: Product[];
 }
+
+

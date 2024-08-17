@@ -1,10 +1,10 @@
-// import dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import AppDataSource from './infrastructure/db/database';
 import '@shopify/shopify-api/adapters/node';
 import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api';
 const sdk = require('node-appwrite');
 
-// dotenv.config();
+dotenv.config();
 
 const { PORT, JWT_SECERT, EXPIRES_IN } = process.env;
 

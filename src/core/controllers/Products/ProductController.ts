@@ -1,12 +1,23 @@
 import { Request, Response } from 'express';
+import { Product } from '../../entity/product.model';
+import { validateOrReject } from 'class-validator';
 import { ProductService } from '../../../infrastructure/services/product.service';
+import { plainToClass } from 'class-transformer';
+import { CreateProductDto } from '../../../infrastructure/dto/CreateProductDTO';
 
 export class ProductController {
   static productService: ProductService = new ProductService();
 
   public addProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-      const product = await ProductController.productService.createProduct(req.body);
+      // Ensure request is valid
+      if (!req.body) {
+        res.status(400).json({ message: 'Request body is required' });
+        return;
+      }
+      // Ensure all required fields are present
+      const newProduct = plainToClass(CreateProductDto, req.body);
+      const product = await ProductController.productService.createProduct(newProduct);
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
