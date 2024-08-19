@@ -32,25 +32,25 @@ export class ProductService {
     return Product;
   }
 
-  async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-      // You can perform additional validations or transformations here
-      const productData: Partial<Product> = {
-            name: createProductDto.name,
-            description: createProductDto.description,
-            price: createProductDto.price,
-            listed_size: createProductDto.listed_size,
-            brand: createProductDto.brand,
-            gender: createProductDto.gender,
-            primaryColor: createProductDto.primaryColor,
-            secondaryColor: createProductDto.secondaryColor,
-            seller: createProductDto.seller,
-            tags: createProductDto.tags,
-            attributes: createProductDto.attributes,
-            items: createProductDto.items,
-        };
+  // async createProduct(createProductDto: CreateProductDto): Promise<Product> {
+  //     // You can perform additional validations or transformations here
+  //     const productData: Partial<Product> = {
+  //           name: createProductDto.name,
+  //           description: createProductDto.description,
+  //           price: createProductDto.price,
+  //           listed_size: createProductDto.listed_size,
+  //           brand: createProductDto.brand,
+  //           gender: createProductDto.gender,
+  //           primaryColor: createProductDto.primaryColor,
+  //           secondaryColor: createProductDto.secondaryColor,
+  //           seller: createProductDto.seller,
+  //           tags: createProductDto.tags,
+  //           attributes: createProductDto.attributes,
+  //           items: createProductDto.items,
+  //       };
 
-        return await ProductRepository.createAndSave(productData);
-  }
+  //       return await ProductRepository.createAndSave(productData);
+  // }
   async deleteProduct(id: string): Promise<string> {
     const deletedID = await deleteProduct(id);
     return deletedID;
@@ -66,27 +66,29 @@ export class ProductService {
   //   return products;
   // }
 
-  // async createProduct(productData: ProductType): Promise<string> {
-  //   const product = {
-  //     name: 'Myself',
-  //     description:
-  //       'It operation true anyone time quite idea protect. Lot wonder threat position thousand audience letter. Answer old process treat quite trial.',
-  //     price: 379.84,
-  //     primaryColors: [ProductColors.Blue],
-  //     secondaryColors: [ProductColors.Blue],
-  //     size: "XS",
-  //     category: 'Skirts',
-  //     condition: 'Fair',
-  //     tags: [ProductTags.Casual],
-  //     brand: 'Sanders, Reid and Brown',
-  //     material: ['Polyester'],
-  //     gender: 'Unisex',
-  //     seller: 'Morgan Garza',
-  //     imageUrls: ['https://dummyimage.com/625x230', 'https://placekitten.com/559/775'],
-  //   };
-  //   const mutationInput = this._genProductAddInput(product);
-  //   return await addProduct(mutationInput);
-  // }
+  async createProduct(productData: ProductType): Promise<Product> {
+    const product = {
+      name: 'Myself',
+      description:
+        'It operation true anyone time quite idea protect. Lot wonder threat position thousand audience letter. Answer old process treat quite trial.',
+      price: 379.84,
+      color: {
+        primaryColor: [ProductColors.Blue],
+        secondaryColor: [ProductColors.Blue],
+      },
+      listed_size: "XS",
+      product_category: 'Skirts',
+      condition: 'Fair',
+      tags: [ProductTags.Casual],
+      brand: 'Sanders, Reid and Brown',
+      material: ['Polyester'],
+      gender: 'Unisex',
+      seller: 1,
+      imageUrls: ['https://dummyimage.com/625x230', 'https://placekitten.com/559/775'],
+    };
+    const newProduct = plainToClass(Product, product);
+    return await ProductRepository.createAndSave(newProduct);
+  }
 
   // // Private Methods
   // _genProductUpdateInput(product: ProductType): any {

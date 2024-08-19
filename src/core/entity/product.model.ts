@@ -1,53 +1,55 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, ManyToMany, JoinTable } from'typeorm';
-import { ProductCategory } from'./product_category.model';
-import { Seller } from'./seller.model';
-import { ProductColors as Colour } from'./color.model';
-import { ProductAttribute } from'./product_attribute.model';
-import { Tag } from'./tags.model';
-import { ProductItem } from'./product_item.model';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Seller } from './seller.model';
+import { ProductCategory, ProductColors } from '../../utils/products.enums';
 
 @Entity()
 export class Product {
-    @PrimaryGeneratedColumn()
-    product_id: number;
+  @PrimaryGeneratedColumn()
+  product_id: number;
 
-    @Column()
-    name: string;
+  @Column()
+  name: string;
 
-    @Column()
-    description: string;
+  @Column()
+  description: string;
 
-    @Column('float')
-    price: number;
+  @Column('float')
+  price: number;
 
-    @ManyToOne(() =>Colour, colour => colour.primaryProducts)
-    primaryColor: Colour;
+  @Column({
+    type: 'simple-json',
+    nullable: false,
+  })
+  color: {
+    primaryColor: [ProductColors];
+    secondaryColor: [ProductColors];
+  };
 
-    @ManyToOne(() =>Colour, colour => colour.secondaryProducts)
-    secondaryColor: Colour;
+  @Column()
+  listed_size: string;
 
-    @Column()
-    listed_size: string;
+  @Column({
+    type: 'simple-enum',
+    enum: ProductCategory,
+  })
+  product_category: ProductCategory;
 
-    // @ManyToOne(() =>ProductCategory, category => category.product_category_id)
-    // product_category: ProductCategory;
+  @Column()
+  brand: string;
 
-    @Column()
-    brand: string;
+  @Column()
+  gender: string;
 
-    @Column()
-    gender: string;
+  @Column({ type: 'simple-array', default: [] })
+  imageURLS: string[];
 
-    @ManyToOne(() =>Seller, seller => seller.seller_id)
+    @ManyToOne(() => Seller, (seller) => seller.seller_id, { onDelete: 'CASCADE' })
+      @JoinColumn({ name: 'seller_id' })
     seller: Seller;
+    
+    @Column({ nullable: true })
+    material: string;
 
-    @ManyToMany(() =>Tag, tag => tag.products)
-    @JoinTable()
-    tags: Tag[];
-
-    @OneToMany(() =>ProductAttribute, attribute => attribute.product)
-    attributes: ProductAttribute[];
-
-    @OneToMany(() =>ProductItem, item => item.product)
-    items: ProductItem[];
+    @Column({ nullable: true })
+    dimensions: string;
 }

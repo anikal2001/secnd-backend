@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from'typeorm';
-import { AttributeOption } from'./attribute_option.model';
+import { AttributeOption } from'../../api/RelationalDB/attribute_option.model';
 
 @Entity()
 export class AttributeType {

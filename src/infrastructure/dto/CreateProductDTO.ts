@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsString, IsNumber, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProductCategory } from '../../core/entity/product_category.model';
-import { ProductColors as Colour } from'../../core/entity/color.model';
+import { ProductCategory } from '../../api/RelationalDB/product_category.model';
+import { ProductColors as Colour } from'../../api/RelationalDB/color.model';
 import { Seller } from'../../core/entity/seller.model';
-import { Tag } from'../../core/entity/tags.model';
-import { ProductAttribute } from'../../core/entity/product_attribute.model';
-import { ProductItem } from'../../core/entity/product_item.model';
+import { Tag } from'../../api/RelationalDB/tags.model';
+import { ProductAttribute } from'../../api/RelationalDB/product_attribute.model';
+import { ProductItem } from'../../api/RelationalDB/product_item.model';
 
 export class CreateProductDto {
     @IsNotEmpty()

@@ -16,8 +16,7 @@ export class ProductController {
         return;
       }
       // Ensure all required fields are present
-      const newProduct = plainToClass(CreateProductDto, req.body);
-      const product = await ProductController.productService.createProduct(newProduct);
+      const product = await ProductController.productService.createProduct(req.body);
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).json({ message: error.message });

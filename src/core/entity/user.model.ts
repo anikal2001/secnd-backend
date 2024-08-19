@@ -1,30 +1,30 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, BaseEntity } from 'typeorm';
-import { Order } from './order.model';
-import { Product } from './product.model';
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Transaction } from './transaction.model';
-import Address from './address.model';
+import { Order } from './order.model';
 
 @Entity({ name: 'users_table' })
 export abstract class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  id!: number;
+  user_id!: number;
   @Column()
   firstName!: string;
 
   @Column()
   lastName!: string;
 
-  @Column()
+  @Column({
+    unique: true,
+  })
   email!: string;
 
-  @Column({ nullable: true })
-  username!: string;
+  @Column({
+    type: 'simple-array',
+    default: [],
+  })
+  cart!: string[];
 
   @Column()
   password!: string;
-
-  // @OneToMany(() => Product, (product) => product.id)
-  cart!: string;
 
   @Column({ nullable: true })
   country!: string;
@@ -59,7 +59,7 @@ export abstract class User extends BaseEntity {
   @OneToMany(() => Order, (order) => order.customer)
   orders!: Order[];
 
-  @OneToMany(() => Transaction, (transaction) => transaction.user)
+  @OneToMany(() => Transaction, (transaction) => transaction.client)
   transactions!: Transaction[];
 
   @Column({ default: false })

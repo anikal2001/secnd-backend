@@ -7,6 +7,15 @@ import { CreateSellerDto } from "../../../infrastructure/dto/CreateSellerDTO";
 export class SellerController{
     static sellerService: SellerService = new SellerService();
 
+    public getAllSellers = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const sellers = await SellerController.sellerService.fetchSellers();
+            res.json(sellers);
+        } catch (error: any) {
+            res.status(500).json({ message: error.message });
+        }
+    };
+
     public addSeller = async (req: Request, res: Response): Promise<void> => {
         try {
             // Ensure request is valid

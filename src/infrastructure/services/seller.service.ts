@@ -6,7 +6,6 @@ export class SellerService {
 
     async createSeller(createSellerDto: CreateSellerDto): Promise<Seller> {
         const sellerData: Partial<Seller> = {
-            name: createSellerDto.name,
             email: createSellerDto.email,
             store_name: createSellerDto.store_name,
             store_description: createSellerDto.store_description,
@@ -15,5 +14,9 @@ export class SellerService {
         return await SellerRepository.save(sellerData)
 
         // return await SellerRepository.createAndSave(sellerData);
+    }
+
+    async fetchSellers(): Promise<Seller[]> {
+        return await SellerRepository.find();
     }
 }

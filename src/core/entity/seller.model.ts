@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn } from'typeorm';
 import { Product } from './product.model';
 
 @Entity()
@@ -16,5 +16,9 @@ export class Seller {
     store_description: string;
 
     @Column({ nullable: true })
-    store_logo: string;
+  store_logo: string;
+  
+  @OneToMany(() => Product, product => product.seller)
+  @JoinColumn({ name: 'product_id' })
+  Products: Product[];
 }

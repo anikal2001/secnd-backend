@@ -1,4 +1,4 @@
 import AppDataSource from '../db/database';
-import Address from '../../core/entity/address.model';
+import Address from '../../api/RelationalDB/address.model';
 
 export const AddressRepository = AppDataSource.getRepository(Address).extend({});
