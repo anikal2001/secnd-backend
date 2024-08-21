@@ -42,6 +42,16 @@ class UserController {
       res.status(400).json({ message: error.message });
     }
   }
+
+  async makeUserSeller(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      const user = await UserController.userService.makeUserSeller(email);
+      res.status(200).json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 export default UserController;

@@ -62,6 +62,11 @@ export class UserService {
   }
 
   async sellerLogin(email: string, password: string) {
+    // Check if User is a Seller
+    const isSeller = await UserRepository.isSeller(email);
+    if (!isSeller) {
+      throw new Error('User is not a seller.');
+    }
     const account = new sdk.Account(this.AppWriteClient)
     const promise = account.createEmailPasswordSession(email, password)
     promise.then((response: any) => {
@@ -70,6 +75,10 @@ export class UserService {
     ).catch((error: any) => {
       console.log(error)
     })
+  }
+
+  async makeUserSeller(email: string) {
+    return await UserRepository.makeSeller(email);
   }
 
   async updateUserPreferences(id: string, preferences: UserPreferences) {

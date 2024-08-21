@@ -17,4 +17,10 @@ export const UserRepository = AppDataSource.getRepository(User).extend({
   findByIdandRemove(id: number) {
     return this.createQueryBuilder('user').delete().from(User).where('user.id = :id', { id }).execute();
   },
+  isSeller(email: string) {
+    return this.createQueryBuilder('user').where('user.email = :email', { email }).andWhere('user.isSeller = true').getOne();
+  },
+  makeSeller(email: string) {
+    return this.createQueryBuilder('user').update(User).set({ isSeller: true }).where('user.email = :email', { email }).execute();
+  }
 });
