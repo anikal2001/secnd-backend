@@ -1,96 +1,98 @@
-import { Product } from '../../core/entity/product.model';
-import { ProductRepository } from '../repositories/Products/ProductRepository';
-import { ProductType } from '../../types/product';
-import { getProducts, addProduct, deleteProduct } from '../shopify';
-import { defaultSort } from '../shopify/constants';
-import { second } from '../../api/decorators/middleware';
 import bcrypt from 'bcrypt';
 import { plainToClass } from 'class-transformer';
-import { ProductColors, ProductTags } from '../../utils/products.enums';
-import { SellerRepository } from '../repositories/sellerRepository';
-import { CreateProductDto } from '../dto/CreateProductDTO';
+import { Product } from '../../core/entity/product.model';
+import { ProductFilters, ProductType } from '../../types/product';
+import { ProductCategory, ProductTags } from '../../utils/products.enums';
+import { ProductRepository } from '../repositories/Products/ProductRepository';
 
 export class ProductService {
-  async getProductById(id: string): Promise<string> {
-    return 'Product';
-    // return await ProductRepository.findOne({ where: { id } });
-  }
 
+  // Get Methods
   async fetchProducts(): Promise<Product[]> {
     return await ProductRepository.find();
   }
 
-  async updateProduct(id: string, productData: Product): Promise<Product | null> {
-    const Product = false;
-    if (!Product) return null;
-
-    // Product.name = productData.name;
-    // Product.description = productData.description;
-    // Product.price = productData.price;
-
-    // await ProductRepository.insert(Product);
-    return Product;
+  async getTrendingProducts(): Promise<Product[]> {
+    // Current Products that have the most wishlist + likes + views
+    const trendingProducts = await ProductRepository.findTrendingProducts();
+    return trendingProducts;
   }
 
-  // async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-  //     // You can perform additional validations or transformations here
-  //     const productData: Partial<Product> = {
-  //           name: createProductDto.name,
-  //           description: createProductDto.description,
-  //           price: createProductDto.price,
-  //           listed_size: createProductDto.listed_size,
-  //           brand: createProductDto.brand,
-  //           gender: createProductDto.gender,
-  //           primaryColor: createProductDto.primaryColor,
-  //           secondaryColor: createProductDto.secondaryColor,
-  //           seller: createProductDto.seller,
-  //           tags: createProductDto.tags,
-  //           attributes: createProductDto.attributes,
-  //           items: createProductDto.items,
-  //       };
-
-  //       return await ProductRepository.createAndSave(productData);
-  // }
-  async deleteProduct(id: string): Promise<string> {
-    const deletedID = await deleteProduct(id);
-    return deletedID;
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    if (category in ProductCategory) {
+      throw new Error('Invalid category');
+    }
+    const categoryKey = category as keyof typeof ProductCategory;
+    const products = await ProductRepository.findBy({ product_category: ProductCategory[categoryKey] });
+    if (!products) {
+      return [];
+    }
+    return products;
   }
 
+    async getProductsByStyle(tag: string): Promise<Product[]> {
+    if (tag in ProductCategory) {
+      throw new Error('Invalid category');
+    }
+    const tagKey = tag as keyof typeof ProductCategory;
+    const products = await ProductRepository.findByTags(tagKey);
+    if (!products) {
+      return [];
+    }
+    return products;
+    }
+  
+  async filterProducts(filter: ProductFilters): Promise<Product[]> {
+    const products = await ProductRepository.filterProducts(filter);
+    if (!products) {
+      return [];
+    }
+    return products;
+  }
+
+  async getProductById(id: string): Promise<Product | null> {
+    const product = await ProductRepository.findOneBy({ product_id: id });
+    if (!product) {
+      return null
+    }
+    return product;
+  } 
+
+  // Post Methods
+  async createProduct(productData: ProductType): Promise<Product | null> {
+    productData.product_id = await this._genProductId(productData.seller.toString(), productData.name);
+    const newProduct = plainToClass(Product, productData);
+    return await ProductRepository.createAndSave(newProduct);
+  }
+
+  async updateProduct(id: string, productData: ProductType): Promise<boolean> {
+    const updatedProduct = plainToClass(Product, productData);
+    const UpdateResult = await ProductRepository.update(id, updatedProduct);
+    if (UpdateResult.affected === 0) {
+      return false
+    }
+    else {
+      return true;
+    }
+  }
+
+  async deleteProduct(id: string): Promise<boolean> {
+    const product = await ProductRepository.findOneBy({ product_id: id });
+    if (!product) {
+      return false;
+    }
+    const deletedProduct = await ProductRepository.remove(product);
+    if (!deletedProduct) {
+      throw new Error('Failed to delete product');
+    }
+    return true;
+  }
+
+  // Private Methods
   async _genProductId(sellerId: string, productName: string): Promise<string> {
     return await bcrypt.hashSync(sellerId + productName.toLowerCase(), 10);
   }
 
-  // async fetchProducts( ): Promise<unknown[]> {
-  //   const { sortKey, reverse } = defaultSort;
-  //   const products = await getProducts({ sortKey, reverse, query: '' });
-  //   return products;
-  // }
-
-  async createProduct(productData: ProductType): Promise<Product> {
-    const product = {
-      name: 'Myself',
-      description:
-        'It operation true anyone time quite idea protect. Lot wonder threat position thousand audience letter. Answer old process treat quite trial.',
-      price: 379.84,
-      color: {
-        primaryColor: [ProductColors.Blue],
-        secondaryColor: [ProductColors.Blue],
-      },
-      listed_size: "XS",
-      product_category: 'Skirts',
-      condition: 'Fair',
-      tags: [ProductTags.Casual],
-      brand: 'Sanders, Reid and Brown',
-      material: ['Polyester'],
-      gender: 'Unisex',
-      seller: 1,
-      imageUrls: ['https://dummyimage.com/625x230', 'https://placekitten.com/559/775'],
-    };
-    const newProduct = plainToClass(Product, product);
-    return await ProductRepository.createAndSave(newProduct);
-  }
-
-  // // Private Methods
   // _genProductUpdateInput(product: ProductType): any {
   // }
 

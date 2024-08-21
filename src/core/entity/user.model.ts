@@ -1,6 +1,7 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Transaction } from './transaction.model';
 import { Order } from './order.model';
+import { ProductInteraction } from './product_interactions.model';
 
 @Entity({ name: 'users_table' })
 export abstract class User extends BaseEntity {
@@ -61,11 +62,8 @@ export abstract class User extends BaseEntity {
 
   @OneToMany(() => Transaction, (transaction) => transaction.client)
   transactions!: Transaction[];
+  
+  @OneToMany(() => ProductInteraction, (interaction) => interaction.user)
+  interactions!: ProductInteraction[];
 
-  @Column({ default: false })
-  isSeller!: boolean;
-
-  // OneToMany(() =>
-  // @Column({ nullable: true })
-  // favouriteProducts!: Product[];
 }

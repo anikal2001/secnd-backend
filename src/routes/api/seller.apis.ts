@@ -5,6 +5,7 @@ const router: Router = express.Router();
 
 const sellerController = new SellerController();
 
+router.get('/', sellerController.getAllSellers);
 router.post('/add', sellerController.addSeller);
 
 export default router;

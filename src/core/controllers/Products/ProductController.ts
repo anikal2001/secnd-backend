@@ -17,6 +17,10 @@ export class ProductController {
       }
       // Ensure all required fields are present
       const product = await ProductController.productService.createProduct(req.body);
+      if (!product) {
+        res.status(400).json({ message: 'Product already exists' });
+        return;
+      }
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -32,27 +36,6 @@ export class ProductController {
     }
   }
 
-  public getAllProducts = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const products = await ProductController.productService.fetchProducts();
-      res.json(products);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  };
-
-  public getSpecificProduct = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const product = await ProductController.productService.getProductById(req.params.id);
-      if (product) {
-        res.json(product);
-      } else {
-        res.status(404).json({ message: 'Product not found' });
-      }
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  };
   public getProductById = async (req: Request, res: Response): Promise<void> => {
     try {
       const product = await ProductController.productService.getProductById(req.params.id);
@@ -63,15 +46,6 @@ export class ProductController {
       }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
-    }
-  };
-
-  public createProduct = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const product = await ProductController.productService.createProduct(req.body);
-      res.status(201).json(product);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
     }
   };
 
@@ -100,4 +74,44 @@ export class ProductController {
       res.status(500).json({ message: error.message });
     }
   };
+
+  // Current Products that have the most wishlist + likes + views
+  public getTrendingProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const topProducts = await ProductController.productService.getTrendingProducts();
+      res.json(topProducts);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  public getProductsByStyle = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const products = await ProductController.productService.getProductsByStyle(req.params.style);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  getProductsByCategory = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const products = await ProductController.productService.getProductsByCategory(req.params.category);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+
+  public filterProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const products = await ProductController.productService.filterProducts(req.body);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  
 }

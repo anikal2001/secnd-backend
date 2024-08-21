@@ -1,11 +1,12 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Seller } from './seller.model';
-import { ProductCategory, ProductColors } from '../../utils/products.enums';
+import { ProductCategory, ProductColors, ProductTags } from '../../utils/products.enums';
+import { ProductInteraction } from './product_interactions.model';
 
 @Entity()
 export class Product {
-  @PrimaryGeneratedColumn()
-  product_id: number;
+  @PrimaryColumn()
+  product_id: string;
 
   @Column()
   name: string;
@@ -41,6 +42,9 @@ export class Product {
   gender: string;
 
   @Column({ type: 'simple-array', default: [] })
+  tags: ProductTags[]
+
+  @Column({ type: 'simple-array', default: [] })
   imageURLS: string[];
 
     @ManyToOne(() => Seller, (seller) => seller.seller_id, { onDelete: 'CASCADE' })
@@ -52,4 +56,8 @@ export class Product {
 
     @Column({ nullable: true })
     dimensions: string;
+  
+  @OneToMany(() => ProductInteraction, interaction => interaction.product)
+  @JoinColumn({ name: 'interaction_id' })
+  interactions: ProductInteraction[];
 }

@@ -16,7 +16,6 @@ const AppDataSource = new DataSource({
   logging: true,
   entities: ['src/core/entity/*.ts', __dirname + '/../**/*.entity.{js,ts}'],
   synchronize: true,
-  dropSchema: true,
 });
 
 export default AppDataSource;
