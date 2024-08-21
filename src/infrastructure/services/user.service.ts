@@ -1,9 +1,5 @@
-import { UserRepository } from '../repositories/UserRepository';
-import { AddressRepository } from '../repositories/AddressRepository';
-import * as bcrypt from 'bcrypt';
-import { Country, Provinces } from '../../utils/users.enums';
-import AppwriteClient from '../../config'
 import { UserPreferences } from '../../types/user';
+import { UserRepository } from '../repositories/UserRepository';
 const sdk = require('node-appwrite');
 
 export class UserService {

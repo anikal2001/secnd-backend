@@ -1,9 +1,5 @@
 import { Request, Response } from 'express';
-import { Product } from '../../entity/product.model';
-import { validateOrReject } from 'class-validator';
 import { ProductService } from '../../../infrastructure/services/product.service';
-import { plainToClass } from 'class-transformer';
-import { CreateProductDto } from '../../../infrastructure/dto/CreateProductDTO';
 
 export class ProductController {
   static productService: ProductService = new ProductService();
