@@ -32,6 +32,16 @@ class UserController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  async sellerLogin(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, password } = req.body;
+      const user = await UserController.userService.sellerLogin(email, password);
+      res.status(200).json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 export default UserController;

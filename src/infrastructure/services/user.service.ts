@@ -61,6 +61,17 @@ export class UserService {
     return await this.Users.getPrefs(userId)
   }
 
+  async sellerLogin(email: string, password: string) {
+    const account = new sdk.Account(this.AppWriteClient)
+    const promise = account.createEmailPasswordSession(email, password)
+    promise.then((response: any) => {
+      console.log(response)
+    }
+    ).catch((error: any) => {
+      console.log(error)
+    })
+  }
+
   async updateUserPreferences(id: string, preferences: UserPreferences) {
     return await this.Users.updatePrefs(id, preferences)
   }

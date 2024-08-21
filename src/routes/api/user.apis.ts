@@ -7,6 +7,7 @@ const userController = new UserController();
 
 router.get('/', userController.getAllUsers);
 router.post('/register', passwordValidations, userController.createUser);
+router.post('/login', userController.sellerLogin);
 // router.post('/updatePreferences', userController.updatePreferences)
 // router.post('/login', userController.loginUser)
 // router.put('/:id', userController.updateUser)
