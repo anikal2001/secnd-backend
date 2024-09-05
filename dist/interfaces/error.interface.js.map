@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/interfaces/error.interface.ts"],"sourcesContent":["interface Error {\n  name?: string;\n  status?: number;\n  stack?: string;\n  message?: string;\n}\n\nexport default Error;\n"],"mappings":";;;;;;;;;;;;;;;;AAAA;AAAA;","names":[]}

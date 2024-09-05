@@ -17,6 +17,8 @@ jobs:
           node-version: 20
       - name: Install Dependencies
         run: npm install && npm install typescript -g
+      - name: Build
+        run: npm run build
       - name: Generate Deployment Package
         run: zip -r secnd-backend-main.zip .
       - name: Deploy to EB

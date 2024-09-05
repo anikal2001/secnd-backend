@@ -1,0 +1,6 @@
+// src/routes/api/transaction.txt
+var transaction_default = "import express, { Router } from 'express'\r\nconst router = express.Router();\r\nconst transactionController = require('../controllers/transaction.controller');\r\n\r\nrouter.get('/transactions', transactionController.getAllTransactions);\r\n\r\nrouter.get('/transactions/:id', transactionController.getTransaction);\r\n\r\nrouter.post('/transactions', transactionController.createTransaction);\r\n\r\nrouter.put('/transactions/:id', transactionController.updateTransaction);\r\n\r\nrouter.delete('/transactions/:id', transactionController.deleteTransaction);\r\n\r\nmodule.exports = router;\r\n";
+export {
+  transaction_default as default
+};
+//# sourceMappingURL=transaction.mjs.map
