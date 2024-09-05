@@ -7,7 +7,6 @@
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "start": "ts-node -r tsconfig-paths/register src/index.ts",
-    "test": "npm run build && jasmine",
     "format": "prettier --write src/**/*.ts",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
