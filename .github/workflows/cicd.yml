@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 20
       - name: Install Dependencies
-        run: npm install && npm install typescript ts-node -g
+        run: npm install && npm install typescript -g && npm install ts-node -g
       - name: Genrate Deployment Package
         run: zip -r secnd-backend-main.zip .
       - name: Deploy to EB
