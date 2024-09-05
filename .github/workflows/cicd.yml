@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: [ ubuntu-latest ]
+    runs-on: [ubuntu-latest]
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
@@ -16,7 +16,9 @@ jobs:
         with:
           node-version: 20
       - name: Install Dependencies
-        run: npm install && npm install typescript -g && npm install ts-node -g
+        run: npm install && npm install typescript -g && npm i babel-cli -g
+      - name: Build
+        run: npm run build
       - name: Genrate Deployment Package
         run: zip -r secnd-backend-main.zip .
       - name: Deploy to EB

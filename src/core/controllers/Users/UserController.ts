@@ -1,4 +1,3 @@
-import { User } from '../../entity/user.model';
 import AppDataSource from '../../../infrastructure/db/database';
 import { hashPassword } from '../../../api/middleware/password.middleware';
 import { validateUserFields } from '../../../api/middleware/user.middleware';

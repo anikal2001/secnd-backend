@@ -1,11 +1,9 @@
-import { Order } from '../../core/entity/order.model';
-import { OrderRepository } from '../repositories/OrderRepository';
 import { OrderType, OrderItemType } from '../../types/order';
 
 export class OrderService {
-  private orderRepository;
+  private orderRepository: { find: () => Order[] | PromiseLike<Order[]>; findOne: (arg0: { where: { id: number; }; }) => any; create: (arg0: { id: number; customer: User; orderItems: OrderItem[]; totalAmount: number; products: Product[]; total: number; status: string; createdAt: Date; updatedAt: Date; }) => any; insert: (arg0: any) => any; } | null;
   constructor() {
-    this.orderRepository = OrderRepository;
+    this.orderRepository = null;
   }
 
   async getAllOrders(): Promise<Order[]> {

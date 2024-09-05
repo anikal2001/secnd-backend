@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { plainToClass } from 'class-transformer';
-import { Product } from '../../core/entity/product.model';
+import { ProductDto as Product } from '../dto/ProductDTO';
 import { ProductFilters, ProductType } from '../../types/product';
 import { ProductCategory, ProductTags } from '../../utils/products.enums';
 import { ProductRepository } from '../repositories/Products/ProductRepository';

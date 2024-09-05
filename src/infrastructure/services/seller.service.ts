@@ -1,10 +1,10 @@
-import {Seller} from '../../core/entity/seller.model';
+import { SellerDTO as Seller } from '../dto/SellerDTO';
 import { SellerRepository } from '../repositories/sellerRepository';
 import { ProductRepository } from '../repositories/Products/ProductRepository';
 import AppDataSource from '../db/database';
 import { CreateSellerDto } from '../dto/CreateSellerDTO';
 import { plainToClass, plainToInstance } from 'class-transformer';
-import { Product } from '../../core/entity/product.model';
+import { ProductDto as Product } from '../dto/ProductDTO';
 
 export class SellerService {
 
