@@ -17,8 +17,6 @@ jobs:
           node-version: 20
       - name: Install Dependencies
         run: npm install && npm install typescript -g && npm i babel-cli -g
-      - name: Build
-        run: npm run build
       - name: Genrate Deployment Package
         run: zip -r secnd-backend-main.zip .
       - name: Deploy to EB
