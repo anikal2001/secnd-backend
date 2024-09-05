@@ -16,8 +16,8 @@ jobs:
         with:
           node-version: 20
       - name: Install Dependencies
-        run: npm install && npm install typescript -g && npm i babel-cli -g
-      - name: Genrate Deployment Package
+        run: npm install && npm install typescript -g
+      - name: Generate Deployment Package
         run: zip -r secnd-backend-main.zip .
       - name: Deploy to EB
         uses: einaregilsson/beanstalk-deploy@v22
