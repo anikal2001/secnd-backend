@@ -9,6 +9,7 @@ export class ProductService {
 
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
+    // If the id is undefined, it will return all orders
     return await ProductRepository.find();
   }
 

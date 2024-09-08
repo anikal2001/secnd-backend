@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import AppDataSource from './infrastructure/db/database';
-import '@shopify/shopify-api/adapters/node';
 import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api';
 const sdk = require('node-appwrite');
 
@@ -23,17 +22,6 @@ const DBconnection = async () => {
   }
 };
 
-const shopifyEnv = {
-  apiKey: '3a0bbb6c01530af6e1edbf1243561147',
-  apiSecretKey: 'a4b2a019f5a630f163def7c77c2e04b3',
-  scopes: ['read_products'],
-  shopName: 'secnd.myshopify.com',
-  hostName: 'ngrok-tunnel-address',
-  apiVersion: LATEST_API_VERSION,
-  isEmbeddedApp: true,
-};
-const shopify = shopifyApi(shopifyEnv);
-
 
 let AppwriteClient = new sdk.Client()
     .setEndpoint('https://cloud.appwrite.io/v1') // Your API Endpoint
@@ -47,7 +35,6 @@ export default {
   port: PORT,
   JWT_SECERT: JWT_SECERT,
   EXPIRES_IN: EXPIRES_IN,
-  shopify: shopify,
   AppwriteClient: AppwriteClient,
   sdk: sdk
 };

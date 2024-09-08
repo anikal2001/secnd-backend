@@ -1,12 +1,15 @@
+import AppDataSource from '../db/database';
 import { OrderType, OrderItemType } from '../../types/order';
+import { Order } from '../../core/entity/order.model'
 
 export class OrderService {
-  private orderRepository: { find: () => Order[] | PromiseLike<Order[]>; findOne: (arg0: { where: { id: number; }; }) => any; create: (arg0: { id: number; customer: User; orderItems: OrderItem[]; totalAmount: number; products: Product[]; total: number; status: string; createdAt: Date; updatedAt: Date; }) => any; insert: (arg0: any) => any; } | null;
+  private orderRepository;
   constructor() {
-    this.orderRepository = null;
+    this.orderRepository = AppDataSource.getRepository(Order);
   }
 
   async getAllOrders(): Promise<Order[]> {
+    // If the id is undefined, it will return all orders
     return await this.orderRepository.find() as Order[];
   }
 
