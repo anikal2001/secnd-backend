@@ -12,9 +12,12 @@ var AppDataSource = new DataSource({
   database: PGDATABASE,
   ssl: true,
   logging: true,
-  entities: ["src/core/entity/*.ts", __dirname + "/../**/*.entity.{js,ts}"],
-  synchronize: true
+  entities: [__dirname + "/../../core/entity/*.model.{ts, js, mjs}"],
+  // entities: [__dirname + '/core/entity/*.model.js'],
+  synchronize: true,
+  cache: false
 });
+console.log("DATABASE CONNECTION: ", __dirname + "core/entity/*.model.js");
 var database_default = AppDataSource;
 
 // src/infrastructure/dto/UserDTO.ts

@@ -1,1 +1,0 @@
-npm install -g typescript@3.6.4

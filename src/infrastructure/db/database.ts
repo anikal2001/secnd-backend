@@ -12,8 +12,12 @@ const AppDataSource = new DataSource({
   database: PGDATABASE,
   ssl: true,
   logging: true,
-  entities: ['src/core/entity/*.ts', __dirname + '/../**/*.entity.{js,ts}'],
+  entities: [__dirname + '/../../core/entity/*.model.{ts, js, mjs}'],
   synchronize: true,
+  cache: false,
 });
+
+console.log('DATABASE CONNECTION: ', __dirname + 'core/entity/*.model.js');
+
 
 export default AppDataSource;
