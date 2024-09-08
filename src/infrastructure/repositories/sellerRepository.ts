@@ -1,7 +1,7 @@
 import AppDataSource from '../db/database';
-import { SellerDTO as Seller } from '../dto/SellerDTO';
+import { Seller } from '../../core/entity/seller.model';
 import { plainToInstance } from 'class-transformer';
-import { ProductDto as Product } from '../dto/ProductDTO';
+import { Product } from '../../core/entity/product.model';
 
 export const SellerRepository = AppDataSource.getRepository(Seller).extend({
     async createAndSave(sellerData: Partial<Seller>): Promise<Seller> {

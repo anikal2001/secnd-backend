@@ -1,5 +1,5 @@
 import AppDataSource from '../db/database';
-import { UserDto as User } from '../dto/UserDTO';
+import { User } from '../../core/entity/user.model';
 
 export const UserRepository = AppDataSource.getRepository(User).extend({
   findByName(firstName: string, lastName: string) {

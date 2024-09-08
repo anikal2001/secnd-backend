@@ -1,5 +1,5 @@
 import AppDataSource from '../../db/database';
-import { ProductDto as Product } from '../../dto/ProductDTO';
+import { Product } from '../../../core/entity/product.model';
 import { create } from 'domain';
 import { UpdateResult } from 'typeorm';
 
@@ -17,7 +17,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
       .select('product')
       .from(Product, 'product')
       .where('product.name = :name', { name: product.name })
-      .andWhere('product.seller = :seller', { seller: product.seller_id });
+      .andWhere('product.seller = :seller', { seller: product.seller });
     if (existingProduct) {
       return null;
     }

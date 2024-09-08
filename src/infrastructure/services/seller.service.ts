@@ -1,10 +1,9 @@
-import { SellerDTO as Seller } from '../dto/SellerDTO';
+import { Seller } from '../../core/entity/seller.model';
 import { SellerRepository } from '../repositories/sellerRepository';
 import { ProductRepository } from '../repositories/Products/ProductRepository';
 import AppDataSource from '../db/database';
-import { CreateSellerDto } from '../dto/CreateSellerDTO';
 import { plainToClass, plainToInstance } from 'class-transformer';
-import { ProductDto as Product } from '../dto/ProductDTO';
+import { Product } from '../../core/entity/product.model';
 
 export class SellerService {
 
@@ -15,15 +14,24 @@ export class SellerService {
             store_description: createSellerDto.store_description,
             store_logo: createSellerDto.store_logo,
         };
-        return await SellerRepository.save(sellerData)
+        const savedSeller = await SellerRepository.save(sellerData)
+        return plainToInstance(Seller, savedSeller);
     }
 
     async fetchSellers(): Promise<Seller[]> {
-        return await SellerRepository.find();
+        const sellers = await SellerRepository.find();
+        if (!sellers) {
+            return [];
+        }
+        return plainToInstance(Seller, sellers);
     }
 
     async getSellerById(sellerId: number): Promise<Seller | null> {
-        return await SellerRepository.findOneBy({ seller_id: sellerId });
+        const seller = await SellerRepository.findOneBy({ seller_id: sellerId });
+        if (!seller) {
+            return null;
+        }
+        return plainToInstance(Seller, seller);
     }
 
     async getSellerProducts(sellerId: number): Promise<any> {

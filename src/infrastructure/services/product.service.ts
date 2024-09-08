@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
-import { plainToClass } from 'class-transformer';
-import { ProductDto as Product } from '../dto/ProductDTO';
+import { plainToClass, plainToInstance } from 'class-transformer';
+import { Product } from '../../core/entity/product.model';
 import { ProductFilters, ProductType } from '../../types/product';
 import { ProductCategory, ProductTags } from '../../utils/products.enums';
 import { ProductRepository } from '../repositories/Products/ProductRepository';
@@ -10,7 +10,11 @@ export class ProductService {
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
     // If the id is undefined, it will return all orders
-    return await ProductRepository.find();
+    const products = await ProductRepository.find();
+    if (!products) {
+      return [];
+    }
+    return plainToInstance(Product, products);
   }
 
   async getTrendingProducts(): Promise<Product[]> {
@@ -28,7 +32,7 @@ export class ProductService {
     if (!products) {
       return [];
     }
-    return products;
+    return plainToInstance(Product, products);
   }
 
     async getProductsByStyle(tag: string): Promise<Product[]> {
@@ -56,7 +60,7 @@ export class ProductService {
     if (!product) {
       return null
     }
-    return product;
+    return plainToInstance(Product, product);
   } 
 
   // Post Methods
