@@ -59,7 +59,6 @@ var AppDataSource = new DataSource({
   ssl: true,
   logging: true,
   entities: [__dirname + "/../../core/entity/*.model.{ts, js, mjs}"],
-  // entities: [__dirname + '/core/entity/*.model.js'],
   synchronize: true,
   cache: false
 });

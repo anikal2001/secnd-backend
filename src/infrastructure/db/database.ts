@@ -17,7 +17,5 @@ const AppDataSource = new DataSource({
   cache: false,
 });
 
-console.log('DATABASE CONNECTION: ', __dirname + 'core/entity/*.model.js');
-
 
 export default AppDataSource;
