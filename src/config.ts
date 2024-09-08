@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import AppDataSource from './infrastructure/db/database';
-import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api';
 const sdk = require('node-appwrite');
 
 dotenv.config();

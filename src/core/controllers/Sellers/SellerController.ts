@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { plainToClass } from "class-transformer";
 import { SellerService } from "../../../infrastructure/services/seller.service";
-import { SellerDTO as Seller } from "../../../infrastructure/dto/SellerDTO";
+import { Seller } from "../../entity/seller.model";
 
 
 export class SellerController{
