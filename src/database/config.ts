@@ -10,7 +10,7 @@ export const AppDataSource = new DataSource({
   username: PGUSER,
   password: PGPASSWORD,
   database: PGDATABASE,
-  ssl: false,
+  ssl: true,
   // ssl: NODE_ENV === "production" ? { rejectUnauthorized: false } : true,
   entities: [__dirname + "/../**/*.entity{.ts,.js}"],
   synchronize: true,
