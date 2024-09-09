@@ -17,4 +17,4 @@ export const AppDataSource = new DataSource({
   logging: true,
 });
 
-console.log(__dirname + "/../**/*.entity{.ts,.js}")
+console.log(process.env.PGHOST);
