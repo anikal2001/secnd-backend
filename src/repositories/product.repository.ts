@@ -17,11 +17,17 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
       .select('product')
       .from(Product, 'product')
       .where('product.name = :name', { name: product.name })
-      .andWhere('product.seller = :seller', { seller: product.seller });
+      .andWhere('product.seller = :seller', { seller: product.seller })
+    .getOne();
     if (existingProduct) {
       return null;
     }
-    return this.save(product);
+    try {
+      return await this.save(product);
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   },
 
   async update(id: string, productData: Product): Promise<UpdateResult> {

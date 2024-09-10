@@ -67,7 +67,13 @@ export class ProductService {
   async createProduct(productData: ProductType): Promise<Product | null> {
     productData.product_id = await this._genProductId(productData.seller.toString(), productData.name);
     const newProduct = plainToClass(Product, productData);
-    return await ProductRepository.createAndSave(newProduct);
+    try {
+      const product = await ProductRepository.createAndSave(newProduct);
+      return product;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   async updateProduct(id: string, productData: ProductType): Promise<boolean> {
