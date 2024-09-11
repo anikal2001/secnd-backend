@@ -58,6 +58,37 @@ export class SellerController{
         }
     }
 
+    getSellerProductById = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const sellerID = Number(req.params.id);
+            const productID = Number(req.params.productID);
+            // const product = await SellerController.sellerService.getSellerProductById(sellerID, productID);
+            const product: any = { message: 'Route not implemented' }
+            if (product) {
+                res.json(product);
+            } else {
+                res.status(404).json({ message: 'Product not found' });
+            }
+        } catch (error: any) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+    getProductInteractions = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const sellerID = Number(req.params.id);
+            const productID = Number(req.params.productID);
+            // const interactions = await SellerController.sellerService.getProductInteractions(sellerID, productID);
+            const interactions: string[] = ['Route not implemented'];
+            if (interactions) {
+                res.json(interactions);
+            } else {
+                res.status(404).json({ message: 'Product not found' });
+            }
+        } catch (error: any) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+
     public getSellerRevenues = async (req: Request, res: Response): Promise<void> => {
         try {
             const sellerID = Number(req.params.id);
@@ -139,7 +170,7 @@ export class SellerController{
     }
 
 
-    public getTrendingProductsForSeller = async (req: Request, res: Response): Promise<void> => {
+    public getTrendingProducts = async (req: Request, res: Response): Promise<void> => {
         try {
             const sellerID = Number(req.params.id);
             const trendingProducts = await SellerController.sellerService.getTrendingProducts(sellerID);

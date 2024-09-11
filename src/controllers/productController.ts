@@ -108,6 +108,13 @@ export class ProductController {
       res.status(500).json({ message: error.message });
     }
   }
-
-  
+    
+    public bulkUpload = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const products = await ProductController.productService.bulkUploadProducts(req.body);
+            res.json(products);
+        } catch (error: any) {
+            res.status(500).json({ message: error.message });
+        }
+    }
 }

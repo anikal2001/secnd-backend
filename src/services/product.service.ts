@@ -99,6 +99,16 @@ export class ProductService {
     return true;
   }
 
+  async bulkUploadProducts(products: ProductType[]): Promise<Product[]> {
+    const newProducts: Product[] = await Promise.all(products.map(async (product) => {
+      product.product_id = await this._genProductId(product.seller.toString(), product.name);
+      const convertedProduct = plainToInstance(Product, product);
+      return convertedProduct
+    }));
+    const savedProducts = await ProductRepository.bulkCreate(newProducts);
+    return savedProducts;
+  }
+
   // Private Methods
   async _genProductId(sellerId: string, productName: string): Promise<string> {
     return await bcrypt.hashSync(sellerId + productName.toLowerCase(), 10);

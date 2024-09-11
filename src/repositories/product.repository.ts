@@ -48,6 +48,11 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     return await AppDataSource.createQueryBuilder().select('product')
       .from(Product, 'product').where('product.tags = :tag', { tag }).getMany();
   },
+  async bulkCreate(products: Product[]): Promise<Product[]> {
+    // bulk create products
+    const createdProducts = await this.save(products);
+    return createdProducts;
+  },
 
   async filterProducts(filter: any): Promise<Product[]> {
     const queryBuilder = AppDataSource.createQueryBuilder().select('product')
