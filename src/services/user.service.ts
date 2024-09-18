@@ -9,6 +9,7 @@ import {
   UserInterface,
   UserRepositoryInterface,
 } from "../interfaces/user.interface";
+import { ID } from "node-appwrite";
 
 export class UserService implements UserRepositoryInterface {
   private AppWriteClient: any;
@@ -31,67 +32,98 @@ export class UserService implements UserRepositoryInterface {
     return await this.Users.getPrefs(userId)
   }
 
-  async sellerLogin(email: string, password: string) {
+  async login(email: string, password: string) {
     // Check if User is a Seller
     const isSeller = await UserRepository.isSeller(email);
     if (!isSeller) {
       throw new Error('User is not a seller.');
     }
     const account = new sdk.Account(this.AppWriteClient)
-    const promise = account.createEmailPasswordSession(email, password)
-    promise.then((response: any) => {
-      console.log(response)
+    try {
+      const session = await account.createEmailPasswordSession(email, password)
+      return session.secret
     }
-    ).catch((error: any) => {
-      console.log(error)
-    })
+    catch (e) {
+      throw new Error('Invalid credentials');
+    }
   }
 
-  async makeUserSeller(email: string) {
-    return await UserRepository.makeSeller(email);
+  async logout(session: string) {
+    const account = new sdk.Account(this.AppWriteClient).setSession(session)
+    return await account.deleteSessions()
   }
 
-  async updateUserPreferences(id: string, preferences: UserPreferences) {
-    return await this.Users.updatePrefs(id, preferences)
+  async listSessions(id: string) {
+    const sessions = this.Users.listSessions(id)
+    return await sessions
   }
 
-  async updateUserPassword(id: string, newPassword: string) {
-    return await this.Users.updatePassword(id, newPassword)
+  async appwriteDeleteSession(id: string, sessionId: string) {
+    const res = await this.Users.deleteSession(id, sessionId)
+    return res
   }
 
-  async updateUserEmail(id: string, email: string) {
-    return await this.Users.updateEmail(id, email)
+  async makeUserSeller(id: string) {
+    // Appwrite update user preferences
+    const user = await this.appwriteGetUserById(id)
+    if (!user) {
+      throw new Error('User not found');
+    }
+    await this.appwriteUpdateUserPreferences(id, { is_seller: true })
+    // DB update user preferences
+    return await UserRepository.makeSeller(user.email);
   }
-
-  async updateUserName(id: string, name: string) {
-    return await this.Users.updateName(id, name)
-  }
-
-  async getUserById(id: string) {
-    return await this.Users.get(id);
-  }
-
-  async getAllUsers() {
-    return await this.Users.list()
-  }
-
-  async removeUser(id: string) {
-    return await this.Users.deleteIdentity(id);
-  }
-  async createUser(user: UserInterface): Promise<UserInterface>{
-    this.UserRepository.createAndSave(user)
-    return this.Users.create(user.email, user.email, user.phone, user.password, user.first_name + user.last_name)
-  };
-  async update(id: string, user: UserInterface): Promise<UserInterface>{
-    return await this.Users.update(id, user)
-  };
-  async delete(id: string): Promise<UserInterface>{
-    return await this.Users.delete(id)
-  };
   async findById(id: string): Promise<UserInterface | null>{ 
     return this.UserRepository.findById(id)
   };
   async findByEmail(email: string): Promise<UserInterface | null>{
     return this.UserRepository.findByEmail(email)
   };
+
+  async appwriteUpdateUserPreferences(id: string, preferences: Partial<UserPreferences>) {
+    return await this.Users.updatePrefs(id, preferences)
+  }
+
+  async appwriteUpdateUserPassword(id: string, newPassword: string) {
+    return await this.Users.updatePassword(id, newPassword)
+  }
+
+  async appwriteUpdateUserEmail(id: string, email: string) {
+    return await this.Users.updateEmail(id, email)
+  }
+
+  async appwriteUpdateUserName(id: string, name: string) {
+    return await this.Users.updateName(id, name)
+  }
+
+  async appwriteGetUserById(id: string) {
+    return await this.Users.get(id);
+  }
+
+  async appwriteGetAllUsers() {
+    return await this.Users.list()
+  }
+
+  async appwriteRemoveUser(id: string) {
+    return await this.Users.deleteIdentity(id);
+  }
+  async createUser(user: Partial<UserInterface>): Promise<UserInterface>{
+    // Add User on Appwrite
+    const name = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`
+    await this.Users.create(ID.unique(), user.email, '+1' + user.phone, user.password, name)
+    return await this.UserRepository.createAndSave(user.first_name, user.last_name, user.email, user.password, user.postalCode, user.phone, user.country, user.city)
+  };
+  async update(id: string, user: UserInterface): Promise<UserInterface>{
+    return await this.Users.update(id, user)
+  };
+  async delete(id: string, user: UserInterface): Promise<UserInterface>{
+    const userdata = await this.UserRepository.findByEmail(user.email)
+    console.log(userdata)
+    await this.UserRepository.findByEmailAndRemove(user.email)
+    return await this.Users.delete(id)
+  };
+  async appwriteFindById(id: string) {
+    console.log(id)
+    return await this.Users.get(id)
+  }
 }

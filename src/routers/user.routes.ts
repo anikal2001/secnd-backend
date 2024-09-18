@@ -4,8 +4,12 @@ import UserController from "../controllers/userController";
 const userController = new UserController();
 
 Router.get("/get-users", userController.getAllUsers);
-Router.post("/seller-login", userController.sellerLogin);
-Router.post("/make-seller/:email", userController.makeUserSeller);
+Router.get("/list-user-sessions", userController.listSessions);
+Router.post("/login", userController.login);
+Router.post("/make-seller", userController.makeUserSeller);
+Router.post("/create-user", userController.createUser);
+Router.delete("/delete", userController.delete);
+Router.delete("/delete-session", userController.deleteSession)
 // Router.post("/login", userController.login);
 // Router.get("/user/:id", userController.findById);
 // Router.get("/user/:email", userController.findByEmail);

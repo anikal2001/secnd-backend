@@ -22,6 +22,6 @@ export type UserType = {
 
 
 export type UserPreferences = {
-  isOnboarded: boolean;
-  isSeller: boolean;
+  is_onboarded: boolean;
+  is_seller: boolean;
 }

@@ -3,6 +3,7 @@ import { UserPreferences } from "../types/user";
 import { Cart } from "../entity/cart.entity";
 import { Order } from "../entity/order.entity";
 import { ProductInteraction } from "../entity/product_interactions.entity";
+import { User } from "../entity/user.entity";
 
 export interface UserInterface {
   user_id?: string;
@@ -28,18 +29,18 @@ export interface UserInterface {
 
 export interface UserRepositoryInterface {
   getUserPreferences(userId: string): Promise<any[]>;
-  sellerLogin(email: string, password: string): Promise<void>;
+  login(email: string, password: string): Promise<void>;
   makeUserSeller(email: string): Promise<UpdateResult>;
-  updateUserPreferences(id: string, preferences: UserPreferences): Promise<boolean>;
-  updateUserPassword(id: string, newPassword: string): Promise<boolean>
-  updateUserEmail(id: string, email: string): Promise<boolean>
-  updateUserName(id: string, name: string): Promise<boolean>
-  getUserById(id: string): Promise<boolean>
-  getAllUsers(): Promise<UserInterface[]>
-  removeUser(id: string): Promise<boolean>
+  appwriteUpdateUserPreferences(id: string, preferences: UserPreferences): Promise<boolean>;
+  appwriteUpdateUserPassword(id: string, newPassword: string): Promise<boolean>
+  appwriteUpdateUserEmail(id: string, email: string): Promise<boolean>
+  appwriteUpdateUserName(id: string, name: string): Promise<boolean>
+  appwriteGetUserById(id: string): Promise<boolean>
+  appwriteGetAllUsers(): Promise<UserInterface[]>
+  appwriteRemoveUser(id: string): Promise<boolean>
   createUser(user: Partial<UserInterface>): Promise<UserInterface>;
   update(id: string, user: UserInterface): Promise<UserInterface>;
-  delete(id: string): Promise<UserInterface>;
+  delete(id: string, user: UserInterface): Promise<UserInterface>;
   findById(id: string): Promise<UserInterface | null>;
   findByEmail(email: string): Promise<UserInterface | null>;
 }

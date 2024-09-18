@@ -44,8 +44,8 @@ export abstract class User extends BaseEntity {
   @Column({ type: 'varchar', nullable: true })
   resetToken!: string;
 
-  @Column({ type: "date", nullable: true })
-  expiryToken!: Date;
+  @Column({ type: "varchar", nullable: true })
+  expiryToken!: string;
 
   @Column({ type: 'varchar', nullable: true })
   avatar!: string;
@@ -53,10 +53,10 @@ export abstract class User extends BaseEntity {
   // @Column({ nullable: true })
   // wishlist!: Product[];
 
-  @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
   created_at!: Date;
 
-  @Column({ type: 'date', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({ type: "timestamptz", default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updated_at!: Date;
 
   @OneToMany(() => Order, (order) => order.customer)
