@@ -4,7 +4,8 @@ import "reflect-metadata";
 import { AppDataSource } from "./database/config";
 import { Router as userRouter } from "./routers/user.routes";
 import { Router as productRouter } from "./routers/product.routes";
-import { Router as SellerRouter} from "./routers/seller.routes";
+import { Router as SellerRouter } from "./routers/seller.routes";
+import { Router as cartRouter } from "./routers/cart.routes";
 
 dotenv.config();
 const app = express();
@@ -14,6 +15,8 @@ app.use(express.json());
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/sellers", SellerRouter);
+app.use('/api/cart', cartRouter)
+
 AppDataSource.initialize()
   .then(() => {
     console.log("Database connected");

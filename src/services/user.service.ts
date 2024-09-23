@@ -33,6 +33,11 @@ export class UserService implements UserRepositoryInterface {
   }
 
   async login(email: string, password: string) {
+    // CHeck if User Exists
+    const user = await UserRepository.findByEmail(email);
+    if (!user) {
+      throw new Error('User not found');
+    }
     // Check if User is a Seller
     const isSeller = await UserRepository.isSeller(email);
     if (!isSeller) {
@@ -41,7 +46,7 @@ export class UserService implements UserRepositoryInterface {
     const account = new sdk.Account(this.AppWriteClient)
     try {
       const session = await account.createEmailPasswordSession(email, password)
-      return session.secret
+      return session
     }
     catch (e) {
       throw new Error('Invalid credentials');

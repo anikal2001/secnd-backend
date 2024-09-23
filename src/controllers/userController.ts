@@ -34,10 +34,17 @@ class UserController {
   async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
-      const user = await UserController.userService.login(email, password);
-      res.status(200).json(user);
+      const session = await UserController.userService.login(email, password);
+      res.cookie('session', session.secret, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: session.expire,
+        path: '/'
+      });
+      res.status(200).json({success: true});
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 
@@ -50,6 +57,7 @@ class UserController {
       res.status(400).json({ message: error.message });
     }
   }
+
 
   async delete(req: Request, res: Response): Promise<void> {
     try {
