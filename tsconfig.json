@@ -8,7 +8,8 @@
     "module": "commonjs" /* Specify what module code is generated. */,
     "rootDir": "./src" /* Specify the root folder within your source files. */,
     "typeRoots": [
-      "node_modules/@types"
+      "node_modules/@types",
+      "@/src/index.d.ts"
     ] /* Specify multiple folders that act like './node_modules/@types'. */,
 
     "outDir": "./build" /* Specify an output folder for all emitted files. */,

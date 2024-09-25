@@ -17,7 +17,7 @@ export type ProductType = {
   material: string[];
   gender: string;
   seller: number;
-  imageUrls: string[];
+  images?: File[];
 };
 
 export type ProductFilters = {
