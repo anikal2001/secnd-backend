@@ -26,7 +26,38 @@ export enum ProductCategory {
   Jumpsuit = 'Jumpsuit',
   Skirts = 'Skirts',
   Other = 'Other',
+  Shorts = 'Shorts',
+  Jeans = 'Jeans',
+  Leggings = 'Leggings',
+  Rompers = 'Rompers',
+  Trousers = 'Trousers',
+  Joggers = 'Joggers',
+  PoloShirts = 'Polo Shirts',
+  Hoodies = 'Hoodies',
+  
 }
+const ClothingCategories = [
+    'Tops',
+    'Dress',
+    'Sweaters',
+    'Jacket',
+    'Coat',
+    'Suit',
+    'Skirts',
+    'Shorts',
+    'Jeans',
+    'Pants',
+    'Leggings',
+    'Jumpsuits',
+    'Rompers',
+    'Trousers',
+    'Joggers',
+    'Polo Shirts',
+    'T-Shirts',
+    'Blouses',
+    'Shirts',
+    'Hoodies',
+]
 
 export enum ProductSize {
   XXS = 'XXS',

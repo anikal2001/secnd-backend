@@ -66,11 +66,25 @@ export class ProductService {
     }
     return plainToInstance(Product, product);
   } 
+  async generateProductDetails(imageFiles: Express.Multer.File[]): Promise<any> {
+    // Upload images to AWS S3
+    const imageUrls = await this._uploadImageAWS(imageFiles);
+    // Call ChatGPT API to generate product details
+    
+
+    // Return product details
+    return null;
+  }
+  
+  async _getSellerID(sellerId: string): Promise<number> {
+    return parseInt(sellerId);
+  }
 
   // Post Methods
-  async createProduct(productData: ProductType, productFiles: Express.Multer.File[]): Promise<Product | null> {
-    productData.product_id = await this._genProductId(productData.seller.toString(), productData.name);
-    const productImageURLs = await this._uploadImageAWS(productFiles);
+  async createProduct(productData: ProductType, imageFiles: Express.Multer.File[]): Promise<Product | null> {
+    productData.product_id = await this._genProductId(productData.seller.toString(), productData.title);
+    console.log(productData.product_id)
+    const productImageURLs = await this._uploadImageAWS(imageFiles);
     const newProductData = {
       ...productData,
       imageUrls: productImageURLs,
@@ -87,33 +101,6 @@ export class ProductService {
     }
   }
 
-  async _uploadImageAWS(imageFiles: Express.Multer.File[]): Promise<string[]> {
-    // Upload images to AWS S3
-    const imageUrls = await Promise.all(imageFiles.map(async (image) => {
-      const filename = `${Date.now()}-${image.originalname}`;
-      const params = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Region: process.env.AWS_REGION,
-        Key: filename,
-        Body: image.buffer,
-        ContentType: image.mimetype,
-        ACL: 'public-read' as ObjectCannedACL,
-      };
-      console.log(params)
-
-      try {
-        await S3.send(new PutObjectCommand(params));
-      } catch (error) {
-        console.log(error);
-        throw new Error('Failed to upload image');
-      }
-      const command = new GetObjectCommand(params);
-      const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
-      return url;
-    }));
-
-    return imageUrls;
-  }
 
   async updateProduct(id: string, productData: ProductType): Promise<boolean> {
     const updatedProduct = plainToClass(Product, productData);
@@ -140,7 +127,7 @@ export class ProductService {
 
   async bulkUploadProducts(products: ProductType[]): Promise<Product[]> {
     const newProducts: Product[] = await Promise.all(products.map(async (product) => {
-      product.product_id = await this._genProductId(product.seller.toString(), product.name);
+      product.product_id = await this._genProductId(product.seller.toString(), product.title);
       const convertedProduct = plainToInstance(Product, product);
       return convertedProduct
     }));
@@ -152,5 +139,33 @@ export class ProductService {
   // Private Methods
   async _genProductId(sellerId: string, productName: string): Promise<string> {
     return await bcrypt.hashSync(sellerId + productName.toLowerCase(), 10);
+  }
+
+    async _uploadImageAWS(imageFiles: Express.Multer.File[]): Promise<string[]> {
+    // Upload images to AWS S3
+    const imageUrls = await Promise.all(imageFiles.map(async (image) => {
+      const filename = `${Date.now()}-${image.originalname}`;
+      const params = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Region: process.env.AWS_REGION,
+        Key: filename,
+        Body: image.buffer,
+        ContentType: image.mimetype,
+        ACL: 'public-read' as ObjectCannedACL,
+      };
+      console.log(params)
+
+      try {
+        await S3.send(new PutObjectCommand(params));
+      } catch (error) {
+        console.log(error);
+        throw new Error('Failed to upload image');
+      }
+      const command = new GetObjectCommand(params);
+      const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
+      return url;
+    }));
+
+    return imageUrls;
   }
 }

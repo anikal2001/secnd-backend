@@ -67,7 +67,7 @@ export class SellerService {
             .where('interaction.interaction_date >= :startDate', { startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }) // last 7 days
             .andWhere('product.sellerId = :sellerId', { sellerID }) // Filter by specific seller
             .select('product.product_id', 'product_id')
-            .addSelect('product.name', 'name')
+            .addSelect('product.title', 'title')
             .addSelect('COUNT(interaction.interaction_id)', 'interaction_count')
             .groupBy('product.product_id')
             .orderBy('interaction_count', 'DESC')
