@@ -1,26 +1,35 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, OneToOne } from'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  OneToMany,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
 import { Product } from './product.entity';
 import { User } from './user.entity';
 
 @Entity()
 export class Seller {
-  @Column({ type: "varchar", primary: true })
-  email: string;
-  
-  @OneToOne(() => User, {nullable: false})
-  @JoinColumn({ name: 'user_id' })
-  user_id: User;
+  @PrimaryColumn('uuid') // Primary key, matching User's primary key
+  user_id: string;
 
-  @Column("varchar")
+  @OneToOne(() => User, { nullable: false })
+  @JoinColumn({ name: 'user_id' }) // This will store the user's ID as the primary key.
+  user: User;
+
+  @Column('varchar')
+  email: string;
+
+  @Column('varchar')
   store_name: string;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   store_description: string;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   store_logo: string;
-  
-  @OneToMany(() => Product, product => product.user_id)
-  @JoinColumn({ name: 'product_id' })
+
+  @OneToMany(() => Product, (product) => product.seller)
   Products: Product[];
 }
