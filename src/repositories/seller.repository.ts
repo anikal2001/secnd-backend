@@ -25,7 +25,7 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
 
     async getSellerProducts(sellerId: string): Promise<any> {
         const Products = await this.createQueryBuilder('seller')
-            .leftJoinAndSelect('seller.products', 'product')
+            .leftJoinAndSelect('seller.Products', 'product')
             .where('seller.userID = :sellerId', { sellerId })
             .getMany();
         const ProductsDTO = Products.map((product) => {

@@ -27,8 +27,6 @@ export class ProductController {
         }
 
         // Access uploaded files 
-        const images = (req.files);
-        console.log(images);
         const imageFiles = (req as any).files as Express.Multer.File[];
         if (!imageFiles) {
           res.status(400).json({ message: 'Images are required' });
