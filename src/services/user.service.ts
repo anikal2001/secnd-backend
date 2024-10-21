@@ -121,9 +121,9 @@ export class UserService implements UserRepositoryInterface {
   async createUser(user: Partial<UserInterface>): Promise<UserInterface>{
     // Add User on Appwrite
     const name = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`
-    const generatedID = crypto.randomUUID()
+    const generatedID = await crypto.randomUUID()
     await this.Users.create(generatedID, user.email, '+1' + user.phone, user.password, name)
-    await this.Users.createPrefs(generatedID, { role: 'user', isSeller: false, isOnboarded: false })  
+    await this.Users.updatePrefs(generatedID, { role: 'user', isSeller: false, isOnboarded: false })  
     return await this.UserRepository.createAndSave(generatedID, user.first_name, user.last_name, user.email, user.password, user.postalCode, user.phone, user.country, user.city)
   };
   async delete(id: string, user: UserInterface): Promise<UserInterface>{

@@ -7,22 +7,20 @@ export class Seller {
   @Column({ type: "varchar", primary: true })
   email: string;
   
-  @OneToOne(() => User)
+  @OneToOne(() => User, {nullable: false})
   @JoinColumn({ name: 'user_id' })
-    @Column({ type:"varchar", nullable: false })
-  userID: User["user_id"];
+  user_id: User;
 
+  @Column("varchar")
+  store_name: string;
 
-    @Column("varchar")
-    store_name: string;
+  @Column({ type: "varchar", nullable: true })
+  store_description: string;
 
-    @Column({ type: "varchar", nullable: true })
-    store_description: string;
-
-    @Column({ type: "varchar", nullable: true })
+  @Column({ type: "varchar", nullable: true })
   store_logo: string;
   
-  @OneToMany(() => Product, product => product.userID)
+  @OneToMany(() => Product, product => product.user_id)
   @JoinColumn({ name: 'product_id' })
   Products: Product[];
 }

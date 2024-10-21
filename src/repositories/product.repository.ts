@@ -2,6 +2,7 @@ import { AppDataSource } from '../database/config';
 import { Product } from '../entity/product.entity';
 import { create } from 'domain';
 import { UpdateResult } from 'typeorm';
+import { UserInterface } from '../interfaces/user.interface';
 
 export const ProductRepository = AppDataSource.getRepository(Product).extend({
   async findWithColors(productId: number): Promise<string> {
@@ -9,15 +10,15 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     // const product = this.findOne({ where: { id: productIdStr }, relations: ['colors'] });
     return "product";
   },
-  async createAndSave(productData: Partial<Product>): Promise<Product | null> {
+  async createAndSave(productData: Partial<Product>, user: UserInterface): Promise<Product | null> {
     const product = this.create(productData);
     // Check uniqueness
     const existingProduct = await AppDataSource
       .createQueryBuilder()
       .select('product')
       .from(Product, 'product')
-      .where('product.title = :title', { title: product.title })
-      .andWhere('product.userID = :seller', { seller: product.userID})
+      .where('product.name = :title', { title: product.name })
+      .andWhere('product.user_id = :seller', { seller: user})
     .getOne();
     if (existingProduct) {
       return null;
