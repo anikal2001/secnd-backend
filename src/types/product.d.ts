@@ -1,6 +1,7 @@
 import { ProductColors, ProductSize, ProductTags } from '../utils/products.enums';
 
 export type ProductType = {
+  userID: string;
   product_id: string;
   title: string;
   description: string;
@@ -16,7 +17,6 @@ export type ProductType = {
   brand: string;
   material: string[];
   gender: string;
-  seller: number;
   images?: File[];
 };
 

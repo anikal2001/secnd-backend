@@ -10,7 +10,7 @@ export class Seller {
   @OneToOne(() => User)
   @JoinColumn({ name: 'user_id' })
     @Column({ type:"varchar", nullable: false })
-  userID: User;
+  userID: User["user_id"];
 
 
     @Column("varchar")
@@ -22,7 +22,7 @@ export class Seller {
     @Column({ type: "varchar", nullable: true })
   store_logo: string;
   
-  @OneToMany(() => Product, product => product.seller)
+  @OneToMany(() => Product, product => product.userID)
   @JoinColumn({ name: 'product_id' })
   Products: Product[];
 }

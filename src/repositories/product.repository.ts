@@ -17,7 +17,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
       .select('product')
       .from(Product, 'product')
       .where('product.title = :title', { title: product.title })
-      .andWhere('product.seller = :seller', { seller: product.seller })
+      .andWhere('product.userID = :seller', { seller: product.userID})
     .getOne();
     if (existingProduct) {
       return null;

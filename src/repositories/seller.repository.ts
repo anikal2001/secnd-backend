@@ -4,38 +4,42 @@ import { plainToInstance } from 'class-transformer';
 import { Product } from '../entity/product.entity';
 
 export const SellerRepository = AppDataSource.getRepository(Seller).extend({
-    async createAndSave(sellerData: Partial<Seller>): Promise<Seller | null> {
-        // Check uniqueness
-        const existingSeller = await AppDataSource
-            .createQueryBuilder()
-            .select('seller')
-            .from(Seller, 'seller')
-            .where('seller.email = :email', { email: sellerData.email })
-            .getOne();
-        if (existingSeller) {
-            return null;
-        }
-        const seller = this.create(sellerData);
-        return this.save(seller);
-    },
-
-    async getByID(sellerId: string): Promise<Seller | null> {
-        return await this.createQueryBuilder('seller').where('seller.userID = :sellerId', { sellerId }).getOne();
-    },
-
-    async getSellerProducts(sellerId: string): Promise<any> {
-        const Products = await this.createQueryBuilder('seller')
-            .leftJoinAndSelect('seller.Products', 'product')
-            .where('seller.userID = :sellerId', { sellerId })
-            .getMany();
-        const ProductsDTO = Products.map((product) => {
-            return plainToInstance(Product, product);
-        });
-        return ProductsDTO;
-        
+  async createAndSave(sellerData: Partial<Seller>): Promise<Seller | null> {
+    // Check uniqueness
+    const existingSeller = await AppDataSource.createQueryBuilder()
+      .select('seller')
+      .from(Seller, 'seller')
+      .where('seller.email = :email', { email: sellerData.email })
+      .getOne();
+    if (existingSeller) {
+      return null;
     }
+    const seller = this.create(sellerData);
+    return this.save(seller);
+  },
 
-    // async findSellerById(sellerId: number): Promise<Seller | undefined> {
-    //     return this.findOne({ where: { sellerId: sellerId } });
-    // }
+  async getByID(sellerId: string): Promise<Seller | null> {
+    return await this.createQueryBuilder('seller').where('seller.userID = :sellerId', { sellerId }).getOne();
+  },
+
+  async getSellerProducts(sellerId: string): Promise<any> {
+    const seller = await this.createQueryBuilder('seller')
+      .leftJoinAndSelect('seller.Products', 'product')
+      .where('seller.userID = :sellerId', { sellerId })
+      .getOne(); // Use getOne() to fetch a single seller
+
+    if (!seller) {
+      throw new Error('Seller not found');
+    }
+    console.log(seller.userID)
+    console.log(seller.Products)
+    // Map products to DTOs (if necessary)
+    const productsDTO = seller.Products.map((product) => plainToInstance(Product, product));
+
+    return productsDTO;
+  },
+
+  // async findSellerById(sellerId: number): Promise<Seller | undefined> {
+  //     return this.findOne({ where: { sellerId: sellerId } });
+  // }
 });

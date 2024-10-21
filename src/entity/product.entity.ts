@@ -49,7 +49,8 @@ export class Product {
 
     @ManyToOne(() => Seller, (seller) => seller.userID, { onDelete: 'CASCADE' })
       @JoinColumn({ name: 'userID' })
-    seller: Seller;
+      @Column({type:"varchar", nullable: false})
+    userID: Seller["userID"];
     
     @Column({ type: "varchar", nullable: true, default: null })
     material: string;

@@ -82,8 +82,7 @@ export class ProductService {
 
   // Post Methods
   async createProduct(productData: ProductType, imageFiles: Express.Multer.File[]): Promise<Product | null> {
-    productData.product_id = await this._genProductId(productData.seller.toString(), productData.title);
-    console.log(productData.product_id)
+    productData.product_id = await this._genProductId(productData.userID.toString(), productData.title);
     const productImageURLs = await this._uploadImageAWS(imageFiles);
     const newProductData = {
       ...productData,
@@ -127,7 +126,7 @@ export class ProductService {
 
   async bulkUploadProducts(products: ProductType[]): Promise<Product[]> {
     const newProducts: Product[] = await Promise.all(products.map(async (product) => {
-      product.product_id = await this._genProductId(product.seller.toString(), product.title);
+      product.product_id = await this._genProductId(product.userID, product.title);
       const convertedProduct = plainToInstance(Product, product);
       return convertedProduct
     }));
