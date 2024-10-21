@@ -47,9 +47,9 @@ export class Product {
   @Column({ type: 'simple-array', default: [] })
   imageURLS: string[];
 
-    @ManyToOne(() => Seller, (seller) => seller.user_id, { onDelete: 'CASCADE', nullable: false })
-      @JoinColumn({ name: 'user_id' })
-    user_id: Seller;
+  @ManyToOne(() => Seller, seller => seller.Products, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'user_id' })  // This column will store the reference to Seller's user_id
+  seller: Seller;  // Change user_id to seller
     
     @Column({ type: "varchar", nullable: true, default: null })
     material: string;
