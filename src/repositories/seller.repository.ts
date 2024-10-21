@@ -19,10 +19,14 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
         return this.save(seller);
     },
 
-    async getSellerProducts(sellerId: number): Promise<any> {
+    async getByID(sellerId: string): Promise<Seller | null> {
+        return await this.createQueryBuilder('seller').where('seller.userID = :sellerId', { sellerId }).getOne();
+    },
+
+    async getSellerProducts(sellerId: string): Promise<any> {
         const Products = await this.createQueryBuilder('seller')
             .leftJoinAndSelect('seller.products', 'product')
-            .where('seller.seller_id = :sellerId', { sellerId })
+            .where('seller.userID = :sellerId', { sellerId })
             .getMany();
         const ProductsDTO = Products.map((product) => {
             return plainToInstance(Product, product);

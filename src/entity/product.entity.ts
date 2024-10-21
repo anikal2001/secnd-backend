@@ -47,8 +47,8 @@ export class Product {
   @Column({ type: 'simple-array', default: [] })
   imageURLS: string[];
 
-    @ManyToOne(() => Seller, (seller) => seller.seller_id, { onDelete: 'CASCADE' })
-      @JoinColumn({ name: 'seller_id' })
+    @ManyToOne(() => Seller, (seller) => seller.userID, { onDelete: 'CASCADE' })
+      @JoinColumn({ name: 'userID' })
     seller: Seller;
     
     @Column({ type: "varchar", nullable: true, default: null })

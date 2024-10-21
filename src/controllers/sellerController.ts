@@ -34,7 +34,7 @@ export class SellerController{
 
     public getSellerById = async (req: Request, res: Response): Promise<void> => {
         try {
-            const seller = await SellerController.sellerService.getSellerById(Number(req.params.id));
+            const seller = await SellerController.sellerService.getSellerById(req.params.id);
             if (seller) {
                 res.json(seller);
             } else {
@@ -47,7 +47,7 @@ export class SellerController{
 
     public getSellerProducts = async (req: Request, res: Response): Promise<void> => {
         try {
-            const products = await SellerController.sellerService.getSellerProducts(Number(req.params.id));
+            const products = await SellerController.sellerService.getSellerProducts(req.params.id);
             if (products) {
                 res.json(products);
             } else {
@@ -119,7 +119,7 @@ export class SellerController{
 
     public updateSeller = async (req: Request, res: Response): Promise<void> => {
         try {
-            const sellerId = Number(req.params.id);
+            const sellerId = req.params.id;
             const updatedSeller = await SellerController.sellerService.updateSeller(sellerId, req.body);
             if (updatedSeller) {
                 res.json(updatedSeller);

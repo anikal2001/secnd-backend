@@ -28,6 +28,7 @@ export class UserService implements UserRepositoryInterface {
     this.UserRepository = UserRepository;
   }
 
+  // Appwrite Routes
   async getUserPreferences(userId: string){
     return await this.Users.getPrefs(userId)
   }
@@ -112,23 +113,37 @@ export class UserService implements UserRepositoryInterface {
   async appwriteRemoveUser(id: string) {
     return await this.Users.deleteIdentity(id);
   }
-  async createUser(user: Partial<UserInterface>): Promise<UserInterface>{
-    // Add User on Appwrite
-    const name = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`
-    await this.Users.create(ID.unique(), user.email, '+1' + user.phone, user.password, name)
-    return await this.UserRepository.createAndSave(user.first_name, user.last_name, user.email, user.password, user.postalCode, user.phone, user.country, user.city)
-  };
   async update(id: string, user: UserInterface): Promise<UserInterface>{
     return await this.Users.update(id, user)
   };
+
+  // Appwrite + DB Routes
+  async createUser(user: Partial<UserInterface>): Promise<UserInterface>{
+    // Add User on Appwrite
+    const name = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`
+    const generatedID = crypto.randomUUID()
+    await this.Users.create(generatedID, user.email, '+1' + user.phone, user.password, name)
+    await this.Users.createPrefs(generatedID, { role: 'user', isSeller: false, isOnboarded: false })  
+    return await this.UserRepository.createAndSave(generatedID, user.first_name, user.last_name, user.email, user.password, user.postalCode, user.phone, user.country, user.city)
+  };
   async delete(id: string, user: UserInterface): Promise<UserInterface>{
     const userdata = await this.UserRepository.findByEmail(user.email)
-    console.log(userdata)
     await this.UserRepository.findByEmailAndRemove(user.email)
     return await this.Users.delete(id)
   };
+
+
+  async getAppWriteUserByEmail(email: string) {
+    console.log(await this.Users.get(email))
+    return await this.Users.get(email)
+  }
+
+  async getUserById(id: string) {
+    const dbCheck = await this.UserRepository.findById(id)
+    return dbCheck
+  }
+
   async appwriteFindById(id: string) {
-    console.log(id)
     return await this.Users.get(id)
   }
 }

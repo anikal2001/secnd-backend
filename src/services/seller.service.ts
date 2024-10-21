@@ -3,18 +3,26 @@ import { SellerRepository } from '../repositories/seller.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { AppDataSource } from '../database/config';
 import { plainToClass, plainToInstance } from 'class-transformer';
-import { Product } from  '../entity/product.entity';
+import { Product } from '../entity/product.entity';
+import { UserService } from './user.service';
 
 export class SellerService {
+    private userService: UserService = new UserService();
 
     async createSeller(createSellerDto: Seller): Promise<Seller> {
+        const user = await this.userService.getUserById(createSellerDto.userID as unknown as string);
+        if (!user) {
+            throw new Error('User does not exist');
+        }
         const sellerData: Partial<Seller> = {
+            userID: createSellerDto.userID,
             email: createSellerDto.email,
             store_name: createSellerDto.store_name,
             store_description: createSellerDto.store_description,
             store_logo: createSellerDto.store_logo,
         };
         const savedSeller = await SellerRepository.createAndSave(sellerData)
+        await this.userService.makeUserSeller(createSellerDto.userID as unknown as string);
         return plainToInstance(Seller, savedSeller);
     }
 
@@ -30,20 +38,20 @@ export class SellerService {
         return sellerDTO;
     }
 
-    async getSellerById(sellerId: number): Promise<Seller | null> {
-        const seller = await SellerRepository.findOneBy({ seller_id: sellerId });
+    async getSellerById(sellerId: string): Promise<Seller | null> {
+        const seller = await SellerRepository.getByID(sellerId);
         if (!seller) {
             return null;
         }
         return plainToInstance(Seller, seller);
     }
 
-    async getSellerProducts(sellerId: number): Promise<any> {
+    async getSellerProducts(sellerId: string): Promise<any> {
         return await SellerRepository.getSellerProducts(sellerId);
     }
 
-    async updateSeller(sellerId: number, updatedSeller: Seller): Promise<Seller | null> {
-        const seller = await SellerRepository.findOneBy({ seller_id: sellerId });
+    async updateSeller(sellerId: string, updatedSeller: Seller): Promise<Seller | null> {
+        const seller = await SellerRepository.getByID(sellerId);
         AppDataSource.createQueryBuilder()
             .update(Seller)
             .set(updatedSeller)
@@ -52,8 +60,8 @@ export class SellerService {
         return null;
     }
 
-    async deleteSeller(sellerId: number): Promise<boolean> {
-        const seller = await SellerRepository.findOneBy({ seller_id: sellerId });
+    async deleteSeller(sellerId: string): Promise<boolean> {
+        const seller = await SellerRepository.getByID(sellerId);
         if (seller) {
             await AppDataSource.createQueryBuilder().delete().from(Seller).where('seller_id = :seller_id', { sellerId }).execute();
         }

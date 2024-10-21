@@ -1,13 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn } from'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, OneToOne } from'typeorm';
 import { Product } from './product.entity';
+import { User } from './user.entity';
 
 @Entity()
 export class Seller {
-    @PrimaryGeneratedColumn()
-    seller_id: number;
+  @Column({ type: "varchar", primary: true })
+  email: string;
+  
+  @OneToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+    @Column({ type:"varchar", nullable: false })
+  userID: User;
 
-    @Column("varchar")
-    email: string;
 
     @Column("varchar")
     store_name: string;
