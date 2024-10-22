@@ -10,19 +10,19 @@ export class SellerService {
     private userService: UserService = new UserService();
 
     async createSeller(createSellerDto: Seller): Promise<Seller> {
-        const user = await this.userService.getUserById(createSellerDto.user as unknown as string);
+        const user = await this.userService.getUserById(createSellerDto.user_id as unknown as string);
         if (!user) {
             throw new Error('User does not exist');
         }
         const sellerData: Partial<Seller> = {
-            user: createSellerDto.user,
+            user_id: createSellerDto.user_id,
             email: createSellerDto.email,
             store_name: createSellerDto.store_name,
             store_description: createSellerDto.store_description,
             store_logo: createSellerDto.store_logo,
         };
         const savedSeller = await SellerRepository.createAndSave(sellerData)
-        await this.userService.makeUserSeller(createSellerDto.user as unknown as string);
+        await this.userService.makeUserSeller(createSellerDto.user_id as unknown as string);
         return plainToInstance(Seller, savedSeller);
     }
 
