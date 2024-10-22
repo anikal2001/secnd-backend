@@ -2,6 +2,8 @@ import { AppDataSource } from '../database/config';
 import { Product } from '../entity/product.entity';
 import { create } from 'domain';
 import { UpdateResult } from 'typeorm';
+import { UserInterface } from '../interfaces/user.interface';
+import { Seller } from '../entity/seller.entity';
 
 export const ProductRepository = AppDataSource.getRepository(Product).extend({
   async findWithColors(productId: number): Promise<string> {
@@ -9,23 +11,39 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     // const product = this.findOne({ where: { id: productIdStr }, relations: ['colors'] });
     return "product";
   },
-  async createAndSave(productData: Partial<Product>): Promise<Product | null> {
-    const product = this.create(productData);
-    // Check uniqueness
-    const existingProduct = await AppDataSource
-      .createQueryBuilder()
+  async createAndSave(productData: Partial<Product>, user: UserInterface): Promise<Product | null> {
+    // Fetch the seller by user ID
+    const seller = await AppDataSource.createQueryBuilder()
+      .select('seller')
+      .from(Seller, 'seller')
+      .where('seller.user_id = :userId', { userId: user.user_id }) // Use user.user_id as a string
+      .getOne();
+    if (!seller) {
+      throw new Error('Seller not found');
+    }
+  
+    // Create the product and assign the seller
+    const product = this.create({
+      ...productData,
+      seller,  // Set the seller object here
+    });
+  
+    // Check for existing product with the same name and seller
+    const existingProduct = await AppDataSource.createQueryBuilder()
       .select('product')
       .from(Product, 'product')
-      .where('product.title = :title', { title: product.title })
-      .andWhere('product.userID = :seller', { seller: product.userID})
-    .getOne();
+      .where('product.name = :name', { name: product.name })
+      .andWhere('product.seller = :seller', { seller: seller.user_id })
+      .getOne();
+  
     if (existingProduct) {
       return null;
     }
+  
     try {
       return await this.save(product);
     } catch (error) {
-      console.log(error);
+      console.error('Error saving product:', error);
       return null;
     }
   },

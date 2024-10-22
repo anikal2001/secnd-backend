@@ -1,17 +1,26 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryColumn,
+} from 'typeorm';
 import { Seller } from './seller.entity';
 import { ProductCategory, ProductColors, ProductTags } from '../utils/products.enums';
 import { ProductInteraction } from './product_interactions.entity';
 
 @Entity()
 export class Product {
-  @PrimaryColumn("varchar")
+  @PrimaryColumn('varchar')
   product_id: string;
 
   @Column("varchar")
   title: string;
+  @Column('varchar')
+  name: string;
 
-  @Column("varchar")
+  @Column('varchar')
   description: string;
 
   @Column('float')
@@ -22,11 +31,11 @@ export class Product {
     nullable: false,
   })
   color: {
-    primaryColor: [ProductColors];
-    secondaryColor: [ProductColors];
+    primaryColor: ProductColors[];
+    secondaryColor: ProductColors[];
   };
 
-  @Column("varchar")
+  @Column('varchar')
   listed_size: string;
 
   @Column({
@@ -35,30 +44,28 @@ export class Product {
   })
   product_category: ProductCategory;
 
-  @Column("varchar")
+  @Column('varchar')
   brand: string;
 
-  @Column("varchar")
+  @Column('varchar')
   gender: string;
 
   @Column({ type: 'simple-array', default: [] })
-  tags: ProductTags[]
+  tags: ProductTags[];
 
   @Column({ type: 'simple-array', default: [] })
   imageURLS: string[];
 
-    @ManyToOne(() => Seller, (seller) => seller.userID, { onDelete: 'CASCADE' })
-      @JoinColumn({ name: 'userID' })
-      @Column({type:"varchar", nullable: false})
-    userID: Seller["userID"];
-    
-    @Column({ type: "varchar", nullable: true, default: null })
-    material: string;
+  @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'user_id' })
+  seller: Seller;
 
-    @Column({ type: "varchar", nullable: true })
-    dimensions: string;
-  
-  @OneToMany(() => ProductInteraction, interaction => interaction.product)
-  @JoinColumn({ name: 'interaction_id' })
+  @Column({ type: 'varchar', nullable: true, default: null })
+  material: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  dimensions: string;
+
+  @OneToMany(() => ProductInteraction, (interaction) => interaction.product)
   interactions: ProductInteraction[];
 }
