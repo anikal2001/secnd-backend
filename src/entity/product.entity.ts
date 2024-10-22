@@ -9,7 +9,7 @@ export class Product {
   product_id: string;
 
   @Column("varchar")
-  name: string;
+  title: string;
 
   @Column("varchar")
   description: string;
@@ -47,9 +47,10 @@ export class Product {
   @Column({ type: 'simple-array', default: [] })
   imageURLS: string[];
 
-    @ManyToOne(() => Seller, (seller) => seller.user_id, { onDelete: 'CASCADE', nullable: false })
-      @JoinColumn({ name: 'user_id' })
-    user_id: Seller;
+    @ManyToOne(() => Seller, (seller) => seller.userID, { onDelete: 'CASCADE' })
+      @JoinColumn({ name: 'userID' })
+      @Column({type:"varchar", nullable: false})
+    userID: Seller["userID"];
     
     @Column({ type: "varchar", nullable: true, default: null })
     material: string;
