@@ -32,7 +32,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     const existingProduct = await AppDataSource.createQueryBuilder()
       .select('product')
       .from(Product, 'product')
-      .where('product.name = :name', { name: product.name })
+      .where('product.title = :name', { name: product.title })
       .andWhere('product.seller = :seller', { seller: seller.user_id })
       .getOne();
   

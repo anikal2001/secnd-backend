@@ -48,6 +48,40 @@ export class ProductController {
     }
   };
 
+  public genProductInfo = async (req: Request, res: Response): Promise<void> => {
+    try {
+      this._handleFileUpload('images')(req, res, async (err) => {
+        console.log("Generating product details...");
+        if (err) {
+          console.log(
+            "Error during file upload:",
+            err
+          )
+          // This will be handled by the `handleFileUploadErrors` middleware
+          return;
+        }
+
+        // Ensure request body is present
+        if (!req.body) {
+          res.status(400).json({ message: 'Request body is required' });
+          return;
+        }
+
+        // Access uploaded files 
+        const imageFiles = (req as any).files as Express.Multer.File[];
+        if (!imageFiles) {
+          res.status(400).json({ message: 'Images are required' });
+          return;
+        }
+        const productDetails = await ProductController.productService.generateProductDetails(imageFiles);
+        res.status(200).json(productDetails);
+        return;
+      });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
   public _handleFileUpload = (fieldName: string, maxCount: number = 10) => {
     return this.upload.array(fieldName, maxCount);
   };
