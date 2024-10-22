@@ -19,7 +19,7 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
   },
 
   async getByID(sellerId: string): Promise<Seller | null> {
-    return await this.createQueryBuilder('seller').where('seller.userID = :sellerId', { sellerId }).getOne();
+    return await this.createQueryBuilder('seller').where('seller.user_id = :sellerId', { sellerId }).getOne();
   },
 
   async getSellerProducts(sellerId: string): Promise<any> {

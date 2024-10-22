@@ -15,8 +15,6 @@ export class Product {
   @PrimaryColumn('varchar')
   product_id: string;
 
-  @Column("varchar")
-  title: string;
   @Column('varchar')
   name: string;
 

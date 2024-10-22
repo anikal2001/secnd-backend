@@ -8,8 +8,10 @@ import { ProductFilters, ProductType } from '../types/product';
 import { ProductCategory, ProductTags } from '../utils/products.enums';
 import { ProductRepository } from '../repositories/product.repository';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { UserService } from './user.service';
 
 export class ProductService {
+  private UserService: UserService = new UserService()
 
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
@@ -82,7 +84,7 @@ export class ProductService {
 
   // Post Methods
   async createProduct(productData: ProductType, imageFiles: Express.Multer.File[]): Promise<Product | null> {
-    productData.product_id = await this._genProductId(productData.userID.toString(), productData.title);
+    productData.product_id = await this._genProductId(productData.user_id, productData.name);
     const productImageURLs = await this._uploadImageAWS(imageFiles);
     const newProductData = {
       ...productData,
@@ -90,9 +92,13 @@ export class ProductService {
     }
     delete newProductData.images;
     const newProduct = plainToClass(Product, { imageUrls: productImageURLs, ...productData });
-    console.log(newProduct)
     try {
-      const product = await ProductRepository.createAndSave(newProduct);
+      const user = await this.UserService.findById(productData.user_id)
+      if (!user) {
+        throw new Error("No user exists with this ID")
+      }
+      const product = await ProductRepository.createAndSave(newProduct, user);
+      console.log(product)
       return product;
     } catch (error) {
       console.log(error);
@@ -126,7 +132,7 @@ export class ProductService {
 
   async bulkUploadProducts(products: ProductType[]): Promise<Product[]> {
     const newProducts: Product[] = await Promise.all(products.map(async (product) => {
-      product.product_id = await this._genProductId(product.userID, product.title);
+      product.product_id = await this._genProductId(product.user_id, product.name);
       const convertedProduct = plainToInstance(Product, product);
       return convertedProduct
     }));
