@@ -118,13 +118,24 @@ export class UserService implements UserRepositoryInterface {
   };
 
   // Appwrite + DB Routes
-  async createUser(user: Partial<UserInterface>): Promise<UserInterface>{
+  async createUser(user: Partial<UserInterface>): Promise<any>{
     // Add User on Appwrite
     const name = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`
     const generatedID = await crypto.randomUUID()
-    await this.Users.create(generatedID, user.email, '+1' + user.phone, user.password, name)
-    await this.Users.updatePrefs(generatedID, { role: 'user', isSeller: false, isOnboarded: false })  
-    return await this.UserRepository.createAndSave(generatedID, user.first_name, user.last_name, user.email, user.password, user.postalCode, user.phone, user.country, user.city)
+    const appwriteCreate = await this.Users.create(generatedID, user.email, '+1' + user.phone, user.password, name)
+    await this.Users.updatePrefs(generatedID, { role: 'user', isSeller: false, isOnboarded: false })
+    const dbCreate = await this.UserRepository.createAndSave(generatedID, user.first_name, user.last_name, user.email, user.password, user.postalCode, user.phone, user.country, user.city)
+    if (!dbCreate && appwriteCreate) {
+      this.Users.delete(generatedID)
+      throw new Error('User not created')
+    }
+    if (dbCreate && !appwriteCreate) {
+      this.UserRepository.delete(generatedID)
+      throw new Error('User not created')
+    }
+    if (dbCreate && appwriteCreate) {
+      return appwriteCreate
+    }
   };
   async delete(id: string, user: UserInterface): Promise<UserInterface>{
     const userdata = await this.UserRepository.findByEmail(user.email)

@@ -106,6 +106,7 @@ export class ProductController {
   }
 
   public getProductById = async (req: Request, res: Response): Promise<void> => {
+    console.log(req.params.id);
     try {
       const product = await ProductController.productService.getProductById(req.params.id);
       if (product) {

@@ -29,8 +29,11 @@ export abstract class User extends BaseEntity {
   @Column("varchar")
   password!: string;
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   country!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+    province!: string;
 
   @Column({ type: 'varchar', nullable: true })
   city!: string;
