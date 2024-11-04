@@ -1,8 +1,10 @@
 export enum ProductCondition {
-  A = 'New',
-  B = 'Used',
-  C = 'Refurbished',
-  D = 'Damaged',
+  New = 'New',
+  BarelyUsed = 'Barely Used',
+  LikeNew = 'Like New',
+  FairlyUsed = 'Fairly Used',
+  Fair = 'Fair',
+  Used = 'Used',
 }
 export enum ProductGender {
   Male = 'Male',
@@ -10,6 +12,7 @@ export enum ProductGender {
   Unisex = 'Unisex',
 }
 export enum ProductCategory {
+  Bottoms = 'Bottoms',
   Shirt = 'Shirt',
   Pants = 'Pants',
   Dress = 'Dress',
@@ -60,6 +63,15 @@ const ClothingCategories = [
 ]
 
 export enum ProductSize {
+  DoubleExtraSmall = 'Double Extra Small',
+  ExtraSmall = 'Extra Small',
+  Small = 'Small',
+  Medium = 'Medium',
+  Large = 'Large',
+  ExtraLarge = 'Extra Large',
+  DoubleExtraLarge = 'Double Extra Large',
+  TripleExtraLarge = 'Triple Extra Large',
+  QuadrupleExtraLarge = 'Quadruple Extra Large',
   XXS = 'XXS',
   XS = 'XS',
   S = 'S',
@@ -108,6 +120,39 @@ export enum ProductTags {
   Other = 'Other',
 }
 
+export enum ProductStyles {
+  Vintage = 'Vintage',
+  Streetwear = 'Streetwear',
+  Casual = 'Casual',
+  Formal = 'Formal',
+  Sportswear = 'Sportswear',
+  Retro = 'Retro',
+  Modern = 'Modern',
+  Classic = 'Classic',
+  Trendy = 'Trendy',
+  Other = 'Other',
+}
+
+export enum MaterialOptions {
+  Cotton = 'Cotton',
+  Polyester = 'Polyester',
+  Wool = 'Wool',
+  Silk = 'Silk',
+  Linen = 'Linen',
+  Nylon = 'Nylon',
+  Rayon = 'Rayon',
+  Spandex = 'Spandex',
+  Denim = 'Denim',
+  Leather = 'Leather',
+  Fur = 'Fur',
+  Fleece = 'Fleece',
+  Velvet = 'Velvet',
+  Satin = 'Satin',
+  Viscose = 'Viscose',
+  Acrylic = 'Acrylic',
+}
+
+
 const measurements = {
     Shirt: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Sleeve Length', 'Fit'],
     Pants: ['Waist', 'Hip', 'Rise', 'Inseam', 'Length', 'Leg Opening'],
@@ -134,3 +179,74 @@ export enum FitTypes {
   Loose = 'Loose',
   Oversized = 'Oversized',
 }
+
+export enum ProductBrand {
+  polo_ralph_lauren = 'Polo Ralph Lauren',
+  tommy_hilfiger = 'Tommy Hilfiger',
+  nike = 'Nike',
+  adidas = 'Adidas',
+  gucci = 'Gucci',
+  louis_vuitton = 'Louis Vuitton',
+  prada = 'Prada',
+  chanel = 'Chanel',
+  burberry = 'Burberry',
+  balenciaga = 'Balenciaga',
+  dior = 'Dior',
+  versace = 'Versace',
+  fendi = 'Fendi',
+  saint_laurent = 'Saint Laurent',
+  givenchy = 'Givenchy',
+  hermes = 'Hermes',
+  alexander_mcqueen = 'Alexander McQueen',
+  off_white = 'Off-White',
+  moncler = 'Moncler',
+  supreme = 'Supreme',
+  rick_owens = 'Rick Owens',
+  vetements = 'Vetements',
+  balmain = 'Balmain',
+  acne_studios = 'Acne Studios',
+  dolce_gabbana = 'Dolce & Gabbana',
+  bottega_veneta = 'Bottega Veneta',
+  kenzo = 'Kenzo',
+  maison_margiela = 'Maison Margiela',
+  thom_browne = 'Thom Browne',
+  issey_miyake = 'Issey Miyake',
+  loewe = 'Loewe',
+  jacquemus = 'Jacquemus',
+  celine = 'Celine',
+  valentino = 'Valentino',
+  bape = 'Bape',
+  yohji_yamamoto = 'Yohji Yamamoto',
+  comme_des_garcons = 'Comme des Garcons',
+  banana_republic = 'Banana Republic',
+  gap = 'Gap',
+  uniqlo = 'Uniqlo',
+  zara = 'Zara',
+  h_m = 'H&M',
+  forever_21 = 'Forever 21',
+  mango = 'Mango',
+  topshop = 'Topshop',
+  urban_outfitters = 'Urban Outfitters',
+  asos = 'ASOS',
+  boohoo = 'Boohoo',
+  missguided = 'Missguided',
+  prettylittlething = 'PrettyLittleThing',
+  river_island = 'River Island',
+  new_look = 'New Look',
+  primark = 'Primark',
+  burton = 'Burton',
+  next = 'Next',
+  levis = 'Levi\'s',
+  disney = 'Disney',
+}
+
+export enum size_enum {
+    XS = 'XS',
+    S = 'S',
+    M = 'M',
+    L = 'L',
+    XL = 'XL',
+    XXL = 'XXL',
+    XXXL = 'XXXL',
+}
+

@@ -19,8 +19,6 @@ export interface UserInterface {
   city: string;
   postalCode: string;
   phone: string;
-  reset_token: string;
-  expiry_token: number;
   avatar: string;
   created_at: number;
   updated_at: number;

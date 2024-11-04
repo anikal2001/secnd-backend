@@ -73,7 +73,7 @@ export class ProductController {
           res.status(400).json({ message: 'Images are required' });
           return;
         }
-        const productDetails = await ProductController.productService.generateProductDetails(imageFiles);
+        const productDetails = await ProductController.productService.generateProductDetails(req.body.sellerID, imageFiles);
         res.status(200).json(productDetails);
         return;
       });
