@@ -93,10 +93,15 @@ export class ProductService {
       // Save the response to the Product Database
       const product = plainToClass(Product, { product_id: productId, status: 'draft', seller: sellerID, ...updatedImageURLS });
       const user = await this.UserService.findById(sellerID);
-      const savedProduct = await ProductRepository.createAndSave(product, user as unknown as User);
-      // Save product details to database
-      const savedResponse = await this.GeneratedResponseRepository.save(product);
-      return savedProduct;
+      if (!user) {
+        console.error('User not found');
+        return null;
+      }
+      const savedProduct = await ProductRepository.createAndSave(product, user);
+      // Save the response to the GeneratedResponse Database
+      const response = plainToClass(GeneratedResponse,  savedProduct);
+      const savedResponse = await this.GeneratedResponseRepository.save(response);
+      return savedResponse;
     } catch (error) {
       console.log(error);
       return null;

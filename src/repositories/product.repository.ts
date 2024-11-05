@@ -2,8 +2,8 @@ import { AppDataSource } from '../database/config';
 import { Product } from '../entity/product.entity';
 import { create } from 'domain';
 import { UpdateResult } from 'typeorm';
-import { UserInterface } from '../interfaces/user.interface';
 import { Seller } from '../entity/seller.entity';
+import { User } from '../entity/user.entity';
 
 export const ProductRepository = AppDataSource.getRepository(Product).extend({
   async findWithColors(productId: number): Promise<string> {
@@ -11,7 +11,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     // const product = this.findOne({ where: { id: productIdStr }, relations: ['colors'] });
     return "product";
   },
-  async createAndSave(productData: Partial<Product>, user: UserInterface): Promise<Product | null> {
+  async createAndSave(productData: Partial<Product>, user: User): Promise<Product | null> {
     // Fetch the seller by user ID
     const seller = await AppDataSource.createQueryBuilder()
       .select('seller')

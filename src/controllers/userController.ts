@@ -14,7 +14,7 @@ class UserController {
     async createUser(req: Request, res: Response): Promise<void> {
         try {
             const { email, password, first_name, last_name, country, city, postalCode, phone, avatar }: UserInterface = req.body;
-          const newUser: Partial<UserInterface> = { email, password, first_name, last_name, country, city, postalCode, phone, avatar, orders: [], transactions: [], interactions: [] };
+          const newUser: Partial<User> = { email, password, first_name, last_name, country, city, postalCode, phone, avatar, orders: [], transactions: [], interactions: [] };
             const user = await UserController.userService.createUser(newUser);
             res.status(200).json(user);
         } catch (error: any) {

@@ -34,11 +34,11 @@ export interface UserRepositoryInterface {
   appwriteUpdateUserEmail(id: string, email: string): Promise<boolean>
   appwriteUpdateUserName(id: string, name: string): Promise<boolean>
   appwriteGetUserById(id: string): Promise<boolean>
-  appwriteGetAllUsers(): Promise<UserInterface[]>
+  appwriteGetAllUsers(): Promise<User[]>
   appwriteRemoveUser(id: string): Promise<boolean>
-  createUser(user: Partial<UserInterface>): Promise<UserInterface>;
-  update(id: string, user: UserInterface): Promise<UserInterface>;
-  delete(id: string, user: UserInterface): Promise<UserInterface>;
-  findById(id: string): Promise<UserInterface | null>;
-  findByEmail(email: string): Promise<UserInterface | null>;
+  createUser(user: Partial<User>): Promise<User>;
+  update(id: string, user: User): Promise<User>;
+  delete(id: string, user: User): Promise<User>;
+  findById(id: string): Promise<User | null>;
+  findByEmail(email: string): Promise<User | null>;
 }
