@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   OneToOne,
@@ -81,9 +82,9 @@ export class Product {
   @Column({ type: 'simple-array', default: [], nullable: true })
   tags: ProductTags[];
 
-  @Column({ type: 'simple-array', default: [], nullable: true })
-  @ManyToOne(() => Image, (image: Image) => image.image_id, { onDelete: 'CASCADE', nullable: false })
-  imageId: string;
+  @OneToMany(() => Image, (image) => image.url)
+    @JoinColumn({ name: 'product_id' })
+
 
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
@@ -104,6 +105,12 @@ export class Product {
 
   @Column({ type: 'varchar', nullable: false })  
   status: string;
+
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', nullable: false })
+  created_at: Date;
+
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', nullable: false })
+  updated_at: Date;
 }
 
 @Entity()
@@ -168,10 +175,6 @@ export class GeneratedResponse extends Product{
 
   @Column({ type: 'simple-array', default: [] })
   tags: ProductTags[];
-
-  @Column({ type: 'simple-array', default: [] })
-    @ManyToOne(() => Image, (image: Image) => image.image_id, { onDelete: 'CASCADE', nullable: false })
-  imageId: string;
 
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })

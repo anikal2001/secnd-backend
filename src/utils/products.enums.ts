@@ -250,3 +250,10 @@ export enum size_enum {
     XXXL = 'XXXL',
 }
 
+export enum status_enum {
+  'draft' = 0,
+  'pending' = 1,
+  'approved' = 2,
+  'rejected' = 3,
+  'sold' = 4,
+}

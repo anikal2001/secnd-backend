@@ -78,8 +78,15 @@ export class ProductService {
 
   async generateProductDetails(sellerID: string, imageFiles: Express.Multer.File[]): Promise<any> {
     try {
+      // Generate a product ID
+      const productId = uuidv4();
       // Upload images to AWS S3
       const imageUrls = await this._uploadImageAWS(imageFiles);
+      if (imageUrls.length === 0) {
+        console.error('No images uploaded');
+        return null;
+      }
+      
       // Call ChatGPT API to generate product details
       const res = await main(imageUrls[0]).catch((err) => {
         console.error('Error occurred:', err);
@@ -88,16 +95,13 @@ export class ProductService {
       const cleanResponse = res.replace(/```json|```/g, '').trim();
       const parsedResponse = JSON.parse(cleanResponse);
       const updatedImageURLS = { ...parsedResponse, imageURLS: imageUrls };
-      // Generate a product ID
-      const productId = uuidv4();
       // Save the response to the Product Database
       const product = plainToClass(Product, { product_id: productId, status: 'draft', seller: sellerID, ...updatedImageURLS });
-      const user = await this.UserService.findById(sellerID);
-      if (!user) {
-        console.error('User not found');
-        return null;
-      }
-      const savedProduct = await ProductRepository.createAndSave(product, user);
+      const savedProduct = await ProductRepository.createAndSave(product, sellerID);
+      // Save the image URLs to the Image Database
+      imageUrls.forEach(async (url) => {
+        await this.ImageService.create({ product_id: productId, url: url });
+      });
       // Save the response to the GeneratedResponse Database
       const response = plainToClass(GeneratedResponse,  savedProduct);
       const savedResponse = await this.GeneratedResponseRepository.save(response);
@@ -113,16 +117,13 @@ export class ProductService {
   }
 
   // Post Methods
-  async createProduct(productData: ProductType, imageFiles: Express.Multer.File[]): Promise<Product | null> {
+
+    async createProduct(productData: Product, imageFiles: Express.Multer.File[]): Promise<Product | null> {
     try {
       productData.product_id = uuidv4();
       const productImageURLs = await this._uploadImageAWS(imageFiles);
       const newProduct = plainToClass(Product, { imageURLS: productImageURLs, ...productData });
-      const user = await this.UserService.findById(productData.user_id);
-      if (!user) {
-        throw new Error('No user exists with this ID');
-      }
-      const product = await ProductRepository.createAndSave(newProduct, user);
+      const product = await ProductRepository.createAndSave(newProduct, productData.seller.user_id);
       return product;
     } catch (error) {
       console.log(error);
@@ -130,7 +131,18 @@ export class ProductService {
     }
   }
 
-  async updateProduct(id: string, productData: ProductType): Promise<boolean> {
+  async updateProduct(id: string, productData: Product): Promise<boolean> {
+    console.log(productData)
+    const validFields = ['title', 'description', 'price', 'quantity', 'product_category', 'tags', 'brand', 'color', 'size', 'styles', 'condition', 'material'];
+    const validUpdates = Object.keys(productData).every((field) => validFields.includes(field));
+    if (!validUpdates) {
+      console.error('Invalid fields');
+      return false;
+    }
+
+    console.log(validUpdates)
+
+
     const updatedProduct = plainToClass(Product, productData);
     const UpdateResult = await ProductRepository.update(id, updatedProduct);
     if (UpdateResult.affected === 0) {
@@ -181,7 +193,6 @@ export class ProductService {
           await S3.send(new PutObjectCommand(params));
           const command = new GetObjectCommand(params);
           const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
-          this.ImageService.create({ url });
           return url;
         } catch (error) {
           console.log(error);
