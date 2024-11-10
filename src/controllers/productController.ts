@@ -14,6 +14,7 @@ export class ProductController {
 
   public genProductInfo = async (req: Request, res: Response): Promise<void> => {
     try {
+      console.log(req.body)
       this._handleFileUpload('images')(req, res, async (err) => {
         console.log("Generating product details...");
         if (err) {

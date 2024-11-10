@@ -238,6 +238,7 @@ export enum ProductBrand {
   next = 'Next',
   levis = 'Levi\'s',
   disney = 'Disney',
+  other = 'Other',
 }
 
 export enum size_enum {
