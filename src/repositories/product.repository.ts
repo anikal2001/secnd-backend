@@ -1,9 +1,8 @@
 import { AppDataSource } from '../database/config';
 import { Product } from '../entity/product.entity';
-import { create } from 'domain';
 import { UpdateResult } from 'typeorm';
-import { UserInterface } from '../interfaces/user.interface';
 import { Seller } from '../entity/seller.entity';
+import { User } from '../entity/user.entity';
 
 export const ProductRepository = AppDataSource.getRepository(Product).extend({
   async findWithColors(productId: number): Promise<string> {
@@ -11,12 +10,12 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     // const product = this.findOne({ where: { id: productIdStr }, relations: ['colors'] });
     return "product";
   },
-  async createAndSave(productData: Partial<Product>, user: UserInterface): Promise<Product | null> {
+  async createAndSave(productData: Partial<Product>, user_id: string): Promise<Product | null> {
     // Fetch the seller by user ID
     const seller = await AppDataSource.createQueryBuilder()
       .select('seller')
       .from(Seller, 'seller')
-      .where('seller.user_id = :userId', { userId: user.user_id }) // Use user.user_id as a string
+      .where('seller.user_id = :userId', { userId: user_id }) // Use user.user_id as a string
       .getOne();
     if (!seller) {
       throw new Error('Seller not found');
@@ -37,6 +36,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
       .getOne();
   
     if (existingProduct) {
+      console.error('Product with the same name already exists');
       return null;
     }
   
@@ -49,12 +49,15 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
   },
 
   async update(id: string, productData: Product): Promise<UpdateResult> {
-    const updatedProduct = AppDataSource.createQueryBuilder()
+    const updatedTime = new Date().toISOString();
+    // Need to update multiple columns 
+    const updateResult = await this.createQueryBuilder()
       .update(Product)
       .set(productData)
-      .where('id = :id', { id })
+      .where('product_id = :id', { id })
       .execute();
-    return updatedProduct;
+    return updateResult;
+    // return updatedProduct;
   },
 
   async findTrendingProducts(): Promise<Product[]> {

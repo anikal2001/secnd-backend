@@ -79,14 +79,14 @@ export class UserService implements UserRepositoryInterface {
     // DB update user preferences
     return await UserRepository.makeSeller(user.email);
   }
-  async findById(id: string): Promise<UserInterface | null>{ 
+  async findById(id: string): Promise<User | null>{ 
     return this.UserRepository.findById(id)
   };
-  async findByEmail(email: string): Promise<UserInterface | null>{
+  async findByEmail(email: string): Promise<User | null>{
     return this.UserRepository.findByEmail(email)
   };
 
-  async appwriteUpdateUserPreferences(id: string, preferences: Partial<UserPreferences>) {
+  async appwriteUpdateUserPreferences(id: string, preferences: Partial<User>) {
     return await this.Users.updatePrefs(id, preferences)
   }
 
@@ -113,12 +113,12 @@ export class UserService implements UserRepositoryInterface {
   async appwriteRemoveUser(id: string) {
     return await this.Users.deleteIdentity(id);
   }
-  async update(id: string, user: UserInterface): Promise<UserInterface>{
+  async update(id: string, user: User): Promise<User>{
     return await this.Users.update(id, user)
   };
 
   // Appwrite + DB Routes
-  async createUser(user: Partial<UserInterface>): Promise<any>{
+  async createUser(user: Partial<User>): Promise<any>{
     // Add User on Appwrite
     const name = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`
     const generatedID = await crypto.randomUUID()
@@ -137,7 +137,7 @@ export class UserService implements UserRepositoryInterface {
       return appwriteCreate
     }
   };
-  async delete(id: string, user: UserInterface): Promise<UserInterface>{
+  async delete(id: string, user: User): Promise<User>{
     const userdata = await this.UserRepository.findByEmail(user.email)
     await this.UserRepository.findByEmailAndRemove(user.email)
     return await this.Users.delete(id)

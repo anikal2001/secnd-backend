@@ -2,18 +2,122 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
+import Image from './image.entity';
 import { Seller } from './seller.entity';
-import { ProductCategory, ProductColors, ProductTags } from '../utils/products.enums';
+import { ProductCategory, ProductColors, ProductTags, ProductBrand, ProductCondition, ProductGender, ProductSize, ProductStyles, ProductMaterial } from '../utils/products.enums';
 import { ProductInteraction } from './product_interactions.entity';
 
 @Entity()
 export class Product {
   @PrimaryColumn('varchar')
   product_id: string;
+
+  @Column({type: 'varchar', nullable: true})
+  title: string;
+
+  @Column({type: 'varchar', nullable: true})
+  description: string;
+
+  @Column({type: 'float', nullable: true})
+  price: number;
+
+  @Column({
+    type: 'simple-json',
+    nullable: true,
+  })
+  color: {
+    primaryColor: ProductColors[];
+    secondaryColor: ProductColors[];
+  };
+
+  @Column({
+    type: 'simple-enum',
+    enum: ProductSize,
+    nullable: true,
+  })
+  listed_size: ProductSize;
+
+  @Column({
+    type: 'simple-enum',
+    enum: ProductCategory,
+    nullable: true,
+  })
+  product_category: ProductCategory;
+
+  @Column({
+    type: 'json',
+    enum: ProductStyles,
+    nullable: true,
+  })
+    styles: ProductStyles[];
+
+  @Column({
+    type: 'simple-enum',
+    nullable: true,
+    enum: ProductCondition,
+  })
+  condition: ProductCondition;
+
+  @Column({
+    type: 'simple-enum',
+    nullable: true,
+    enum: ProductBrand,
+  })
+  brand: ProductBrand;
+
+  @Column({
+    type: 'simple-enum',
+    nullable: true,
+    enum: ProductGender,
+  })
+  gender: ProductGender;
+
+  @Column({ type: 'simple-array', default: [], nullable: true })
+  tags: ProductTags[];
+
+  @OneToMany(() => Image, (image) => image.url)
+    @JoinColumn({ name: 'product_id' })
+
+
+  @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'user_id' })
+  seller: Seller;
+
+  @Column({
+    type: 'simple-enum',
+    enum: ProductMaterial,
+    nullable: true,
+  })
+  material: ProductMaterial;
+
+  @Column({ type: 'varchar', nullable: true })
+  dimensions: string;
+
+  @OneToMany(() => ProductInteraction, (interaction) => interaction.product)
+  interactions: ProductInteraction[];
+
+  @Column({ type: 'varchar', nullable: false })  
+  status: string;
+
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', nullable: false })
+  created_at: Date;
+
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', nullable: false })
+  updated_at: Date;
+}
+
+@Entity()
+export class GeneratedResponse extends Product{
+  @OneToOne(() => Product, (product) => product.product_id)
+  @JoinColumn({ name: 'product_id' })
+  product: Product;
 
   @Column('varchar')
   title: string;
@@ -33,8 +137,11 @@ export class Product {
     secondaryColor: ProductColors[];
   };
 
-  @Column('varchar')
-  listed_size: string;
+  @Column({
+    type: 'simple-enum',
+    enum: ProductSize,
+  })
+  listed_size: ProductSize;
 
   @Column({
     type: 'simple-enum',
@@ -42,24 +149,42 @@ export class Product {
   })
   product_category: ProductCategory;
 
-  @Column('varchar')
-  brand: string;
+  @Column({
+    type: 'json',
+    enum: ProductStyles,
+  })
+    styles: ProductStyles[];
 
-  @Column('varchar')
-  gender: string;
+  @Column({
+    type: 'simple-enum',
+    enum: ProductCondition,
+  })
+  condition: ProductCondition;
+
+  @Column({
+    type: 'simple-enum',
+    enum: ProductBrand,
+  })
+  brand: ProductBrand;
+
+  @Column({
+    type: 'simple-enum',
+    enum: ProductGender,
+  })
+  gender: ProductGender;
 
   @Column({ type: 'simple-array', default: [] })
   tags: ProductTags[];
-
-  @Column({ type: 'simple-array', default: [] })
-  imageURLS: string[];
 
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   seller: Seller;
 
-  @Column({ type: 'varchar', nullable: true, default: null })
-  material: string;
+  @Column({
+    type: 'simple-enum',
+    enum: ProductMaterial,
+  })
+  material: ProductMaterial;
 
   @Column({ type: 'varchar', nullable: true })
   dimensions: string;
