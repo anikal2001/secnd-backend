@@ -150,6 +150,8 @@ export enum MaterialOptions {
   Satin = 'Satin',
   Viscose = 'Viscose',
   Acrylic = 'Acrylic',
+  Other = 'Other',
+  None = 'None',
 }
 
 

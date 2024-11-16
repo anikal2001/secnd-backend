@@ -145,12 +145,12 @@ export class ProductService {
   }
 
   async updateProduct(id: string, productData: Product): Promise<boolean> {
-    console.log(productData)
-    const validFields = ['title', 'description', 'price', 'quantity', 'product_category', 'tags', 'brand', 'color', 'size', 'styles', 'condition', 'material'];
+    const validFields = ['title', 'description', 'price', 'quantity', 'product_category', 'tags', 'brand', 'color', 'listed_size', 'styles', 'condition', 'material', 'status', 'gender' ];
     const validUpdates = Object.keys(productData).every((field) => validFields.includes(field));
+
     if (!validUpdates) {
       console.error('Invalid fields');
-      return false;
+      throw new Error('Invalid fields');
     }
 
     console.log(validUpdates)
