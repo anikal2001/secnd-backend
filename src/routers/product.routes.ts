@@ -6,6 +6,7 @@ const productController = new ProductController();
 
 Router.get('/all', productController.fetchProducts);
 Router.post('/generate', productController.genProductInfo);
+Router.post('/add', productController.addProduct);
 Router.get('/get', productController.getProductById);
 Router.delete('/delete', productController.deleteProduct);
 Router.post('/update', productController.updateProduct);
