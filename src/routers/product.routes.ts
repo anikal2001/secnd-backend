@@ -6,9 +6,10 @@ const productController = new ProductController();
 
 Router.get('/all', productController.fetchProducts);
 Router.post('/generate', productController.genProductInfo);
+Router.post('/add', productController.addProduct);
 Router.get('/get', productController.getProductById);
 Router.delete('/delete', productController.deleteProduct);
-Router.put('/update', productController.updateProduct);
+Router.post('/update', productController.updateProduct);
 Router.get('/filter', productController.filterProducts);
 // Router.get('/search', productController.searchProducts);
 // Router.get('/categories', productController.getCategories);

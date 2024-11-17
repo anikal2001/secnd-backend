@@ -150,6 +150,8 @@ export enum MaterialOptions {
   Satin = 'Satin',
   Viscose = 'Viscose',
   Acrylic = 'Acrylic',
+  Other = 'Other',
+  None = 'None',
 }
 
 
@@ -238,6 +240,7 @@ export enum ProductBrand {
   next = 'Next',
   levis = 'Levi\'s',
   disney = 'Disney',
+  other = 'Other',
 }
 
 export enum size_enum {

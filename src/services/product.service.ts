@@ -101,9 +101,9 @@ export class ProductService {
       const product = plainToClass(Product, { product_id: productId, status: 'draft', seller: sellerID, ...updatedImageURLS });
       const savedProduct = await ProductRepository.createAndSave(product, sellerID);
       // Save the image URLs to the Image Database
-      imageUrls.forEach(async (url) => {
-        await this.ImageService.create({ product_id: productId, url: url });
-      });
+      if (savedProduct) {
+        await this.saveImagesToDB(productId, imageUrls);
+      }
       // Save the response to the GeneratedResponse Database
       const response = plainToClass(GeneratedResponse, savedProduct);
       const savedResponse = await this.GeneratedResponseRepository.save(response);
@@ -112,6 +112,19 @@ export class ProductService {
       console.log(error);
       return null;
     }
+  }
+
+
+  async saveImagesToDB(productID: string, imageUrls: string[]): Promise<boolean> {
+    try {
+          imageUrls.forEach(async (url) => {
+      await this.ImageService.create({ product_id: productID, url: url });
+    });
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+    return true;
   }
 
   async _getSellerID(sellerId: string): Promise<number> {
@@ -145,7 +158,6 @@ export class ProductService {
   }
 
   async updateProduct(id: string, productData: Product): Promise<boolean> {
-    console.log(productData);
     const validFields = [
       'title',
       'description',
@@ -161,9 +173,10 @@ export class ProductService {
       'material',
     ];
     const validUpdates = Object.keys(productData).every((field) => validFields.includes(field));
+
     if (!validUpdates) {
       console.error('Invalid fields');
-      return false;
+      throw new Error('Invalid fields');
     }
 
     console.log(validUpdates);
