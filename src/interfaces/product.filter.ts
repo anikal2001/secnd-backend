@@ -1,9 +1,9 @@
-import { ProductCategory, status_enum } from '../utils/products.enums';
+import { ProductCategory, statusMap } from '../utils/products.enums';
 import { Product } from '../entity/product.entity';
 
 export interface ProductFilter {
   category?: ProductCategory;
-  status?: status_enum;
+  status?: string;
   startDate?: Date;
   endDate?: Date;
   sellerId: string;
