@@ -46,7 +46,7 @@ export class ProductController {
     }
   }
 
-    public addProduct = async (req: Request, res: Response): Promise<void> => {
+  public addProduct = async (req: Request, res: Response): Promise<void> => {
     try {
       this._handleFileUpload('images')(req, res, async (err) => {
         if (err) {
@@ -107,7 +107,8 @@ export class ProductController {
 
   public getProductById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const product = await ProductController.productService.getProductById(req.params.id);
+      const productId = req.query.id as string; 
+      const product = await ProductController.productService.getProductById(productId);
       if (product) {
         res.json(product);
       } else {

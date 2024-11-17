@@ -1,19 +1,23 @@
-import "dotenv/config";
-import { AzureOpenAI } from "openai";
-import type {
-  ChatCompletion,
-  ChatCompletionCreateParamsNonStreaming,
-} from "openai/resources/index";
-import { ProductCategory, ProductColors, ProductTags, ProductBrand, ProductCondition, ProductGender, ProductSize, ProductStyles, ProductMaterial } from '../utils/products.enums';
+import 'dotenv/config';
+import { AzureOpenAI } from 'openai';
+import type { ChatCompletion, ChatCompletionCreateParamsNonStreaming } from 'openai/resources/index';
+import {
+  ProductCategory,
+  ProductColors,
+  ProductTags,
+  ProductBrand,
+  ProductCondition,
+  ProductGender,
+  ProductSize,
+  ProductStyles,
+  ProductMaterial,
+} from '../utils/products.enums';
 
+const endpoint = process.env['AZURE_OPENAI_ENDPOINT'] || '<endpoint>';
+const apiKey = process.env['AZURE_OPENAI_API_KEY'] || '<api key>';
 
-// You will need to set these environment variables or edit the following values
-const endpoint = process.env["AZURE_OPENAI_ENDPOINT"] || "<endpoint>";
-const apiKey = process.env["AZURE_OPENAI_API_KEY"] || "<api key>";
-
-// Required Azure OpenAI deployment name and API version
-const apiVersion = "2024-08-01-preview";
-const deploymentName = "gpt-4o-mini";
+const apiVersion = '2024-08-01-preview';
+const deploymentName = 'gpt-4o-mini';
 
 function getClient(): AzureOpenAI {
   return new AzureOpenAI({
@@ -26,9 +30,7 @@ function getClient(): AzureOpenAI {
 
 const convertEnumToList = (enumObject: any): string[] => {
   return Object.values(enumObject);
-}
-
-
+};
 
 const promptText = `
 Do not send any other text other than the json response.
@@ -47,46 +49,38 @@ Try to have the response as accurate as possible and avoid null values as much a
 - Product Styles: ${convertEnumToList(ProductStyles).toString()}
 `;
 
-
 function createMessages(imageUrl: string): ChatCompletionCreateParamsNonStreaming {
   return {
     messages: [
-      { role: "system", content: "You are a helpful assistant." },
+      { role: 'system', content: 'You are a helpful assistant.' },
       {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: promptText,
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: imageUrl,
-            },
-          },
-        ],
+        role: 'user',
+        content: `Here is some text followed by an image: ${imageUrl}`,
       },
     ],
-    model: "",
+    model: 'gpt-4-turbo', // Make sure to specify your model here
     max_tokens: 2000,
   };
 }
+
 async function printChoices(completion: ChatCompletion): Promise<void> {
   for (const choice of completion.choices) {
     console.log(choice.message);
   }
 }
+
 export async function main(imageUrl: string): Promise<any> {
-  console.log("== Get GPT-4 Turbo with vision Sample ==");
+  console.log('== Get GPT-4 Turbo with vision Sample ==');
+  console.log(imageUrl)
 
   const client = getClient();
   const messages = createMessages(imageUrl);
-    const completion = await client.chat.completions.create(messages);
-    for (const choice of completion.choices) {
-      return choice.message.content;
-    }
-    console.log("== End of GPT-4 Turbo with vision Sample ==");
+  console.log("reached")
+  const completion = await client.chat.completions.create(messages);
+  for (const choice of completion.choices) {
+    return choice.message.content;
+  }
+  console.log('== End of GPT-4 Turbo with vision Sample ==');
 }
 
 export default main;

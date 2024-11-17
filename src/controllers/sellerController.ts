@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { plainToClass } from "class-transformer";
 import { SellerService } from "../services/seller.service";
 import { Seller } from "../entity/seller.entity";
-
+import { ProductCategory, statusMap } from '../utils/products.enums';
 
 export class SellerController{
     static sellerService: SellerService = new SellerService();
@@ -45,16 +45,50 @@ export class SellerController{
         }
     }
 
-    public getSellerProducts = async (req: Request, res: Response): Promise<void> => {
+    public getSellerProducts = async (req: Request, res: Response) => {
         try {
-            const products = await SellerController.sellerService.getSellerProducts(req.params.id);
-            if (products) {
-                res.json(products);
-            } else {
-                res.status(404).json({ message: 'Seller not found' });
+            const sellerId = req.params.id;
+            const { 
+                category, 
+                status, 
+                startDate, 
+                endDate, 
+                page, 
+                limit,
+                includeImages,
+            } = req.query;
+
+            // Validate category if provided
+            if (category && !Object.values(ProductCategory).includes(category as ProductCategory)) {
+                return res.status(400).json({ error: 'Invalid category' });
             }
-        } catch (error: any) {
-            res.status(500).json({ message: error.message });
+
+            // // Validate status if provided
+            // if (status && !Object.values(status_enum).includes(Number(status))) {
+            //     return res.status(400).json({ error: 'Invalid status' });
+            // }
+
+            // Create filter object
+            const filter = {
+                sellerId,
+                ...(category && { category: category as ProductCategory }),
+                ...(status && { status: statusMap[Number(status)] }),
+                ...(startDate && { startDate: new Date(startDate as string) }),
+                ...(endDate && { endDate: new Date(endDate as string) }),
+                ...(includeImages && { includeImages: Boolean(includeImages) }),
+            };
+
+            // Create pagination object
+            const pagination = {
+                page: page ? Number(page) : 1,
+                limit: limit ? Number(limit) : 10
+            };
+
+            const products = await SellerController.sellerService.getSellerProducts(filter, pagination);
+            res.json(products);
+        } catch (error) {
+            console.error('Error in getSellerProducts:', error);
+            res.status(500).json({ error: 'Failed to get seller products' });
         }
     }
 
@@ -91,9 +125,9 @@ export class SellerController{
 
     public getSellerRevenues = async (req: Request, res: Response): Promise<void> => {
         try {
-            const sellerID = Number(req.params.id);
-            const revenues = await SellerController.sellerService.getSellerRevenues(sellerID);
-            if (revenues) {
+            const revenues = await SellerController.sellerService.getSellerRevenues(req.params.id);
+            console.log(revenues)
+            if (revenues || revenues==0) {
                 res.json(revenues);
             } else {
                 res.status(404).json({ message: 'Seller not found' });
@@ -105,9 +139,8 @@ export class SellerController{
 
     public getSellerOrders = async (req: Request, res: Response): Promise<void> => {
         try {
-            const sellerID = Number(req.params.id);
-            const orders = await SellerController.sellerService.getSellerOrders(sellerID);
-            if (orders) {
+            const orders = await SellerController.sellerService.getSellerOrders(req.params.id);
+            if (orders || orders==0) {
                 res.json(orders);
             } else {
                 res.status(404).json({ message: 'Seller not found' });
@@ -115,6 +148,20 @@ export class SellerController{
         } catch (error: any) {
             res.status(500).json({ message: error.message });
         }
+    }
+
+    public getSellerCustomers = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const customers = await SellerController.sellerService.getSellerCustomers(req.params.id);
+            if (customers) {
+                res.json(customers);
+            } else {
+                res.status(404).json({ message: 'Seller not found' });
+            }
+        } catch (error: any) {
+            res.status(500).json({ message: error.message });
+        }
+
     }
 
     public updateSeller = async (req: Request, res: Response): Promise<void> => {
@@ -172,8 +219,7 @@ export class SellerController{
 
     public getTrendingProducts = async (req: Request, res: Response): Promise<void> => {
         try {
-            const sellerID = Number(req.params.id);
-            const trendingProducts = await SellerController.sellerService.getTrendingProducts(sellerID);
+            const trendingProducts = await SellerController.sellerService.getTrendingProducts(req.params.id);
             if (trendingProducts) {
                 res.json(trendingProducts);
             } else {

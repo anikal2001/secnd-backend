@@ -82,9 +82,9 @@ export class Product {
   @Column({ type: 'simple-array', default: [], nullable: true })
   tags: ProductTags[];
 
-  @OneToMany(() => Image, (image) => image.url)
+  @OneToMany(() => Image, (image) => image.product)
     @JoinColumn({ name: 'product_id' })
-
+  imageURLS: Image[];
 
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })

@@ -23,11 +23,7 @@ export class Transaction extends BaseEntity {
   @Column({ type: 'timestamptz' })
   updated_at: Date;
 
-  @OneToMany(() => Transaction, (transaction) => transaction.client)
-  @JoinColumn({
-    name: 'user_id',
-  })
-  client: User;
-
-
+  @ManyToOne(() => User, (user) => user.transactions)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }
