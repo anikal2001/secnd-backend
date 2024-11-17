@@ -68,13 +68,15 @@ export class ProductService {
   }
 
   async getProductById(id: string): Promise<Product | null> {
-    const product = await ProductRepository.findOneBy({ product_id: id });
+    const product = await ProductRepository.findOne({
+      where: { product_id: id },
+      relations: ['imageURLS'], // Include the 'imageURLS' relation
+    });
     if (!product) {
       return null;
     }
     return plainToInstance(Product, product);
   }
-
 
   async generateProductDetails(sellerID: string, imageFiles: Express.Multer.File[]): Promise<any> {
     try {
@@ -86,7 +88,7 @@ export class ProductService {
         console.error('No images uploaded');
         return null;
       }
-      
+
       // Call ChatGPT API to generate product details
       const res = await main(imageUrls[0]).catch((err) => {
         console.error('Error occurred:', err);
@@ -103,7 +105,7 @@ export class ProductService {
         await this.saveImagesToDB(productId, imageUrls);
       }
       // Save the response to the GeneratedResponse Database
-      const response = plainToClass(GeneratedResponse,  savedProduct);
+      const response = plainToClass(GeneratedResponse, savedProduct);
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
     } catch (error) {
@@ -131,12 +133,23 @@ export class ProductService {
 
   // Post Methods
 
-    async createProduct(productData: Product, imageFiles: Express.Multer.File[]): Promise<Product | null> {
+  async createProduct(productData: Product, imageFiles: Express.Multer.File[]): Promise<Product | null> {
     try {
       productData.product_id = uuidv4();
       const productImageURLs = await this._uploadImageAWS(imageFiles);
-      const newProduct = plainToClass(Product, { imageURLS: productImageURLs, ...productData });
+      // Destructure imageURLS from productData and create restProductData without imageURLS
+      const { imageURLS, ...restProductData } = productData;
+
+      // Use plainToClass without the conflicting property
+      const newProduct = plainToClass(Product, { imageURLS: productImageURLs, ...restProductData });
+      if (typeof productData.seller === 'string') {
+        productData.seller = JSON.parse(productData.seller);
+      }
       const product = await ProductRepository.createAndSave(newProduct, productData.seller.user_id);
+
+      productImageURLs.forEach(async (url) => {
+        await this.ImageService.create({ product_id: productData.product_id, url: url });
+      });
       return product;
     } catch (error) {
       console.log(error);
@@ -145,7 +158,20 @@ export class ProductService {
   }
 
   async updateProduct(id: string, productData: Product): Promise<boolean> {
-    const validFields = ['title', 'description', 'price', 'quantity', 'product_category', 'tags', 'brand', 'color', 'listed_size', 'styles', 'condition', 'material', 'status', 'gender' ];
+    const validFields = [
+      'title',
+      'description',
+      'price',
+      'quantity',
+      'product_category',
+      'tags',
+      'brand',
+      'color',
+      'size',
+      'styles',
+      'condition',
+      'material',
+    ];
     const validUpdates = Object.keys(productData).every((field) => validFields.includes(field));
 
     if (!validUpdates) {
@@ -153,8 +179,7 @@ export class ProductService {
       throw new Error('Invalid fields');
     }
 
-    console.log(validUpdates)
-
+    console.log(validUpdates);
 
     const updatedProduct = plainToClass(Product, productData);
     const UpdateResult = await ProductRepository.update(id, updatedProduct);

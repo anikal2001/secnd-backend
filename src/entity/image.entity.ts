@@ -1,16 +1,20 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, ManyToOne } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, ManyToOne, JoinColumn } from "typeorm";
 import { Product } from "./product.entity";
 
 @Entity()
 class Image {
-    @PrimaryGeneratedColumn('uuid')
-    image_id!: string;
-    
-    @Column("varchar")
-    url!: string;
-    
-    @ManyToOne(() => Product, (product: Product) => product.product_id)
-    product_id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  image_id: string;
+
+  @Column('varchar')
+  url: string;
+
+  @Column('varchar')
+  product_id: string;
+
+  @ManyToOne(() => Product, (product) => product.imageURLS, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'product_id' })
+  product: Product;
 }
 
 export default Image;

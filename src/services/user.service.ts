@@ -47,6 +47,7 @@ export class UserService implements UserRepositoryInterface {
     const account = new sdk.Account(this.AppWriteClient)
     try {
       const session = await account.createEmailPasswordSession(email, password)
+      console.log(session.expire)
       return session
     }
     catch (e) {

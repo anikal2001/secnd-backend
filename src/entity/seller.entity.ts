@@ -11,11 +11,11 @@ import { User } from './user.entity';
 
 @Entity()
 export class Seller {
-  @PrimaryColumn('uuid') // Primary key, matching User's primary key
+  @PrimaryColumn('uuid')
   user_id: string;
 
   @OneToOne(() => User, { nullable: false })
-  @JoinColumn({ name: 'user_id' }) // This will store the user's ID as the primary key.
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column('varchar')

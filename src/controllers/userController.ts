@@ -35,11 +35,15 @@ class UserController {
     try {
       const { email, password } = req.body;
       const session = await UserController.userService.login(email, password);
+      
+      const expireDate = new Date(session.expire)
+      const maxAge = expireDate.getTime() - Date.now();
+      
       res.cookie('session', session.secret, {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
-        maxAge: session.expire,
+        maxAge: maxAge,
         path: '/'
       });
       res.status(200).json({success: true});

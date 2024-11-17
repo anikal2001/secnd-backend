@@ -65,8 +65,8 @@ export abstract class User extends BaseEntity {
   @OneToMany(() => Order, (order) => order.customer)
   orders!: Order[];
 
-  @OneToMany(() => Transaction, (transaction) => transaction.client)
-  transactions!: Transaction[];
+  @OneToMany(() => Transaction, (transaction) => transaction.user)
+  transactions: Transaction[];
   
   @OneToMany(() => ProductInteraction, (interaction) => interaction.user)
   interactions!: ProductInteraction[];

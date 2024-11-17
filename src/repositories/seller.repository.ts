@@ -2,6 +2,8 @@ import { AppDataSource } from '../database/config';
 import { Seller } from '../entity/seller.entity';
 import { plainToInstance } from 'class-transformer';
 import { Product } from '../entity/product.entity';
+import { User } from '../entity/user.entity';
+import { ProductFilter, PaginationOptions, PaginatedProducts } from '../interfaces/product.filter';
 
 export const SellerRepository = AppDataSource.getRepository(Seller).extend({
   async createAndSave(sellerData: Partial<Seller>): Promise<Seller | null> {
@@ -22,20 +24,65 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
     return await this.createQueryBuilder('seller').where('seller.user_id = :sellerId', { sellerId }).getOne();
   },
 
-  async getSellerProducts(sellerId: string): Promise<any> {
-    const seller = await this.createQueryBuilder('seller')
-      .leftJoinAndSelect('seller.Products', 'product') // Correct relationship field
-      .where('seller.user_id = :sellerId', { sellerId }) // Query on the correct user_id field
-      .getOne(); // Use getOne() to fetch a single seller
-  
-    if (!seller) {
-      throw new Error('Seller not found');
+  async getSellerProducts(filter: ProductFilter, pagination?: PaginationOptions): Promise<PaginatedProducts> {
+    try {
+      const productRepository = AppDataSource.getRepository(Product);
+      let queryBuilder = productRepository.createQueryBuilder('product');
+
+      // Base conditions
+      queryBuilder = queryBuilder
+        .where('product.user_id = :sellerId', { sellerId: filter.sellerId })
+
+      // Optional joins
+      if (filter.includeImages) {
+        queryBuilder = queryBuilder.leftJoinAndSelect('product.imageURLS', 'imageURLS');
+      }
+
+      // Apply filters
+      if (filter.category) {
+        queryBuilder = queryBuilder.andWhere('product.product_category = :category', { category: filter.category });
+      }
+
+      if (filter.status !== undefined) {
+        queryBuilder = queryBuilder.andWhere('product.status = :status', { status: filter.status });
+      }
+
+      if (filter.startDate) {
+        queryBuilder = queryBuilder.andWhere('product.created_at >= :startDate', { startDate: filter.startDate });
+      }
+
+      if (filter.endDate) {
+        queryBuilder = queryBuilder.andWhere('product.created_at <= :endDate', { endDate: filter.endDate });
+      }
+
+      // Get total count before pagination
+      const total = await queryBuilder.getCount();
+
+      // Apply pagination
+      if (pagination) {
+        const page = pagination.page || 1;
+        const limit = pagination.limit || 10;
+        queryBuilder = queryBuilder
+          .skip((page - 1) * limit)
+          .take(limit);
+      }
+
+      // Get products with ordering
+      const products = await queryBuilder
+        .orderBy('product.created_at', 'DESC')
+        .getMany();
+
+      return {
+        products: products.map(product => plainToInstance(Product, product, { excludeExtraneousValues: false })),
+        total,
+        page: pagination?.page || 1,
+        limit: pagination?.limit || 10,
+        totalPages: pagination ? Math.ceil(total / (pagination.limit || 10)) : 1
+      };
+    } catch (error) {
+      console.error('Error in getSellerProducts:', error);
+      throw error;
     }
-  
-    // Map products to DTOs (if necessary)
-    const productsDTO = seller.Products.map((product) => plainToInstance(Product, product));
-  
-    return productsDTO;
   },
 
   async find(): Promise<any> {
@@ -44,9 +91,5 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
       .select(['seller', 'user.user_id', 'user.email'])
       .getMany();
     return sellers
-  }
-
-  // async findSellerById(sellerId: number): Promise<Seller | undefined> {
-  //     return this.findOne({ where: { sellerId: sellerId } });
-  // }
+  },
 });
