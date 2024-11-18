@@ -6,9 +6,9 @@
   "scripts": {
     "watch": "tsc -w",
     "dev": "nodemon src/index.ts",
-    "build": "tsc",
+    "build": "./node_modules/typescript/bin/tsc",
     "start": "npm run build && node dist/index.js",
-    "test": "npm run build && jasmine",
+    "test": "npm run build",
     "format": "prettier --write src/**/*.ts",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
