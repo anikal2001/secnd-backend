@@ -49,38 +49,29 @@ export class ProductController {
 
   public addProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-      this._handleFileUpload('images')(req, res, async (err) => {
-        if (err) {
-          // This will be handled by the `handleFileUploadErrors` middleware
-          return;
-        }
-
         // Ensure request body is present
         if (!req.body) {
           res.status(400).json({ message: 'Request body is required' });
           return;
         }
 
-        // Access uploaded files 
-        const imageFiles = (req as any).files as Express.Multer.File[];
-        if (!imageFiles) {
-          res.status(400).json({ message: 'Images are required' });
+        if (!req.body.pictureIds || !Array.isArray(req.body.pictureIds) || req.body.pictureIds.length === 0) {
+          res.status(400).json({ message: 'At least one picture ID is required' });
           return;
         }
 
-        // Create product
-        const product = await ProductController.productService.createProduct(req.body, imageFiles);
+        const product = await ProductController.productService.createProduct(req.body);
 
         if (!product) {
-          res.status(400).json({ message: 'Product already exists' });
+          res.status(400).json({ message: 'Failed to create product' });
           return;
         }
 
         res.status(201).json(product);
-      });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
+      } catch (error: any) {
+        console.error("Add product error:", error);
+        res.status(400).json({ message: error.message });
+      }
   };
 
   public _handleFileUpload = (fieldName: string, maxCount: number = 10) => {
@@ -96,6 +87,38 @@ export class ProductController {
   }
     next();
   }
+
+  public uploadImage = async (req: Request, res: Response): Promise<void> => {
+    try {
+      this.upload.single('image')(req, res, async (err) => {
+        console.log("Uploading Image...");
+        if (err) {
+          console.error("Error during file upload:", err);
+          res.status(400).json({ message: err.message });
+          return;
+        }
+
+        // Access uploaded file
+        const file = req.file;
+        if (!file) {
+          res.status(400).json({ message: 'Image is required' });
+          return;
+        }
+
+        try {
+          const response = await ProductController.productService._uploadAndSaveImage(file);
+          res.status(200).json(response);
+        } catch (error: any) {
+          console.error("Error saving image:", error);
+          res.status(500).json({ message: error.message });
+        }
+      });
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      res.status(400).json({ message: error.message });
+    }
+  }
+
 
   async fetchProducts(req: Request, res: Response): Promise<void> {
     try {
@@ -189,12 +212,12 @@ export class ProductController {
     }
   }
     
-    public bulkUpload = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const products = await ProductController.productService.bulkUploadProducts(req.body);
-            res.json(products);
-        } catch (error: any) {
-            res.status(500).json({ message: error.message });
-        }
-    }
+  public bulkUpload = async (req: Request, res: Response): Promise<void> => {
+      try {
+          const products = await ProductController.productService.bulkUploadProducts(req.body);
+          res.json(products);
+      } catch (error: any) {
+          res.status(500).json({ message: error.message });
+      }
+  }
 }

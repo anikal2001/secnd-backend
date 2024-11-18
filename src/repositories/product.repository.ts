@@ -24,21 +24,8 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     // Create the product and assign the seller
     const product = this.create({
       ...productData,
-      seller,  // Set the seller object here
+      seller,
     });
-  
-    // Check for existing product with the same name and seller
-    const existingProduct = await AppDataSource.createQueryBuilder()
-      .select('product')
-      .from(Product, 'product')
-      .where('product.title = :name', { name: product.title })
-      .andWhere('product.seller = :seller', { seller: seller.user_id })
-      .getOne();
-  
-    if (existingProduct) {
-      console.error('Product with the same name already exists');
-      return null;
-    }
   
     try {
       return await this.save(product);

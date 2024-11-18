@@ -11,12 +11,12 @@ import {
 } from 'typeorm';
 import Image from './image.entity';
 import { Seller } from './seller.entity';
-import { ProductCategory, ProductColors, ProductTags, ProductBrand, ProductCondition, ProductGender, ProductSize, ProductStyles, ProductMaterial } from '../utils/products.enums';
+import { ProductCategory, ProductColors, ProductStatus, ProductTags, ProductBrand, ProductCondition, ProductGender, ProductSize, ProductStyles, ProductMaterial } from '../utils/products.enums';
 import { ProductInteraction } from './product_interactions.entity';
 
 @Entity()
 export class Product {
-  @PrimaryColumn('varchar')
+  @PrimaryGeneratedColumn('uuid')
   product_id: string;
 
   @Column({type: 'varchar', nullable: true})
@@ -104,7 +104,7 @@ export class Product {
   interactions: ProductInteraction[];
 
   @Column({ type: 'varchar', nullable: false })  
-  status: string;
+  status: ProductStatus;
 
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', nullable: false })
   created_at: Date;

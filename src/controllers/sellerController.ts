@@ -229,4 +229,15 @@ export class SellerController{
             res.status(500).json({ message: error.message });
         }
     }
+
+    public getSellerCategoryCounts = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const sellerId = req.params.id;
+            const categoryCounts = await SellerController.sellerService.getSellerCategoryCounts(sellerId);
+            res.json(categoryCounts);
+        } catch (error: any) {
+            console.error('Error in getSellerCategoryCounts:', error);
+            res.status(500).json({ error: 'Failed to get seller category counts' });
+        }
+    }
 }

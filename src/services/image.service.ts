@@ -23,7 +23,7 @@ export class ImageService {
         return this.imageRepository.findOne({ where: { image_id: id } });
     }
 
-    async update(id: string, imageData: Image): Promise<Image | null> {
+    async update(id: string, imageData: Partial<Image>): Promise<Image | null> {
         await this.imageRepository.update(id, imageData);
         return this.imageRepository.findOne({ where: { image_id: id } });
     }

@@ -22,7 +22,7 @@ export enum ProductCategory {
   Blazer = 'Blazer',
   Sweater = 'Sweater',
   Cardigan = 'Cardigan',
-  Top = 'Top',
+  Tops = 'Tops',
   Blouse = 'Blouse',
   Tshirt = 'Tshirt',
   Tanktop = 'Tanktop',
@@ -81,6 +81,7 @@ export enum ProductSize {
   XXL = 'XXL',
   XXXL = 'XXXL',
 }
+
 export enum ProductMaterial {
   Cotton = 'Cotton',
   Polyester = 'Polyester',
@@ -107,6 +108,7 @@ export enum ProductColors {
   Beige = 'Beige',
   Other = 'Other',
 }
+
 export enum ProductTags {
   Vintage00s = "00's Vintage",
   Streetwear = 'Streetwear',
@@ -133,6 +135,13 @@ export enum ProductStyles {
   Other = 'Other',
 }
 
+export enum ProductStatus {
+  draft = 0,
+  active = 1,
+  sold = 2,
+  pendingAction = 3,
+}
+
 export enum MaterialOptions {
   Cotton = 'Cotton',
   Polyester = 'Polyester',
@@ -154,7 +163,6 @@ export enum MaterialOptions {
   None = 'None',
 }
 
-
 const measurements = {
     Shirt: ['Chest', 'Shoulder', 'Sleeve', 'Length', 'Sleeve Length', 'Fit'],
     Pants: ['Waist', 'Hip', 'Rise', 'Inseam', 'Length', 'Leg Opening'],
@@ -172,8 +180,6 @@ const measurements = {
     Tanktop: ['Chest', 'Shoulder', 'Length', 'Fit'],
     Jumpsuit: ['Chest', 'Waist', 'Hip', 'Length', 'Fit'],
 }
-
-
 
 export enum FitTypes {
   Slim = 'Slim',

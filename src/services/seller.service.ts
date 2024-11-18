@@ -7,7 +7,7 @@ import { Product } from '../entity/product.entity';
 import { UserService } from './user.service';
 import { User } from '../entity/user.entity';
 import { ProductFilter, PaginationOptions, PaginatedProducts } from '../interfaces/product.filter';
-import { statusMap } from '../utils/products.enums';
+import { ProductStatus, statusMap } from '../utils/products.enums';
 
 export class SellerService {
   private userService: UserService = new UserService();
@@ -102,7 +102,7 @@ export class SellerService {
     }
 
     const totalRevenue = sellerProducts.products.reduce((acc: number, product: Product) => {
-        if (product.status === 'sold') {
+        if (product.status === ProductStatus.sold) {
             return acc + (product.price || 0);
         }
         return acc;
@@ -152,5 +152,32 @@ export class SellerService {
 
   async getTrendingSellers(): Promise<null> {
     return null;
+  }
+
+  async getSellerCategoryCounts(sellerID: string): Promise<{ [key: string]: number }> {
+    try {
+      const filter: ProductFilter = {
+        sellerId: sellerID,
+        status: statusMap[1] // active products only
+      };
+
+      const products = await SellerRepository.getSellerProducts(filter);
+
+      // Initialize counts object
+      const categoryCounts: { [key: string]: number } = {};
+
+      // Count products by category
+      products.products.forEach((product: Product) => {
+        const category = product.product_category;
+        if (category) {
+          categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        }
+      });
+
+      return categoryCounts;
+    } catch (error) {
+      console.error('Error getting seller category counts:', error);
+      throw error;
+    }
   }
 }
