@@ -37,7 +37,8 @@ Do not send any other text other than the json response.
 Generate a JSON response for the following clothing attributes like title, description,
 price, color, listed_size, product_category, styles, condition, brand, gender, and tags
 based on the provided images and only use the following template for the response and only use the provided enums for the attributes.
-If the image is not clear, please provide the best guess based on the image. If a guess is not possible, please provide a null value except for price.
+If the image is not clear, please provide the best guess based on the image. Do not hallucinate.
+ If a guess is not possible, please provide a null value except for price.
 Try to have the response as accurate as possible and avoid null values as much as possible.:
 - Product Category: ${convertEnumToList(ProductCategory).toString()}
 - Product Colors: {primaryColors: [${convertEnumToList(ProductColors).toString()}], secondaryColors: [${convertEnumToList(ProductColors).toString()}]}
@@ -75,9 +76,9 @@ export async function main(imageUrl: string): Promise<any> {
 
   const client = getClient();
   const messages = createMessages(imageUrl);
-  console.log("reached")
   const completion = await client.chat.completions.create(messages);
   for (const choice of completion.choices) {
+    console.log(choice.message);
     return choice.message.content;
   }
   console.log('== End of GPT-4 Turbo with vision Sample ==');
