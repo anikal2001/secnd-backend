@@ -7,7 +7,7 @@ import { Product } from '../entity/product.entity';
 import { UserService } from './user.service';
 import { User } from '../entity/user.entity';
 import { ProductFilter, PaginationOptions, PaginatedProducts } from '../interfaces/product.filter';
-import { ProductStatus, statusMap } from '../utils/products.enums';
+import { ProductStatus } from '../utils/products.enums';
 
 export class SellerService {
   private userService: UserService = new UserService();
@@ -115,7 +115,7 @@ export class SellerService {
     try {
       const filter: ProductFilter = {
         sellerId: sellerID,
-        status: statusMap[2]
+        status: ProductStatus.sold
       };
 
       const sellerProducts = await SellerRepository.getSellerProducts(filter);
@@ -158,7 +158,7 @@ export class SellerService {
     try {
       const filter: ProductFilter = {
         sellerId: sellerID,
-        status: statusMap[1] // active products only
+        status: ProductStatus.active
       };
 
       const products = await SellerRepository.getSellerProducts(filter);

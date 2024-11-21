@@ -258,12 +258,3 @@ export enum size_enum {
     XXL = 'XXL',
     XXXL = 'XXXL',
 }
-
-export const statusMap: { [key: number]: string } = {
-  0: 'draft',
-  1: 'active',
-  2: 'sold',
-  3: 'pending',
-  4: 'approved',
-  5: 'rejected',
-};

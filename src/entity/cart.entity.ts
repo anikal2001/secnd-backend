@@ -1,29 +1,17 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { Product } from './product.entity';
+import { CartItem } from './cart_item.entity';
 
 @Entity()
 export class Cart {
   @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({type: 'simple-array'})
-  items: Product[];
+  id: string;
 
   @Column()
-  user_id: number;
+  user_id: string;
 
   @Column()
-  quantity: number;
+  order_status: string;
 
-  @Column()
-  size: string;
-
-  @Column()
-  color: string;
-
-  @Column()
-  created_at: Date;
-
-  @Column()
-  updated_at: Date;
+  @OneToMany(() => CartItem, (cartItem) => cartItem.cart, { cascade: true })
+  cartItems: CartItem[];
 }

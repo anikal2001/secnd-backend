@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { plainToClass } from "class-transformer";
 import { SellerService } from "../services/seller.service";
 import { Seller } from "../entity/seller.entity";
-import { ProductCategory, statusMap } from '../utils/products.enums';
+import { ProductCategory, ProductStatus } from '../utils/products.enums';
 
 export class SellerController{
     static sellerService: SellerService = new SellerService();
@@ -72,7 +72,7 @@ export class SellerController{
             const filter = {
                 sellerId,
                 ...(category && { category: category as ProductCategory }),
-                ...(status && { status: statusMap[Number(status)] }),
+                ...(status && { status: Number(status) as ProductStatus }),
                 ...(startDate && { startDate: new Date(startDate as string) }),
                 ...(endDate && { endDate: new Date(endDate as string) }),
                 ...(includeImages && { includeImages: Boolean(includeImages) }),
