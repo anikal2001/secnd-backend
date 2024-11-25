@@ -20,7 +20,8 @@
     /* Type Checking */
     "strict": true /* Enable all strict type-checking options. */,
     "strictPropertyInitialization": false,
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true, /* Skip type checking all .d.ts files. */
+    "allowSyntheticDefaultImports": true,
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]

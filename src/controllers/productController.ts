@@ -49,14 +49,17 @@ export class ProductController {
 
   public addProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-        // Ensure request body is present
         if (!req.body) {
           res.status(400).json({ message: 'Request body is required' });
           return;
         }
 
-        if (!req.body.pictureIds || !Array.isArray(req.body.pictureIds) || req.body.pictureIds.length === 0) {
-          res.status(400).json({ message: 'At least one picture ID is required' });
+        if (!req.body.pictureIds) {
+          res.status(400).json({ message: 'no request for pictureIds' });
+          return;
+        }
+        else if (req.body.pictureIds.length === 0) { 
+          res.status(400).json({ message: 'pictureIds is empty' });
           return;
         }
 
@@ -193,7 +196,7 @@ export class ProductController {
     }
   }
 
-  getProductsByCategory = async (req: Request, res: Response): Promise<void> => {
+  public getProductsByCategory = async (req: Request, res: Response): Promise<void> => {
     try {
       const products = await ProductController.productService.getProductsByCategory(req.params.category);
       res.json(products);
