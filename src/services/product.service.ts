@@ -9,7 +9,7 @@ import { ProductCategory, ProductStatus } from '../utils/products.enums';
 import { ProductRepository } from '../repositories/product.repository';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { UserService } from './user.service';
-import { main } from '../utils/OpenAPI';
+import { main } from './ai.service';
 import { AppDataSource } from '../database/config';
 import { ImageService } from './image.service';
 import { User } from '../entity/user.entity';
@@ -77,32 +77,23 @@ export class ProductService {
     return plainToInstance(Product, product);
   }
 
-  async generateProductDetails(sellerID: string, imageFiles: Express.Multer.File[]): Promise<any> {
+  async generateProductDetails(sellerID: string, imageURL: string): Promise<any> {
     try {
-      // Upload images to AWS S3
-      const imageUrls = await this._uploadImageAWS(imageFiles);
-      if (imageUrls.length === 0) {
-        console.error('No images uploaded');
-        return null;
-      }
-
       // Call ChatGPT API to generate product details
-      const res = await main(imageUrls[0]).catch((err) => {
+      const res = await main(imageURL).catch((err) => {
         console.error('Error occurred:', err);
       });
-      // Convert res to JSON
-      const cleanResponse = res.replace(/```json|```/g, '').trim();
-      const parsedResponse = JSON.parse(cleanResponse);
-      const updatedImageURLS = { ...parsedResponse, imageURLS: imageUrls };
-      // Save the response to the Product Database
-      const product = plainToClass(Product, { status: 'draft', seller: sellerID, ...updatedImageURLS });
-      const savedProduct = await ProductRepository.createAndSave(product, sellerID);
-      // Save the image URLs to the Image Database
-      if (savedProduct) {
-        await this.saveImagesToDB(product.product_id,imageUrls);
+
+      const seller = await this.UserService.findById(sellerID);
+      
+      if (!seller) {
+        throw new Error('Seller not found');
       }
+
       // Save the response to the GeneratedResponse Database
-      const response = plainToClass(GeneratedResponse, savedProduct);
+      console.log(res)
+      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', seller: {user_id: sellerID} });
+      console.log(response);
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
     } catch (error) {
@@ -200,6 +191,7 @@ export class ProductService {
 
   async createProduct(productData: any): Promise<Product | null> {
     try {
+      console.log(productData);
       // Parse seller data if it's a string
       if (typeof productData.seller === 'string') {
         productData.seller = JSON.parse(productData.seller);
@@ -257,15 +249,6 @@ export class ProductService {
   }
 
   async updateProduct(id: string, productData: Product): Promise<boolean> {
-    const validFields = ['title', 'description', 'price', 'product_category', 'tags', 'brand', 'color', 'size', 'styles', 'condition', 'material'];
-    const validUpdates = Object.keys(productData).every((field) => validFields.includes(field));
-
-    if (!validUpdates) {
-      console.error('Invalid fields');
-      throw new Error('Invalid fields');
-    }
-
-    console.log(validUpdates);
 
     const updatedProduct = plainToClass(Product, productData);
     const UpdateResult = await ProductRepository.update(id, updatedProduct);
