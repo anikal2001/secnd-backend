@@ -16,10 +16,11 @@ Router.post('/upload-image', productController.uploadImage);
 // Router.get('/search', productController.searchProducts);
 // Router.get('/categories', productController.getCategories);
 Router.get('/categories/:category', productController.getProductsByCategory);
-Router.get('/tags/:tag', productController.getProductsByStyle);
+// Router.get('/tags/:tag', productController.getProductsByStyle);
 Router.get('/trending', productController.getTrendingProducts);
 // Router.get('/colors', productController.getColors);
 // Router.get('/colors/:color', productController.getProductsByColor);
 // Router.get('/sizes', productController.getSizes);
 Router.post('/add', productController.addProduct);
 Router.post('/picture', productController.uploadImage)
+Router.post('/inference', productController.inferenceImages)

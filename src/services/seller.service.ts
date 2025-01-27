@@ -6,7 +6,7 @@ import { plainToClass, plainToInstance } from 'class-transformer';
 import { Product } from '../entity/product.entity';
 import { UserService } from './user.service';
 import { User } from '../entity/user.entity';
-import { ProductFilter, PaginationOptions, PaginatedProducts } from '../interfaces/product.filter';
+import { ProductFilter, PaginationOptions, PaginatedProducts, PaginatedDrafts } from '../interfaces/product.filter';
 import { ProductStatus } from '../utils/products.enums';
 
 export class SellerService {
@@ -57,7 +57,7 @@ export class SellerService {
       throw error;
     }
   }
-
+  
   async updateSeller(sellerId: string, updatedSeller: Seller): Promise<Seller | null> {
     const seller = await SellerRepository.getByID(sellerId);
     AppDataSource.createQueryBuilder().update(Seller).set(updatedSeller).where('seller_id = :seller_id', { seller_id: sellerId }).execute();
@@ -168,7 +168,7 @@ export class SellerService {
 
       // Count products by category
       products.products.forEach((product: Product) => {
-        const category = product.product_category;
+        const category = product.category;
         if (category) {
           categoryCounts[category] = (categoryCounts[category] || 0) + 1;
         }

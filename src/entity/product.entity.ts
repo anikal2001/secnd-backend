@@ -15,16 +15,15 @@ import {
 import Image from './image.entity';
 import { Seller } from './seller.entity';
 import {
-  ProductCategory,
+  Gender,
+  Material,
   ProductColors,
   ProductStatus,
   ProductTags,
   ProductBrand,
   ProductCondition,
-  ProductGender,
   ProductSize,
   ProductStyles,
-  ProductMaterial,
 } from '../utils/products.enums';
 import { randomUUID } from 'crypto';
 import { ProductInteraction } from './product_interactions.entity';
@@ -37,7 +36,6 @@ export abstract class ProductBase {
   @BeforeInsert()
   generateId() {
     if (!this.product_id) {
-      
       this.product_id = randomUUID(); // Auto-generate UUID if not provided
     }
   }
@@ -57,11 +55,17 @@ export abstract class ProductBase {
     secondaryColor: ProductColors[];
   };
 
+  @Column({ type: 'simple-enum', enum: Gender, nullable: true })
+  gender: Gender;
+
+  @Column()
+  category: string;
+
+  @Column({ nullable: true })
+  subcategory: string;
+
   @Column({ type: 'simple-enum', enum: ProductSize, nullable: true })
   listed_size: ProductSize;
-
-  @Column({ type: 'simple-enum', enum: ProductCategory, nullable: true })
-  product_category: ProductCategory;
 
   @Column({ type: 'json', nullable: true, enum: ProductStyles })
   styles: ProductStyles[];
@@ -71,10 +75,7 @@ export abstract class ProductBase {
 
   @Column({ type: 'simple-enum', nullable: true, enum: ProductBrand })
   brand: ProductBrand;
-
-  @Column({ type: 'simple-enum', nullable: true, enum: ProductGender })
-  gender: ProductGender;
-
+  
   @Column({ type: 'simple-array', default: [], nullable: true })
   tags: ProductTags[];
 
@@ -82,8 +83,8 @@ export abstract class ProductBase {
   @JoinColumn({ name: 'product_id' })
   imageURLS: Image[];
 
-  @Column({ type: 'simple-enum', enum: ProductMaterial, nullable: true })
-  material: ProductMaterial;
+  @Column({ type: 'simple-enum', enum: Material, nullable: true })
+  material: Material;
 
   @Column({ type: 'varchar', nullable: true })
   dimensions: string;
@@ -103,35 +104,14 @@ export abstract class ProductBase {
 
 @Entity()
 export class Product extends ProductBase {
-    @OneToOne(() => Product, (product) => product.product_id)
+  @OneToOne(() => Product, (product) => product.product_id)
   @JoinColumn({ name: 'product_id' })
-    product: Product;
-  
+  product: Product;
+
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   seller: Seller;
 }
 
-
-
 @Entity()
 export class GeneratedResponse extends ProductBase {}
-
-@Entity('listing_drafts')
-export class ListingDraft extends Product {
-  @PrimaryGeneratedColumn('uuid')
-  id: string; // Unique identifier for the draft
-
-  @ManyToOne(() => Seller, (seller) => seller.user_id, { onDelete: 'CASCADE' })
-  seller: Seller;
-
-  @Column({ type: 'varchar', nullable: true })
-  status: ProductStatus;
-
-  @CreateDateColumn()
-  createdAt: Date; // Timestamp for when the draft was created
-
-  @UpdateDateColumn()
-  updatedAt: Date; // Timestamp for when the draft was last updated
-}
-

@@ -2,11 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import bodyParser from 'body-parser';
 import { ProductService } from '../services/product.service';
-import { ListingDraftService } from '../services/listingdraft.service';
+import { ProductStatus } from '../utils/products.enums';
 
 export class ProductController {
   static productService: ProductService = new ProductService();
-  static listingDraftService: ListingDraftService = new ListingDraftService();
 
   private upload: multer.Multer; // Multer instance
 
@@ -15,40 +14,38 @@ export class ProductController {
     this.upload = multer({ dest: 'uploads/', storage: storage });
   }
 
-public genProductInfo = async (req: Request, res: Response): Promise<void> => {
-  // Use multer to parse the form data
-  this.upload.any()(req, res, async (err) => {
-    if (err) {
-      // Send error response if multer encounters an issue
-      return res.status(400).json({ message: 'Error parsing form data', error: err.message });
-    }
-
-    try {
-      // Ensure request body is present
-      if (!req.body || Object.keys(req.body).length === 0) {
-        return res.status(400).json({ message: 'Request body is required' });
+  public genProductInfo = async (req: Request, res: Response): Promise<void> => {
+    // Use multer to parse the form data
+    this.upload.any()(req, res, async (err) => {
+      if (err) {
+        // Send error response if multer encounters an issue
+        return res.status(400).json({ message: 'Error parsing form data', error: err.message });
       }
 
-      const imageURL = req.body.image;
-      const sellerID = req.body.sellerID;
+      try {
+        // Ensure request body is present
+        if (!req.body || Object.keys(req.body).length === 0) {
+          return res.status(400).json({ message: 'Request body is required' });
+        }
 
-      console.log("Parsed Body:", req.body);
+        const imageURL = req.body.image;
+        const sellerID = req.body.sellerID;
 
-      const productDetails = await ProductController.productService.generateProductDetails(sellerID, imageURL);
+        console.log("Parsed Body:", req.body);
 
-      // Send success response
-      return res.status(200).json(productDetails);
-    } catch (error: any) {
-      // Catch and handle errors during processing
-      return res.status(500).json({ message: error.message });
-    }
-  });
-};
+        const productDetails = await ProductController.productService.generateProductDetails(sellerID, imageURL);
+
+        // Send success response
+        return res.status(200).json(productDetails);
+      } catch (error: any) {
+        // Catch and handle errors during processing
+        return res.status(500).json({ message: error.message });
+      }
+    });
+  };
 
   public addProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log('Adding product...');
-      console.log(req.body);
       // Ensure request body is present
       if (!req.body) {
         res.status(400).json({ message: 'Request body is required' });
@@ -59,8 +56,8 @@ public genProductInfo = async (req: Request, res: Response): Promise<void> => {
         res.status(400).json({ message: 'At least one picture ID is required' });
         return;
       }
-      console.log(req.body);
 
+      req.body.status = ProductStatus.active;
       const product = await ProductController.productService.createProduct(req.body);
 
       if (!product) {
@@ -173,16 +170,11 @@ public genProductInfo = async (req: Request, res: Response): Promise<void> => {
       res.status(500).json({ message: error.message });
     }
   };
+ 
   public saveDraft = async (req: Request, res: Response): Promise<void> => {
-    const userId = req.body.userId;
-    console.log(req);
-    console.log('User ID:', userId);
-    if (!userId) {
-      res.status(400).json({ message: 'User ID is required' });
-      return;
-    }
     try {
-      const draft = await ProductController.listingDraftService.saveDraft(userId, req.body);
+      req.body.status = ProductStatus.draft;
+      const draft = await ProductController.productService.createProduct(req.body);
       res.json(draft);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -199,14 +191,14 @@ public genProductInfo = async (req: Request, res: Response): Promise<void> => {
     }
   };
 
-  public getProductsByStyle = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const products = await ProductController.productService.getProductsByStyle(req.params.style);
-      res.json(products);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  };
+  // public getProductsByStyle = async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const products = await ProductController.productService.getProductsByStyle(req.params.style);
+  //     res.json(products);
+  //   } catch (error: any) {
+  //     res.status(500).json({ message: error.message });
+  //   }
+  // };
 
   getProductsByCategory = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -234,4 +226,18 @@ public genProductInfo = async (req: Request, res: Response): Promise<void> => {
       res.status(500).json({ message: error.message });
     }
   };
+
+  public inferenceImages = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const images = req.body.images;
+      if (!Array.isArray(images) || !images.every(img => img.image_id && img.url)) {
+        res.status(400).json({ message: "Request body must contain 'images' array with image_id and url for each image" });
+        return;
+      }
+      const products = await ProductController.productService.inferenceImages(images);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }

@@ -1,18 +1,17 @@
-import bcrypt from 'bcrypt';
 import { PutObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 import S3 from '../utils/AWSClient';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { plainToClass, plainToInstance } from 'class-transformer';
 import { Product, GeneratedResponse } from '../entity/product.entity';
 import { ProductFilters, ProductType } from '../types/product';
-import { ProductCategory, ProductStatus } from '../utils/products.enums';
+import { Category } from '../utils/product/category';
 import { ProductRepository } from '../repositories/product.repository';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { UserService } from './user.service';
 import { main } from './ai.service';
 import { AppDataSource } from '../database/config';
 import { ImageService } from './image.service';
-import { User } from '../entity/user.entity';
+import { ImageData } from '../types/image';
 
 export class ProductService {
   private UserService: UserService = new UserService();
@@ -35,27 +34,25 @@ export class ProductService {
   }
 
   async getProductsByCategory(category: string): Promise<Product[]> {
-    if (category in ProductCategory) {
+    if (!(category in Category.getAllTopLevelCategories())) {
       throw new Error('Invalid category');
     }
-    const categoryKey = category as keyof typeof ProductCategory;
-    const products = await ProductRepository.findBy({ product_category: ProductCategory[categoryKey] });
+    const products = await ProductRepository.findBy({ category });
     if (!products) {
       return [];
     }
     return plainToInstance(Product, products);
   }
 
-  async getProductsByStyle(tag: string): Promise<Product[]> {
-    if (tag in ProductCategory) {
+  async getProductsBySubCategory(subcategory: string): Promise<Product[]> {
+    if (!(subcategory in Category.getAllSubcategories())) {
       throw new Error('Invalid category');
     }
-    const tagKey = tag as keyof typeof ProductCategory;
-    const products = await ProductRepository.findByTags(tagKey);
+    const products = await ProductRepository.findBy({ subcategory });
     if (!products) {
       return [];
     }
-    return products;
+    return plainToInstance(Product, products);
   }
 
   async filterProducts(filter: ProductFilters): Promise<Product[]> {
@@ -77,7 +74,7 @@ export class ProductService {
     return plainToInstance(Product, product);
   }
 
-  async generateProductDetails(sellerID: string, imageURL: string): Promise<any> {
+  async generateProductDetails(sellerID: string, imageURL: string[]): Promise<any> {
     try {
       // Call ChatGPT API to generate product details
       const res = await main(imageURL).catch((err) => {
@@ -191,12 +188,6 @@ export class ProductService {
 
   async createProduct(productData: any): Promise<Product | null> {
     try {
-      console.log(productData);
-      // Parse seller data if it's a string
-      if (typeof productData.seller === 'string') {
-        productData.seller = JSON.parse(productData.seller);
-      }
-
       // Parse brand if it's a string
       if (typeof productData.brand === 'string') {
         try {
@@ -216,9 +207,6 @@ export class ProductService {
         .filter((img): img is { url: string } => img !== null)
         .map(img => img.url);
 
-      // Add active status
-      productData.status = ProductStatus.active;
-
       // Create the product with image URLs
       const { pictureIds, ...restProductData } = productData;
       const newProduct = plainToClass(Product, {
@@ -227,7 +215,7 @@ export class ProductService {
       });
 
       // Save the product
-      const product = await ProductRepository.createAndSave(newProduct, productData.seller.user_id);
+      const product = await ProductRepository.createAndSave(newProduct, productData.user_id);
 
       if (product) {
         await Promise.all(
@@ -280,5 +268,26 @@ export class ProductService {
     );
     const savedProducts = await ProductRepository.bulkCreate(newProducts);
     return savedProducts;
+  }
+
+  async inferenceImages(images: ImageData[]) {
+    try {
+      const imageURLs = images.map(img => img.url);
+      
+      // Call ChatGPT API to generate product details
+      const res = await main(imageURLs).catch((err) => {
+        console.error('Error occurred:', err);
+      });
+
+      const response = plainToClass(GeneratedResponse, { 
+        ...res,
+        images: images,
+        status: 'draft' 
+      });
+      return response;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 }
