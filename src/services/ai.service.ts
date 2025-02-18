@@ -64,23 +64,30 @@ ${CategoryHierarchy}
  
 3. **Provide JSON with the following attributes:**
     - **Title**: Write the title in the format:
-     \`[style] [age] [color] [material] [subcategory] [design]\`
-     - Example 1: "Vintage 1980s fuchsia pink angora knit sweater dress with velvet, satin and bead detail."
-     - Example 2: "Modern navy blue cotton polo shirt with logo embroidery."
+    
+     \`Vintage [age/decade] [brand or identifiable text] / [subcategory] / [fit type or design] / [style descriptor 1] [/ [style descriptor 2]]\`
+     - Example 1: "Vintage 1990s Martinique carribean / Vacation Crewneck Sweatshirt"
+     - Example 2: "Vintage 2000s Plaid Button Up / Colourful / Flannel / Shirt"
+     - Example 3: "Vintage 1990s Levi Strauss 501 Red Tab Button Fly Denim Jeans / Made in USA / American Vintage / Workwear / Streetwear"
      - Use "style" to describe the overall look or aesthetic (e.g., "vintage", "modern", "retro").
      - Use "age" if any era or decade can be inferred (e.g., "1980s").
      - Use "color" for the dominant color(s) (from: ${ProductColorsList}).
      - Use "material" for the primary material (from: ${ProductMaterialsList}).
      - Use "subcategory" for the item type (from hierarchy above).
      - Use "design" for any notable patterns, decorations, or details.
-   - **Description**: Detailed description including notable features.
+     - Use "fit type" for the clothing fit (e.g., "slim", "regular", "loose", "relaxed").
+     - Use size i.e. 36x32 for description, but use only included options in the next Size output. 
+   - **Description**: In the following format:
+      This @brand @age in @color is size @size.
+      [Detailed description including notable features]
+
    - **Price**: Estimated price as a number (e.g., 25.99), take the condition, brand and trend into account.
    - **Colors**:
      - Pick the colors from the list: ${ProductColorsList}. If color is not present, map to the closest color within the provided list (i.e. turquoise should be mapped to blue)
      - Primary colors: Dominant colors
      - Secondary colors: Accent colors
    - **Material**: Material composition (e.g., ${ProductMaterialsList}).
-   - **Size**: Listed size from the options: ${ProductSizesList}.
+   - **Size**: Listed size from the options: ${ProductSizesList}. DO NOT GIVE SIZES NOT INCLUDED IN THE OPTIONS. DO NOT GIVE 36x32, JUST GIVE THE WAIST IF POSSIBLE.
    - **Category**: The determined category (e.g., "Tops", "Bottoms").
    - **Subcategory**: The determined subcategory (e.g., "T-Shirts", "Jeans").
    - **Condition**: Condition of the item from the options: ${ProductConditionsList}.
@@ -96,7 +103,7 @@ ${CategoryHierarchy}
 ### Example Output:
 \`\`\`json
 {
-  "title": "Modern navy blue cotton polo shirt with logo embroidery",
+  "title": "Vintage 1990s Martinique carribean / Vacation Crewneck Sweatshirt",
   "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.",
   "price": 45.99,
   "color": {
