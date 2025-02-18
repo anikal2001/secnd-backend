@@ -6,7 +6,7 @@
   "scripts": {
     "watch": "tsc -w",
     "dev": "nodemon src/index.ts",
-    "build": "npm install -g typescript && tsc",
+    "build": "./node_modules/typescript/bin/tsc",
     "start": "npm run build && node dist/index.js",
     "test": "npm run build",
     "format": "prettier --write src/**/*.ts",
