@@ -15,7 +15,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     const seller = await AppDataSource.createQueryBuilder()
       .select('seller')
       .from(Seller, 'seller')
-      .where('seller.user_id = :userId', { userId: user_id }) // Use user.user_id as a string
+      .where('seller.user_id = :user_id', { user_id: user_id }) // Use user.user_id as a string
       .getOne();
     if (!seller) {
       throw new Error('Seller not found');

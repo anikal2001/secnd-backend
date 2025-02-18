@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import { Product } from './product.entity';
 import { User } from './user.entity';
-import { ListingDraft } from './product.entity';
 
 @Entity()
 export class Seller {
@@ -33,7 +32,4 @@ export class Seller {
 
   @OneToMany(() => Product, (product) => product.seller)
   Products: Product[];
-
-  @OneToMany(() => ListingDraft, (draft) => draft.seller)
-  drafts: ListingDraft[];
 }

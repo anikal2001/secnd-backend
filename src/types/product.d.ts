@@ -11,7 +11,7 @@ export type ProductType = {
     secondaryColor: ProductColors[];
   };
   listed_size: ProductSize;
-  product_category: string;
+  category: string;
   condition: string;
   tags: ProductTags[];
   brand: string;
