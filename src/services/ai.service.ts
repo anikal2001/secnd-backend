@@ -98,6 +98,7 @@ ${CategoryHierarchy}
 ### Expectations:
 - Always guess the gender, category, and subcategory, even if uncertain.
 - Provide as much detail as possible.
+- Make sure decade is present at the beginning of the title
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
 
 ### Example Output:
