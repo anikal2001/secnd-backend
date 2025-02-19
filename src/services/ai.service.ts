@@ -140,32 +140,61 @@ class ProductClassifier {
     });
   }
 
-  async classifyThreeImages(imageUrls: string[]): Promise<ProductResponse> {
-    if (imageUrls.length !== 3) {
-      throw new Error('You must provide exactly 3 image URLs.');
-    }
-
-    const messages = createThreeImageMessages(imageUrls);
-    console.log('== Messages ==\n', messages);
-
+  private async getRagContext(imageUrls: string[]): Promise<string> {
     try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: messages,
-        max_tokens: 500,
-        temperature: 0,
+      // Make API call to your vector database backend
+      const response = await fetch(`${process.env.VECTOR_DB_URL}/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageUrls }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch RAG context');
+      }
+
+      const data = await response.json();
+      return data.context || '';
+    } catch (error) {
+      console.error('Error fetching RAG context:', error);
+      return '';
+    }
+  }
+
+  async classifyThreeImages(imageUrls: string[]): Promise<ProductResponse> {
+    const messages = createThreeImageMessages(imageUrls);
+    
+    // Get relevant context from vector database
+    // const relevantContext = await this.getRagContext(imageUrls);
+
+    // // Add context to the messages if available
+    // if (relevantContext) {
+    //   messages.push({
+    //     role: 'system',
+    //     content: `Here is some relevant context about similar products:\n${relevantContext}\nUse this context to help classify the product more accurately.`
+    //   });
+    // }
+
+    // Make classification with context
+    const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+      messages: messages,
+      max_tokens: 500,
+      temperature: 0
+    });
 
       const rawJson = response.choices[0].message?.content?.replace(/```json\n?|```/g, '').trim();
 
       if (!rawJson) {
         throw new Error('No valid JSON received from the model.');
-      }
+    }
 
       console.log('== Raw JSON ==\n', rawJson);
       const parsedContent = JSON.parse(rawJson);
       return ProductResponseSchema.parse(parsedContent);
-    } catch (error) {
+    } catch (error: { errors: any; }) {
       if (error instanceof z.ZodError) {
         console.error('Validation error:', error.errors);
         throw new Error('Invalid response format from the AI model.');
@@ -173,7 +202,6 @@ class ProductClassifier {
       throw error;
     }
   }
-}
 
 /**
  * Main function
