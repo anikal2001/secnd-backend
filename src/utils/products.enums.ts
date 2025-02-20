@@ -65,7 +65,7 @@ export enum ProductColors {
   NAVY = 'navy',
   GREEN = 'green',
   KHAKI = 'khaki',
-  MULTICOLOR = 'multicolor',
+  MULTI = 'multi',
 };
 
 

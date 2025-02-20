@@ -50,7 +50,7 @@ export class SellerController {
   public getSellerProducts = async (req: Request, res: Response) => {
     try {
       const sellerId = req.params.id;
-      const { category, status, startDate, endDate, page, limit, includeImages } = req.query;
+      const { category, status, startDate, endDate, page, limit, includeImages, marketplaces } = req.query;
 
       // Validate category if provided
       if (category && !Object.values(Category.getAllTopLevelCategories()).includes(category as string)) {
@@ -64,7 +64,8 @@ export class SellerController {
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
         includeImages: includeImages ? Boolean(includeImages) : undefined,
-        category: category && typeof category === 'string' ? new Category(category) : undefined
+        category: category && typeof category === 'string' ? new Category(category) : undefined,
+        marketplaces: marketplaces && typeof marketplaces === 'string' ? marketplaces.split(',') : undefined
       };
 
       // Create pagination object

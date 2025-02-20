@@ -55,6 +55,13 @@ export abstract class ProductBase {
     secondaryColor: ProductColors[];
   };
 
+  @Column({ type: 'simple-array', nullable: true, default: [] })
+  primaryColor: string[];
+
+  @Column({ type: 'simple-array', nullable: true, default: [] })
+  secondaryColor: string[];
+
+
   @Column({ type: 'simple-enum', enum: Gender, nullable: true })
   gender: Gender;
 
@@ -73,8 +80,8 @@ export abstract class ProductBase {
   @Column({ type: 'simple-enum', nullable: true, enum: ProductCondition })
   condition: ProductCondition;
 
-  @Column({ type: 'simple-enum', nullable: true, enum: ProductBrand })
-  brand: ProductBrand;
+  @Column({ nullable: true })
+  brand: string;
   
   @Column({ type: 'simple-array', default: [], nullable: true })
   tags: ProductTags[];
@@ -94,6 +101,9 @@ export abstract class ProductBase {
 
   @Column({ type: 'varchar', nullable: false })
   status: ProductStatus;
+
+  @Column({ type: 'simple-array', nullable: true, default: [] })
+  marketplaces: string[];
 
   @CreateDateColumn()
   created_at: Date;

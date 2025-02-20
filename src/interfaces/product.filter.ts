@@ -9,6 +9,7 @@ export interface ProductFilter {
   endDate?: Date;
   sellerId: string;
   includeImages?: boolean;
+  marketplaces?: string[];
 }
 
 export interface PaginationOptions {

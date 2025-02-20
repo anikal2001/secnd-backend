@@ -55,6 +55,10 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
         queryBuilder = queryBuilder.andWhere('product.created_at <= :endDate', { endDate: filter.endDate });
       }
 
+      if (filter.marketplaces) {
+        queryBuilder = queryBuilder.andWhere('product.marketplaces = :marketplaces', { marketplaces: filter.marketplaces });
+      }
+
       // Get total count before pagination
       const total = await queryBuilder.getCount();
 
