@@ -115,7 +115,7 @@ export class ProductService {
         try {
           await S3.send(new PutObjectCommand(params));
           const command = new GetObjectCommand(params);
-          const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
+          const url = await getSignedUrl(S3, command, { expiresIn: 60 * 60 * 24 * 7 });
           return url;
         } catch (error) {
           console.log(error);
