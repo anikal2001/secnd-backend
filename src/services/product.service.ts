@@ -115,7 +115,8 @@ export class ProductService {
         try {
           await S3.send(new PutObjectCommand(params));
           const command = new GetObjectCommand(params);
-          const url = await getSignedUrl(S3, command, { expiresIn: 60 * 60 * 24 * 7 });
+          const url = 'https://dq534dzir8764.cloudfront.net/'+ filename; 
+          // const url = await getSignedUrl(S3, command, { expiresIn: 60 * 60 * 24 * 7 });
           return url;
         } catch (error) {
           console.log(error);
