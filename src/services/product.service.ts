@@ -160,7 +160,8 @@ export class ProductService {
       // Upload to S3
       await S3.send(new PutObjectCommand(params));
       const command = new GetObjectCommand(params);
-      const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
+      const url = 'https://dq534dzir8764.cloudfront.net/'+ filename;
+      // const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
       
       // // Get a public URL instead of a signed URL
       // const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${filename}`;
