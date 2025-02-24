@@ -22,31 +22,32 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
         throw new Error('Seller not found');
       }
 
-      // Check if a draft product already exists for this seller
-      let existingDraft = null;
-      if (productData.status === ProductStatus.draft) {
-        existingDraft = await this.createQueryBuilder('product')
-          .where('product.seller = :sellerId', { sellerId: seller.user_id })
-          .andWhere('product.status = :status', { status: ProductStatus.draft })
-          .getOne();
-      }
-
-      if (existingDraft) {
-        // Update existing draft
-        const updatedProduct = {
-          ...existingDraft,
-          ...productData,
-          seller,
-        };
-        return await this.save(updatedProduct);
-      } else {
-        // Create new product
-        const product = this.create({
-          ...productData,
-          seller,
+      // If product_id is provided, try to find and update the existing product
+      if (productData.product_id) {
+        const existingProduct = await this.findOne({
+          where: {
+            product_id: productData.product_id,
+            seller: { user_id: seller.user_id } // Ensure the product belongs to the seller
+          }
         });
-        return await this.save(product);
+
+        if (existingProduct) {
+          // Update existing product
+          const updatedProduct = {
+            ...existingProduct,
+            ...productData,
+            seller,
+          };
+          return await this.save(updatedProduct);
+        }
       }
+      
+      // Create new product
+      const product = this.create({
+        ...productData,
+        seller,
+      });
+      return await this.save(product);
     } catch (error) {
       console.error('Error saving product:', error);
       return null;
