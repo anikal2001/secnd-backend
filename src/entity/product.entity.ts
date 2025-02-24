@@ -55,12 +55,11 @@ export abstract class ProductBase {
     secondaryColor: ProductColors[];
   };
 
-  @Column({ type: 'simple-array', nullable: true, default: [] })
+  @Column({ type: 'simple-array', nullable: true })
   primaryColor: string[];
 
-  @Column({ type: 'simple-array', nullable: true, default: [] })
+  @Column({ type: 'simple-array', nullable: true })
   secondaryColor: string[];
-
 
   @Column({ type: 'simple-enum', enum: Gender, nullable: true })
   gender: Gender;

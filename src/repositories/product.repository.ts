@@ -2,7 +2,7 @@ import { AppDataSource } from '../database/config';
 import { Product } from '../entity/product.entity';
 import { UpdateResult } from 'typeorm';
 import { Seller } from '../entity/seller.entity';
-import { User } from '../entity/user.entity';
+import { ProductStatus } from '../utils/products.enums';
 
 export const ProductRepository = AppDataSource.getRepository(Product).extend({
   async findWithColors(productId: number): Promise<string> {
@@ -11,24 +11,42 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     return "product";
   },
   async createAndSave(productData: Partial<Product>, user_id: string): Promise<Product | null> {
-    // Fetch the seller by user ID
-    const seller = await AppDataSource.createQueryBuilder()
-      .select('seller')
-      .from(Seller, 'seller')
-      .where('seller.user_id = :user_id', { user_id: user_id }) // Use user.user_id as a string
-      .getOne();
-    if (!seller) {
-      throw new Error('Seller not found');
-    }
-  
-    // Create the product and assign the seller
-    const product = this.create({
-      ...productData,
-      seller,
-    });
-  
     try {
-      return await this.save(product);
+      // Fetch the seller by user ID
+      const seller = await AppDataSource.createQueryBuilder()
+        .select('seller')
+        .from(Seller, 'seller')
+        .where('seller.user_id = :user_id', { user_id: user_id })
+        .getOne();
+      if (!seller) {
+        throw new Error('Seller not found');
+      }
+
+      // Check if a draft product already exists for this seller
+      let existingDraft = null;
+      if (productData.status === ProductStatus.draft) {
+        existingDraft = await this.createQueryBuilder('product')
+          .where('product.seller = :sellerId', { sellerId: seller.user_id })
+          .andWhere('product.status = :status', { status: ProductStatus.draft })
+          .getOne();
+      }
+
+      if (existingDraft) {
+        // Update existing draft
+        const updatedProduct = {
+          ...existingDraft,
+          ...productData,
+          seller,
+        };
+        return await this.save(updatedProduct);
+      } else {
+        // Create new product
+        const product = this.create({
+          ...productData,
+          seller,
+        });
+        return await this.save(product);
+      }
     } catch (error) {
       console.error('Error saving product:', error);
       return null;
