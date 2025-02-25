@@ -52,12 +52,33 @@ export class ProductController {
         return;
       }
 
+      // Validate required fields
       if (!req.body.pictureIds || !Array.isArray(req.body.pictureIds) || req.body.pictureIds.length === 0) {
         res.status(400).json({ message: 'At least one picture ID is required' });
         return;
       }
 
-      req.body.status = ProductStatus.active;
+      if (!req.body.user_id) {
+        res.status(400).json({ message: 'User ID is required' });
+        return;
+      }
+
+      if (!req.body.title) {
+        res.status(400).json({ message: 'Product title is required' });
+        return;
+      }
+
+      if (!req.body.price || isNaN(parseFloat(req.body.price))) {
+        res.status(400).json({ message: 'Valid product price is required' });
+        return;
+      }
+
+      // Status is now handled in the service layer
+      // We only need to set it if explicitly requested by publish flag
+      if (req.body.publish === true) {
+        req.body.status = ProductStatus.active;
+      }
+
       const product = await ProductController.productService.createProduct(req.body);
 
       if (!product) {
@@ -65,10 +86,24 @@ export class ProductController {
         return;
       }
 
-      res.status(201).json(product);
+      // Return appropriate status code - 201 for new products, 200 for updates
+      const statusCode = req.body.product_id ? 200 : 201;
+      res.status(statusCode).json(product);
     } catch (error: any) {
       console.error('Add product error:', error);
-      res.status(400).json({ message: error.message });
+      
+      // Provide more specific error messages based on error type
+      if (error.message.includes('Seller not found')) {
+        res.status(404).json({ message: 'Seller not found. User may not be registered as a seller.' });
+      } else if (error.message.includes('Unauthorized')) {
+        res.status(403).json({ message: 'You are not authorized to modify this product' });
+      } else if (error.message.includes('Product not found')) {
+        res.status(404).json({ message: 'Product not found' });
+      } else if (error.message.includes('No valid images found')) {
+        res.status(400).json({ message: 'No valid images found. Please upload images first.' });
+      } else {
+        res.status(400).json({ message: error.message || 'An error occurred while processing your request' });
+      }
     }
   };
 
@@ -147,11 +182,24 @@ export class ProductController {
         res.status(400).json({ message: 'Product ID is required' });
         return;
       }
+
+      // Get existing product to maintain status if not explicitly changed
+      const existingProduct = await ProductController.productService.getProductById(id);
+      if (!existingProduct) {
+        res.status(404).json({ message: 'Product not found' });
+        return;
+      }
+
+      // Keep existing status unless explicitly changed
+      if (!req.body.status) {
+        req.body.status = existingProduct.status;
+      }
+
       const updatedProduct = await ProductController.productService.updateProduct(id, req.body);
       if (updatedProduct) {
         res.json(updatedProduct);
       } else {
-        res.status(404).json({ message: 'Product not found' });
+        res.status(404).json({ message: 'Failed to update product' });
       }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -173,9 +221,25 @@ export class ProductController {
  
   public saveDraft = async (req: Request, res: Response): Promise<void> => {
     try {
+      // Always set status as draft
       req.body.status = ProductStatus.draft;
-      const draft = await ProductController.productService.createProduct(req.body);
-      res.json(draft);
+
+      // Check if we're updating an existing draft
+      if (req.body.id) {
+        const existingProduct = await ProductController.productService.getProductById(req.body.id);
+        if (!existingProduct) {
+          res.status(404).json({ message: 'Draft not found' });
+          return;
+        }
+
+        // Update existing draft
+        const updatedDraft = await ProductController.productService.updateProduct(req.body.user_id, req.body);
+        res.json(updatedDraft);
+      } else {
+        // Create new draft
+        const draft = await ProductController.productService.createProduct(req.body);
+        res.json(draft);
+      }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

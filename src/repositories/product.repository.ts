@@ -1,8 +1,7 @@
 import { AppDataSource } from '../database/config';
 import { Product } from '../entity/product.entity';
-import { UpdateResult } from 'typeorm';
 import { Seller } from '../entity/seller.entity';
-import { ProductStatus } from '../utils/products.enums';
+import { UpdateResult } from 'typeorm';
 
 export const ProductRepository = AppDataSource.getRepository(Product).extend({
   async findWithColors(productId: number): Promise<string> {
@@ -10,43 +9,25 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     // const product = this.findOne({ where: { id: productIdStr }, relations: ['colors'] });
     return "product";
   },
+  
   async createAndSave(productData: Partial<Product>, user_id: string): Promise<Product | null> {
+    // Fetch the seller by user ID
+    const seller = await AppDataSource.createQueryBuilder()
+      .select('seller')
+      .from(Seller, 'seller')
+      .where('seller.user_id = :user_id', { user_id: user_id }) // Use user.user_id as a string
+      .getOne();
+    if (!seller) {
+      throw new Error('Seller not found');
+    }
+  
+    // Create the product and assign the seller
+    const product = this.create({
+      ...productData,
+      seller,
+    });
+  
     try {
-      // Fetch the seller by user ID
-      const seller = await AppDataSource.createQueryBuilder()
-        .select('seller')
-        .from(Seller, 'seller')
-        .where('seller.user_id = :user_id', { user_id: user_id })
-        .getOne();
-      if (!seller) {
-        throw new Error('Seller not found');
-      }
-
-      // If product_id is provided, try to find and update the existing product
-      if (productData.product_id) {
-        const existingProduct = await this.findOne({
-          where: {
-            product_id: productData.product_id,
-            seller: { user_id: seller.user_id } // Ensure the product belongs to the seller
-          }
-        });
-
-        if (existingProduct) {
-          // Update existing product
-          const updatedProduct = {
-            ...existingProduct,
-            ...productData,
-            seller,
-          };
-          return await this.save(updatedProduct);
-        }
-      }
-      
-      // Create new product
-      const product = this.create({
-        ...productData,
-        seller,
-      });
       return await this.save(product);
     } catch (error) {
       console.error('Error saving product:', error);
@@ -54,16 +35,13 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     }
   },
 
-  async update(id: string, productData: Product): Promise<UpdateResult> {
-    const updatedTime = new Date().toISOString();
-    // Need to update multiple columns 
+  async update(id: string, productData: Partial<Product>): Promise<UpdateResult> {
     const updateResult = await this.createQueryBuilder()
       .update(Product)
       .set(productData)
       .where('product_id = :id', { id })
       .execute();
     return updateResult;
-    // return updatedProduct;
   },
 
   async findTrendingProducts(): Promise<Product[]> {
@@ -75,6 +53,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     return await AppDataSource.createQueryBuilder().select('product')
       .from(Product, 'product').where('product.tags = :tag', { tag }).getMany();
   },
+  
   async bulkCreate(products: Product[]): Promise<Product[]> {
     // bulk create products
     const createdProducts = await this.save(products);
