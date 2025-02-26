@@ -232,8 +232,8 @@ export class ProductController {
           return;
         }
 
-        // Update existing draft
-        const updatedDraft = await ProductController.productService.updateProduct(req.body.user_id, req.body);
+        // Update existing draft - fix: pass product ID as first parameter
+        const updatedDraft = await ProductController.productService.updateProduct(req.body.id, req.body);
         res.json(updatedDraft);
       } else {
         // Create new draft

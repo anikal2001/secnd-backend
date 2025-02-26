@@ -82,7 +82,7 @@ export abstract class ProductBase {
 
   @Column({ nullable: true })
   brand: string;
-  
+
   @Column({ type: 'simple-array', default: [], nullable: true })
   tags: ProductTags[];
 
