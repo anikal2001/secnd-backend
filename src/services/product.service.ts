@@ -9,6 +9,7 @@ import { ProductRepository } from '../repositories/product.repository';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { UserService } from './user.service';
 import { main } from './ai.service';
+import { enhanceProductWithBrandMatch } from '../utils/product/brandMatcher';
 import { AppDataSource } from '../database/config';
 import { ImageService } from './image.service';
 import { ImageData } from '../types/image';
@@ -71,13 +72,13 @@ export class ProductService {
   async getProductById(id: string): Promise<Product | null> {
     const product = await ProductRepository.findOne({
       where: { product_id: id },
-      relations: ['imageURLS', 'seller', 'seller.user']
+      relations: ['imageURLS', 'seller', 'seller.user'],
     });
 
     if (product) {
       // Get marketplace listings for this product
       const marketplaceListings = await this.MarketplaceService.findByProductId(product.product_id);
-      
+
       // Attach marketplace listings to the product for the client
       if (marketplaceListings.length > 0) {
         product.marketplaceListings = marketplaceListings;
@@ -218,18 +219,18 @@ export class ProductService {
 
       // Create the product with image URLs
       const { pictureIds, ...restProductData } = productData;
-      
+
       // Create a new product instance
       const product = new Product();
-      
+
       // Set basic product information
       Object.assign(product, restProductData);
 
       // Set status to active if not provided
-      if (!productData.status) {
+      if (productData.status === undefined) {
         product.status = ProductStatus.active;
       }
-      
+
       // Set the seller relationship
       if (productData.user_id) {
         // Find the seller by user_id
@@ -244,7 +245,7 @@ export class ProductService {
 
       // Save the product to get an ID
       const savedProduct = await ProductRepository.save(product);
-      
+
       // Update image associations
       if (savedProduct) {
         await Promise.all(
@@ -257,16 +258,13 @@ export class ProductService {
           ),
         );
       }
-      
+
       // Process marketplace data if provided
       if (productData.marketplaceData && Array.isArray(productData.marketplaceData)) {
-        console.log("MarketpalceData: ", productData.marketplaceData);
+        console.log('MarketpalceData: ', productData.marketplaceData);
         // Process marketplace listings and get marketplace names
-        savedProduct.marketplaces = await this.MarketplaceService.processMarketplaces(
-          savedProduct,
-          productData.marketplaceData
-        );
-        
+        savedProduct.marketplaces = await this.MarketplaceService.processMarketplaces(savedProduct, productData.marketplaceData);
+
         // Save the product again with the updated marketplaces array
         await ProductRepository.save(savedProduct);
       }
@@ -274,13 +272,13 @@ export class ProductService {
       // Get the complete product with all relations
       const completeProduct = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
-        relations: ['imageURLS', 'seller', 'seller.user']
+        relations: ['imageURLS', 'seller', 'seller.user'],
       });
-      
+
       if (completeProduct) {
         // Get marketplace listings for this product
         const marketplaceListings = await this.MarketplaceService.findByProductId(savedProduct.product_id);
-        
+
         // Attach marketplace listings to the product for the client
         if (marketplaceListings.length > 0) {
           completeProduct.marketplaceListings = marketplaceListings;
@@ -297,11 +295,11 @@ export class ProductService {
   async updateProduct(id: string, productData: Product): Promise<Product | null> {
     try {
       console.log('Updating product with ID:', id, 'Data:', productData);
-      
+
       // Get existing product to maintain data integrity
       const existingProduct = await ProductRepository.findOne({
         where: { product_id: id },
-        relations: ['imageURLS', 'seller', 'seller.user']
+        relations: ['imageURLS', 'seller', 'seller.user'],
       });
 
       if (!existingProduct) {
@@ -313,16 +311,16 @@ export class ProductService {
       Object.assign(existingProduct, productData);
 
       // Set status to active if not provided
-      if (!productData.status) {
+      if (productData.status === undefined) {
         existingProduct.status = ProductStatus.active;
       }
 
       // Save the updated product
       const updatedProduct = await ProductRepository.save(existingProduct);
-      
+
       // Get marketplace listings for this product
       const marketplaceListings = await this.MarketplaceService.findByProductId(updatedProduct.product_id);
-      
+
       // Attach marketplace listings to the product for the client
       if (marketplaceListings.length > 0) {
         updatedProduct.marketplaceListings = marketplaceListings;
@@ -362,16 +360,18 @@ export class ProductService {
     try {
       const imageURLs = images.map((img) => img.url);
 
-      // Call ChatGPT API to generate product details
       const res = await main(imageURLs).catch((err) => {
         console.error('Error occurred:', err);
       });
 
+      const enhancedResponse = res ? enhanceProductWithBrandMatch(res) : res;
       const response = plainToClass(GeneratedResponse, {
-        ...res,
+        ...enhancedResponse,
         images: images,
         status: 'draft',
       });
+
+      console.log(response);
       return response;
     } catch (error) {
       console.log(error);

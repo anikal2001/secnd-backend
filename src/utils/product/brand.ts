@@ -1,3 +1,4 @@
+import fuzz from 'fuzzball';
 import brandsData from './brand.json';
 
 export interface Brand {
