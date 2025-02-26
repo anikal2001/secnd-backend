@@ -30,9 +30,9 @@ function loadBrands(): Brand[] {
 export function findClosestBrandMatch(
   brandName: string | null, 
   options: { 
-    cutoff?: number,      // Minimum score to consider a match (0-100)
-    forceAscii?: boolean, // Strip non-ascii characters
-    useCollator?: boolean // Use Intl.Collator for locale-sensitive string comparison
+    cutoff?: number,      
+    forceAscii?: boolean, 
+    useCollator?: boolean
   } = {}
 ): Brand | null {
   if (!brandName) return null;
@@ -42,9 +42,9 @@ export function findClosestBrandMatch(
   
   // Default options
   const defaultOptions = {
-    cutoff: 70,           // Only consider matches with a score of 70 or higher
-    forceAscii: true,     // Strip non-ascii characters
-    useCollator: true,    // Use Intl.Collator for locale-sensitive string comparison
+    cutoff: 90, 
+    forceAscii: true,
+    useCollator: true,
     ...options
   };
   
