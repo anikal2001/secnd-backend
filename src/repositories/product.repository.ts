@@ -1,8 +1,7 @@
 import { AppDataSource } from '../database/config';
 import { Product } from '../entity/product.entity';
-import { UpdateResult } from 'typeorm';
 import { Seller } from '../entity/seller.entity';
-import { User } from '../entity/user.entity';
+import { UpdateResult } from 'typeorm';
 
 export const ProductRepository = AppDataSource.getRepository(Product).extend({
   async findWithColors(productId: number): Promise<string> {
@@ -10,6 +9,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     // const product = this.findOne({ where: { id: productIdStr }, relations: ['colors'] });
     return "product";
   },
+  
   async createAndSave(productData: Partial<Product>, user_id: string): Promise<Product | null> {
     // Fetch the seller by user ID
     const seller = await AppDataSource.createQueryBuilder()
@@ -35,16 +35,13 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     }
   },
 
-  async update(id: string, productData: Product): Promise<UpdateResult> {
-    const updatedTime = new Date().toISOString();
-    // Need to update multiple columns 
+  async update(id: string, productData: Partial<Product>): Promise<UpdateResult> {
     const updateResult = await this.createQueryBuilder()
       .update(Product)
       .set(productData)
       .where('product_id = :id', { id })
       .execute();
     return updateResult;
-    // return updatedProduct;
   },
 
   async findTrendingProducts(): Promise<Product[]> {
@@ -56,6 +53,7 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
     return await AppDataSource.createQueryBuilder().select('product')
       .from(Product, 'product').where('product.tags = :tag', { tag }).getMany();
   },
+  
   async bulkCreate(products: Product[]): Promise<Product[]> {
     // bulk create products
     const createdProducts = await this.save(products);

@@ -211,30 +211,9 @@ export class Category {
 // Utility Functions
 //----------------------------------------------------------------
 
-// Get the human-readable label for a subcategory value
-const getLabelFromValue = (categoryKey: CategoryKey, subcategoryValue: string): string | null => {
-  const rootCategories = categoryHierarchy[categoryKey];
-  if (!rootCategories) return null;
-
-  for (const category of rootCategories) {
-    if (category.value === subcategoryValue) return category.label;
-    const subcategory = category.sub.find((sub) => sub.value === subcategoryValue);
-    if (subcategory) return subcategory.label;
-  }
-  return null;
-};
-
 // Initialize categories from raw data
 const createCategories = (labels: (string | [string, string[]])[]): Category[] => {
   return labels.map((label) => (typeof label === 'string' ? new Category(label) : new Category(label[0], createCategories(label[1]))));
-};
-
-// Get all top-level categories (no subcategories) for a given key
-const getTopLevelCategories = (categoryKey: CategoryKey, returnType: 'label' | 'value' = 'label'): string[] => {
-  const rootCategories = categoryHierarchy[categoryKey];
-  if (!rootCategories) return [];
-
-  return rootCategories.map((category) => (returnType === 'label' ? category.label : category.value));
 };
 
 //----------------------------------------------------------------
@@ -258,19 +237,27 @@ const sharedBottomsData: (string | [string, string[]])[] = [
   ['Shorts', ['Cargo', 'Jean', 'Jogger', 'Chino', 'Bermudas']],
 ];
 
+const sharedOuterwearData: (string | [string, string[]])[] = [
+  ['Coats', ['Heavy', 'Puffer', 'Rain', 'Parkas']],
+  ['Jackets', ['Denim', 'Leather', 'Light', 'Bomber', 'Puffer', 'Shirt', 'Varsity']],
+];
+
 // Full Apparel Hierarchy
 const categoryHierarchy = {
+  // men
   men_tops: createCategories(sharedTopsData),
   men_bottoms: createCategories(sharedBottomsData),
-  men_outerwear: createCategories([
-    ['Coats', ['Heavy', 'Puffer', 'Rain', 'Parkas']],
-    ['Jackets', ['Denim', 'Leather', 'Light', 'Bomber', 'Puffer', 'Shirt', 'Varsity']],
-  ]),
+  men_outerwear: createCategories(sharedOuterwearData),
   men_suits: createCategories([['Suits', ['Jacket', 'Trousers', 'Waistcoat', 'One Piece']]]),
+  men_onesies: createCategories(['Jumpsuits']),
+
+  // women
   women_tops: createCategories([...sharedTopsData, ['Crop Tops', ['Tube Tops', 'Halter Tops']], 'Blouses', 'Corsets']),
   women_bottoms: createCategories([...sharedBottomsData, 'Leggings', ['Skirts', ['Maxi', 'Midi', 'Mini']]]),
   women_dresses: createCategories([['Dresses', ['Maxi', 'Midi', 'Mini']]]),
-  onesies: createCategories(['Jumpsuits', 'Rompers']),
+  women_outerwear: createCategories(sharedOuterwearData),
+  women_suits: createCategories([['Suits', ['Jacket', 'Trousers', 'Waistcoat', 'One Piece']]]),
+  women_onesies: createCategories(['Jumpsuits', 'Rompers']),
 };
 
 export { categoryHierarchy };

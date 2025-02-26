@@ -27,6 +27,7 @@ import {
 } from '../utils/products.enums';
 import { randomUUID } from 'crypto';
 import { ProductInteraction } from './product_interactions.entity';
+import { MarketplaceListing } from './marketplace.entity';
 
 // Abstract base class for Product
 export abstract class ProductBase {
@@ -55,12 +56,11 @@ export abstract class ProductBase {
     secondaryColor: ProductColors[];
   };
 
-  @Column({ type: 'simple-array', nullable: true, default: [] })
+  @Column({ type: 'simple-array', nullable: true })
   primaryColor: string[];
 
-  @Column({ type: 'simple-array', nullable: true, default: [] })
+  @Column({ type: 'simple-array', nullable: true })
   secondaryColor: string[];
-
 
   @Column({ type: 'simple-enum', enum: Gender, nullable: true })
   gender: Gender;
@@ -104,6 +104,9 @@ export abstract class ProductBase {
 
   @Column({ type: 'simple-array', nullable: true, default: [] })
   marketplaces: string[];
+
+  @OneToMany(() => MarketplaceListing, (listing) => listing.product)
+  marketplaceListings: MarketplaceListing[];
 
   @CreateDateColumn()
   created_at: Date;

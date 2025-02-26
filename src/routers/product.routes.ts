@@ -21,6 +21,6 @@ Router.get('/trending', productController.getTrendingProducts);
 // Router.get('/colors', productController.getColors);
 // Router.get('/colors/:color', productController.getProductsByColor);
 // Router.get('/sizes', productController.getSizes);
-Router.post('/add', productController.addProduct);
 Router.post('/picture', productController.uploadImage)
 Router.post('/inference', productController.inferenceImages)
+

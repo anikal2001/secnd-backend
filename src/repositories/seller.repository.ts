@@ -90,10 +90,15 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
   },
 
   async find(): Promise<any> {
-    const sellers = await this.createQueryBuilder('seller')
-      .leftJoin('seller.user', 'user')
-      .select(['seller', 'user.user_id', 'user.email'])
+    return await this.createQueryBuilder('seller')
+      .leftJoinAndSelect('seller.user', 'user')
       .getMany();
-    return sellers
   },
+
+  async findByUserId(userId: string): Promise<Seller | null> {
+    return await this.createQueryBuilder('seller')
+      .where('seller.user_id = :userId', { userId })
+      .leftJoinAndSelect('seller.user', 'user')
+      .getOne();
+  }
 });

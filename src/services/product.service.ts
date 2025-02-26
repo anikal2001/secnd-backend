@@ -12,10 +12,15 @@ import { main } from './ai.service';
 import { AppDataSource } from '../database/config';
 import { ImageService } from './image.service';
 import { ImageData } from '../types/image';
+import { ProductStatus } from '../utils/products.enums';
+import { SellerService } from './seller.service';
+import { MarketplaceService } from './marketplace.service';
 
 export class ProductService {
   private UserService: UserService = new UserService();
   private ImageService: ImageService = new ImageService();
+  private SellerService: SellerService = new SellerService();
+  private MarketplaceService: MarketplaceService = new MarketplaceService();
   private GeneratedResponseRepository = AppDataSource.getRepository(GeneratedResponse);
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
@@ -66,12 +71,20 @@ export class ProductService {
   async getProductById(id: string): Promise<Product | null> {
     const product = await ProductRepository.findOne({
       where: { product_id: id },
-      relations: ['imageURLS'], // Include the 'imageURLS' relation
+      relations: ['imageURLS', 'seller', 'seller.user']
     });
-    if (!product) {
-      return null;
+
+    if (product) {
+      // Get marketplace listings for this product
+      const marketplaceListings = await this.MarketplaceService.findByProductId(product.product_id);
+      
+      // Attach marketplace listings to the product for the client
+      if (marketplaceListings.length > 0) {
+        product.marketplaceListings = marketplaceListings;
+      }
     }
-    return plainToInstance(Product, product);
+
+    return product;
   }
 
   async generateProductDetails(sellerID: string, imageURL: string[]): Promise<any> {
@@ -82,14 +95,14 @@ export class ProductService {
       });
 
       const seller = await this.UserService.findById(sellerID);
-      
+
       if (!seller) {
         throw new Error('Seller not found');
       }
 
       // Save the response to the GeneratedResponse Database
-      console.log(res)
-      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', seller: {user_id: sellerID} });
+      console.log(res);
+      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', seller: { user_id: sellerID } });
       console.log(response);
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
@@ -115,7 +128,7 @@ export class ProductService {
         try {
           await S3.send(new PutObjectCommand(params));
           const command = new GetObjectCommand(params);
-          const url = 'https://dq534dzir8764.cloudfront.net/'+ filename; 
+          const url = 'https://dq534dzir8764.cloudfront.net/' + filename;
           // const url = await getSignedUrl(S3, command, { expiresIn: 60 * 60 * 24 * 7 });
           return url;
         } catch (error) {
@@ -129,7 +142,7 @@ export class ProductService {
   }
 
   async saveImagesToDB(productID: string, imageUrls: string[]): Promise<string[]> {
-    const imageIDs: string[] = []
+    const imageIDs: string[] = [];
     try {
       imageUrls.forEach(async (url) => {
         const imageID = await this.ImageService.create({ product_id: productID, url: url });
@@ -160,24 +173,24 @@ export class ProductService {
       // Upload to S3
       await S3.send(new PutObjectCommand(params));
       const command = new GetObjectCommand(params);
-      const url = 'https://dq534dzir8764.cloudfront.net/'+ filename;
+      const url = 'https://dq534dzir8764.cloudfront.net/' + filename;
       // const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
-      
+
       // // Get a public URL instead of a signed URL
       // const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${filename}`;
 
       // Save to database
-      const savedImage = await this.ImageService.create({ 
+      const savedImage = await this.ImageService.create({
         product_id: null,
-        url: url 
+        url: url,
       });
 
       return {
         image_id: savedImage.image_id,
-        url: url
+        url: url,
       };
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error('Upload error:', error);
       throw new Error('Failed to upload image');
     }
   }
@@ -190,62 +203,135 @@ export class ProductService {
 
   async createProduct(productData: any): Promise<Product | null> {
     try {
-      // Parse brand if it's a string
-      if (typeof productData.brand === 'string') {
-        try {
-          productData.brand = JSON.parse(productData.brand);
-        } catch (e) {
-          console.log('Brand parsing failed, keeping original value');
-        }
+      console.log('Creating product:', productData);
+
+      // Validate required pictureIds
+      if (!productData.pictureIds || !Array.isArray(productData.pictureIds)) {
+        throw new Error('Picture IDs are required and must be an array');
       }
 
       // Get the image URLs from the provided pictureIds
-      const images = await Promise.all(
-        productData.pictureIds.map((id: string) => this.ImageService.findOne(id))
-      );
+      const images = await Promise.all(productData.pictureIds.map((id: string) => this.ImageService.findOne(id)));
 
       // Filter out any null values and get URLs
-      const imageURLS = images
-        .filter((img): img is { url: string } => img !== null)
-        .map(img => img.url);
+      const imageURLS = images.filter((img): img is { url: string } => img !== null).map((img) => img.url);
 
       // Create the product with image URLs
       const { pictureIds, ...restProductData } = productData;
-      const newProduct = plainToClass(Product, {
-        ...restProductData,
-        imageURLS
-      });
+      
+      // Create a new product instance
+      const product = new Product();
+      
+      // Set basic product information
+      Object.assign(product, restProductData);
 
-      // Save the product
-      const product = await ProductRepository.createAndSave(newProduct, productData.user_id);
-
-      if (product) {
-        await Promise.all(
-          pictureIds.map((id: string, index: number) => 
-            this.ImageService.update(id, {
-              product_id: product.product_id,
-              image_type: index <= 2 ? index : 3,
-              product: product
-            })
-          )
-        );
+      // Set status to active if not provided
+      if (!productData.status) {
+        product.status = ProductStatus.active;
+      }
+      
+      // Set the seller relationship
+      if (productData.user_id) {
+        // Find the seller by user_id
+        const seller = await this.SellerService.getSellerById(productData.user_id);
+        if (!seller) {
+          throw new Error(`Seller with user_id ${productData.user_id} not found`);
+        }
+        product.seller = seller;
+      } else {
+        throw new Error('user_id is required to create a product');
       }
 
-      return product;
+      // Save the product to get an ID
+      const savedProduct = await ProductRepository.save(product);
+      
+      // Update image associations
+      if (savedProduct) {
+        await Promise.all(
+          pictureIds.map((id: string, index: number) =>
+            this.ImageService.update(id, {
+              product_id: savedProduct.product_id,
+              image_type: index <= 2 ? index : 3,
+              product: savedProduct,
+            }),
+          ),
+        );
+      }
+      
+      // Process marketplace data if provided
+      if (productData.marketplaceData && Array.isArray(productData.marketplaceData)) {
+        console.log("MarketpalceData: ", productData.marketplaceData);
+        // Process marketplace listings and get marketplace names
+        savedProduct.marketplaces = await this.MarketplaceService.processMarketplaces(
+          savedProduct,
+          productData.marketplaceData
+        );
+        
+        // Save the product again with the updated marketplaces array
+        await ProductRepository.save(savedProduct);
+      }
+
+      // Get the complete product with all relations
+      const completeProduct = await ProductRepository.findOne({
+        where: { product_id: savedProduct.product_id },
+        relations: ['imageURLS', 'seller', 'seller.user']
+      });
+      
+      if (completeProduct) {
+        // Get marketplace listings for this product
+        const marketplaceListings = await this.MarketplaceService.findByProductId(savedProduct.product_id);
+        
+        // Attach marketplace listings to the product for the client
+        if (marketplaceListings.length > 0) {
+          completeProduct.marketplaceListings = marketplaceListings;
+        }
+      }
+
+      return completeProduct;
     } catch (error) {
-      console.error("Create product error:", error);
-      return null;
+      console.error('Error creating product:', error);
+      throw error;
     }
   }
 
-  async updateProduct(id: string, productData: Product): Promise<boolean> {
+  async updateProduct(id: string, productData: Product): Promise<Product | null> {
+    try {
+      console.log('Updating product with ID:', id, 'Data:', productData);
+      
+      // Get existing product to maintain data integrity
+      const existingProduct = await ProductRepository.findOne({
+        where: { product_id: id },
+        relations: ['imageURLS', 'seller', 'seller.user']
+      });
 
-    const updatedProduct = plainToClass(Product, productData);
-    const UpdateResult = await ProductRepository.update(id, updatedProduct);
-    if (UpdateResult.affected === 0) {
-      return false;
-    } else {
-      return true;
+      if (!existingProduct) {
+        console.log(`Product with ID ${id} not found`);
+        return null;
+      }
+
+      // Merge the existing product with the new data
+      Object.assign(existingProduct, productData);
+
+      // Set status to active if not provided
+      if (!productData.status) {
+        existingProduct.status = ProductStatus.active;
+      }
+
+      // Save the updated product
+      const updatedProduct = await ProductRepository.save(existingProduct);
+      
+      // Get marketplace listings for this product
+      const marketplaceListings = await this.MarketplaceService.findByProductId(updatedProduct.product_id);
+      
+      // Attach marketplace listings to the product for the client
+      if (marketplaceListings.length > 0) {
+        updatedProduct.marketplaceListings = marketplaceListings;
+      }
+
+      return updatedProduct;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
     }
   }
 
@@ -274,17 +360,17 @@ export class ProductService {
 
   async inferenceImages(images: ImageData[]) {
     try {
-      const imageURLs = images.map(img => img.url);
-      
+      const imageURLs = images.map((img) => img.url);
+
       // Call ChatGPT API to generate product details
       const res = await main(imageURLs).catch((err) => {
         console.error('Error occurred:', err);
       });
 
-      const response = plainToClass(GeneratedResponse, { 
+      const response = plainToClass(GeneratedResponse, {
         ...res,
         images: images,
-        status: 'draft' 
+        status: 'draft',
       });
       return response;
     } catch (error) {
