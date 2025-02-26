@@ -95,11 +95,23 @@ ${CategoryHierarchy}
    - **Gender**: The determined gender.
    - **Tags**: Relevant tags (e.g., "casual", "vintage").
 
+***Before providing your final answer, carefully analyze each image for***:
+- Logos and text placement
+- Fabric texture and patterns
+- Stitching quality and patterns
+- Hardware elements (buttons, zippers, etc.)
+- Distinctive details that indicate era or brand
+
 ### Expectations:
 - Always guess the gender, category, and subcategory, even if uncertain.
 - Provide as much detail as possible.
 - Make sure decade is present at the beginning of the title
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
+
+Common mistakes to avoid:
+- Confusing similar materials (e.g., cotton blend vs 100% cotton)
+- Misidentifying decades (note: Y2K items are 1999-2004)
+- Inaccurate pricing (vintage band t-shirts command higher prices)
 
 ### Example Output:
 \`\`\`json
