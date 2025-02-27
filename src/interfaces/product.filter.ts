@@ -17,8 +17,14 @@ export interface PaginationOptions {
   limit?: number;
 }
 
+export type ExtendedProduct = Omit<Product, 'generateId' | 'marketplaces'> & {
+  generateId?: () => void;
+  marketplaces?: string[];
+  marketplaceListings: any[];
+};
+
 export interface PaginatedProducts {
-  products: Product[]
+  products: ExtendedProduct[];
   total: number;
   page: number;
   limit: number;

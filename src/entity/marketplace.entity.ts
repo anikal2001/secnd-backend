@@ -10,7 +10,7 @@ export class MarketplaceListing {
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @Column()
+  @Column() // name of marketplace
   marketplace: string;
 
   @Column()
