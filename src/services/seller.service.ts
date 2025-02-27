@@ -6,7 +6,7 @@ import { plainToClass, plainToInstance } from 'class-transformer';
 import { Product } from '../entity/product.entity';
 import { UserService } from './user.service';
 import { User } from '../entity/user.entity';
-import { ProductFilter, PaginationOptions, PaginatedProducts, PaginatedDrafts } from '../interfaces/product.filter';
+import { ProductFilter, PaginationOptions, PaginatedProducts, ExtendedProduct } from '../interfaces/product.filter';
 import { ProductStatus } from '../utils/products.enums';
 
 export class SellerService {
@@ -101,7 +101,7 @@ export class SellerService {
         return 0;
     }
 
-    const totalRevenue = sellerProducts.products.reduce((acc: number, product: Product) => {
+    const totalRevenue = sellerProducts.products.reduce((acc: number, product: ExtendedProduct) => {
         if (product.status === ProductStatus.sold) {
             return acc + (product.price || 0);
         }
@@ -167,7 +167,7 @@ export class SellerService {
       const categoryCounts: { [key: string]: number } = {};
 
       // Count products by category
-      products.products.forEach((product: Product) => {
+      products.products.forEach((product: ExtendedProduct) => {
         const category = product.category;
         if (category) {
           categoryCounts[category] = (categoryCounts[category] || 0) + 1;
