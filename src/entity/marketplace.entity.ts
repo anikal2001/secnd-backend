@@ -11,6 +11,9 @@ export class MarketplaceListing {
   product: Product;
 
   @Column()
+  marketplace: string;
+
+  @Column()
   marketplace_id: string;
 
   @Column({ nullable: true })
