@@ -24,3 +24,4 @@ Router.get('/trending', productController.getTrendingProducts);
 Router.post('/picture', productController.uploadImage)
 Router.post('/inference', productController.inferenceImages)
 
+Router.post('/delist', productController.deleteMarketplaceListing)

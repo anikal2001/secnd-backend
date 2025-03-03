@@ -304,4 +304,29 @@ export class ProductController {
       res.status(500).json({ message: error.message });
     }
   }
+
+
+  // Marketplace related
+  public deleteMarketplaceListing = async (req: Request, res: Response): Promise<void> => {
+    const product_id = req.query.product_id?.toString();
+    const marketplace = req.query.marketplace?.toString();
+
+    if (!product_id || !marketplace) {
+      res.status(400).json({ message: 'Product ID and Marketplace are required' });
+      return;
+    }
+
+    try {
+      // Delete the marketplace listing via the MarketplaceService.
+      await ProductController.productService.delistMarketplaceListing(product_id, marketplace);
+
+      // Optionally, update the product record if needed (e.g. remove the marketplace from the marketplaces array)
+      // You might call a method like:
+      // await ProductController.productService.removeMarketplaceFromProduct(productId, marketplaceName);
+
+      res.status(200).json({ success: true, message: 'Marketplace listing deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
 }

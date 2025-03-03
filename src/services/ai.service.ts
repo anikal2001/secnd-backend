@@ -12,8 +12,8 @@ const ProductResponseSchema = z
     description: z.string(),
     price: z.number(),
     color: z.object({
-      primaryColors: z.array(z.enum(Object.values(ProductColors) as [string, ...string[]])),
-      secondaryColors: z.array(z.enum(Object.values(ProductColors) as [string, ...string[]])).nullable(),
+      primaryColor: z.array(z.enum(Object.values(ProductColors) as [string, ...string[]])),
+      secondaryColor: z.array(z.enum(Object.values(ProductColors) as [string, ...string[]])).nullable(),
     }),
     listed_size: z.string().nullable(),
     gender: z.enum([Gender.Menswear, Gender.Womenswear]),
@@ -120,8 +120,8 @@ Common mistakes to avoid:
   "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.",
   "price": 45.99,
   "color": {
-    "primaryColors": ["navy"],
-    "secondaryColors": null
+    "primaryColor": ["navy"],
+    "secondaryColor": null
   },
   "material": "cotton",
   "listed_size": "m",
@@ -178,17 +178,6 @@ class ProductClassifier {
 
   async classifyThreeImages(imageUrls: string[]): Promise<ProductResponse> {
     const messages = createThreeImageMessages(imageUrls);
-    
-    // Get relevant context from vector database
-    // const relevantContext = await this.getRagContext(imageUrls);
-
-    // // Add context to the messages if available
-    // if (relevantContext) {
-    //   messages.push({
-    //     role: 'system',
-    //     content: `Here is some relevant context about similar products:\n${relevantContext}\nUse this context to help classify the product more accurately.`
-    //   });
-    // }
 
     // Make classification with context
     const response = await this.openai.chat.completions.create({
@@ -198,10 +187,10 @@ class ProductClassifier {
       temperature: 0
     });
 
-      const rawJson = response.choices[0].message?.content?.replace(/```json\n?|```/g, '').trim();
+    const rawJson = response.choices[0].message?.content?.replace(/```json\n?|```/g, '').trim();
 
-      if (!rawJson) {
-        throw new Error('No valid JSON received from the model.');
+    if (!rawJson) {
+      throw new Error('No valid JSON received from the model.');
     }
 
       console.log('== Raw JSON ==\n', rawJson);

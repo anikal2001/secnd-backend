@@ -108,6 +108,24 @@ export abstract class ProductBase {
   @OneToMany(() => MarketplaceListing, (listing) => listing.product)
   marketplaceListings: MarketplaceListing[];
 
+  @Column({ type: 'varchar', nullable: true })
+  weight: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  packageLength: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  packageWidth: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  packageHeight: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  shippingPrice: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  shippingProfile: number;
+
   @CreateDateColumn()
   created_at: Date;
 
