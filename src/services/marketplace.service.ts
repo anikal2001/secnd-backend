@@ -101,8 +101,7 @@ export class MarketplaceService {
       await this.create({
         product_id: product.product_id,
         marketplace: marketplaceName,
-        // Use listing_id from your data instead of marketplace_id:
-        marketplace_id: marketplaceData.listing_id,
+        marketplace_id: marketplaceData.marketplace_id,
         name: marketplaceName,
         slug: marketplaceData.slug,
       });
