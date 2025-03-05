@@ -153,23 +153,27 @@ class ProductClassifier {
     });
   }
 
-  private async getRagContext(imageUrls: string[]): Promise<string> {
+  private async getRagContext(imageUrls: string): Promise<string> {
     try {
       // Make API call to your vector database backend
-      const response = await fetch(`${process.env.VECTOR_DB_URL}/search`, {
+      const response = await fetch(`http://68.183.204.156:8882/api/rag/process_multimodal`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageUrls }),
+        body: JSON.stringify({
+          image_url: imageUrls,
+          limit: 5,
+        }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to fetch RAG context');
       }
-
       const data = await response.json();
-      return data.context || '';
+      const result = JSON.stringify(data.products) || '';
+      console.log("This is the result: ", result);
+      return result;
     } catch (error) {
       console.error('Error fetching RAG context:', error);
       return '';
@@ -180,15 +184,15 @@ class ProductClassifier {
     const messages = createThreeImageMessages(imageUrls);
     
     // Get relevant context from vector database
-    // const relevantContext = await this.getRagContext(imageUrls);
-
+    const relevantContext = await this.getRagContext(imageUrls[0]);
+    console.log("Relevant Context", relevantContext)
     // // Add context to the messages if available
-    // if (relevantContext) {
-    //   messages.push({
-    //     role: 'system',
-    //     content: `Here is some relevant context about similar products:\n${relevantContext}\nUse this context to help classify the product more accurately.`
-    //   });
-    // }
+    if (relevantContext) {
+      messages.push({
+        role: 'system',
+        content: `Here is some relevant context about similar products:\n${relevantContext}\nUse this context to help classify the product more accurately.`
+      });
+    }
 
     // Make classification with context
     const response = await this.openai.chat.completions.create({
