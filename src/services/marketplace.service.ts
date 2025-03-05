@@ -31,6 +31,26 @@ export class MarketplaceService {
   }
 
   /**
+   * Delete a single marketplace listing by its ID.
+   * @param listingId The marketplace listing ID as a string.
+   */
+  async deleteListing(listingId: string): Promise<void> {
+    // Convert listingId to number since the primary key is a number.
+    const id = Number(listingId);
+    await this.marketplaceRepository.delete({ id });
+  }
+
+  async deleteListingByProductAndMarketplace(product_id: string, marketplace: string): Promise<void> {
+    await this.marketplaceRepository
+      .createQueryBuilder()
+      .delete()
+      .from(MarketplaceListing)
+      .where("product_id = :product_id", { product_id })
+      .andWhere("marketplace = :marketplace", { marketplace })
+      .execute();
+  }
+
+  /**
    * Create a marketplace listing
    * @param data The marketplace listing data
    * @returns The created marketplace listing
@@ -113,11 +133,25 @@ export class MarketplaceService {
    * @param listings Array of MarketplaceListing entities
    */
   public static formatListings(listings: MarketplaceListing[]): any[] {
-    return listings.map(listing => {
+    return listings.map((listing) => {
       if (listing.marketplace === 'depop') {
         return { id: listing.id, depop: { marketplace_id: listing.marketplace_id, slug: listing.slug } };
       }
       return { id: listing.id, [listing.marketplace]: { marketplace_id: listing.marketplace_id } };
     });
+  }
+
+
+  /**
+   * Check if any marketplace listing exists for a product
+   * @param product_id The product ID
+   * @returns true if a listing exists, false otherwise
+   */
+  async doesAnyListingExist(product_id: string): Promise<boolean> {
+    // This assumes your repository has a method findOne that accepts criteria.
+    const listing = await this.marketplaceRepository.findOne({
+      where: { product: { product_id } },
+    });
+    return listing !== null;
   }
 }

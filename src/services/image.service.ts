@@ -2,13 +2,13 @@ import { Repository } from 'typeorm';
 import Image from '../entity/image.entity';
 import { plainToClass } from 'class-transformer';
 import { ImageRepository } from '../repositories/image.repository';
+
 export class ImageService {
-    private readonly imageRepository: Repository<Image> ;
+    private readonly imageRepository: Repository<Image>;
 
     constructor() {
         this.imageRepository = ImageRepository;
     }
-
 
     async create(imageData: Partial<Image>): Promise<Image> {
         const image = this.imageRepository.create(imageData);
@@ -24,7 +24,7 @@ export class ImageService {
     }
 
     async update(id: string, imageData: Partial<Image>): Promise<Image | null> {
-        await this.imageRepository.update(id, imageData);
+        await this.imageRepository.update({ image_id: id }, imageData);
         return this.imageRepository.findOne({ where: { image_id: id } });
     }
 

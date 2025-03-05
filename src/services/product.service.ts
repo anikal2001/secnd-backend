@@ -261,7 +261,6 @@ export class ProductService {
 
       // Process marketplace data if provided
       if (productData.marketplaceData && Array.isArray(productData.marketplaceData)) {
-        console.log('MarketpalceData: ', productData.marketplaceData);
         // Process marketplace listings and get marketplace names
         savedProduct.marketplaces = await this.MarketplaceService.processMarketplaces(savedProduct, productData.marketplaceData);
 
@@ -296,10 +295,10 @@ export class ProductService {
     try {
       console.log('Updating product with ID:', id, 'Data:', productData);
 
-      // Get existing product to maintain data integrity
+      // Get existing product (include marketplaceListings for processing removals)
       const existingProduct = await ProductRepository.findOne({
         where: { product_id: id },
-        relations: ['imageURLS', 'seller', 'seller.user'],
+        relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings'],
       });
 
       if (!existingProduct) {
@@ -307,21 +306,36 @@ export class ProductService {
         return null;
       }
 
-      // Merge the existing product with the new data
+      // Merge the existing product with the new data.
       Object.assign(existingProduct, productData);
 
-      // Set status to active if not provided
+      // Set status to active if not provided.
       if (productData.status === undefined) {
         existingProduct.status = ProductStatus.active;
       }
 
-      // Save the updated product
+      // If marketplaces array is provided, remove delisted marketplaces.
+      if (productData.marketplaces) {
+        const updatedMarketplaces: string[] = productData.marketplaces;
+        if (existingProduct.marketplaceListings && existingProduct.marketplaceListings.length > 0) {
+          // Identify listings that should be removed.
+          const listingsToRemove = existingProduct.marketplaceListings.filter((listing) => !updatedMarketplaces.includes(listing.marketplace));
+          if (listingsToRemove.length > 0) {
+            // Remove each listing using the MarketplaceService.
+            await Promise.all(listingsToRemove.map((listing) => this.MarketplaceService.deleteListing(listing.id.toString())));
+            // Remove these listings from the in-memory list.
+            existingProduct.marketplaceListings = existingProduct.marketplaceListings.filter((listing) =>
+              updatedMarketplaces.includes(listing.marketplace),
+            );
+          }
+        }
+      }
+
+      // Save the updated product.
       const updatedProduct = await ProductRepository.save(existingProduct);
 
-      // Get marketplace listings for this product
+      // Re-fetch marketplace listings and attach them.
       const marketplaceListings = await this.MarketplaceService.findByProductId(updatedProduct.product_id);
-
-      // Attach marketplace listings to the product for the client
       if (marketplaceListings.length > 0) {
         updatedProduct.marketplaceListings = marketplaceListings;
       }
@@ -370,12 +384,27 @@ export class ProductService {
         images: images,
         status: 'draft',
       });
-
-      console.log(response);
       return response;
     } catch (error) {
-      console.log(error);
       return null;
+    }
+  }
+
+  // Marketplace related
+  async delistMarketplaceListing(product_id: string, marketplace: string): Promise<void> {
+    try {
+      await this.MarketplaceService.deleteListingByProductAndMarketplace(product_id, marketplace);
+
+      // Now, check if there are any listings left for this product.
+      const exists = await this.MarketplaceService.doesAnyListingExist(product_id);
+
+      // If no marketplace listing remains, update the product status to draft.
+      if (!exists) {
+        await ProductRepository.update(product_id, { status: ProductStatus.draft });
+      }
+    } catch (error) {
+      console.error('Error deleting marketplace listing:', error);
+      throw error;
     }
   }
 }
