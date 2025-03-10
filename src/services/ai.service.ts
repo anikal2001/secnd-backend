@@ -66,7 +66,8 @@ function createThreeImageMessages(imageUrls: string[], titleTemplate: string): O
 
   // Create instructions for template handling
   const titleInstruction = titleTemplate
-    ? `RECEIVED CUSTOM title template: ${titleTemplate}. Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}`
+    ? `RECEIVED CUSTOM title template: ${titleTemplate}. Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}. 
+    If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder`
     : `Compose a title using the default format (not provided CUSTOM template) below:`;
 
   // Define title formatting details
