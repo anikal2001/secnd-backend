@@ -88,10 +88,10 @@ export class ProductService {
     return product;
   }
 
-  async generateProductDetails(sellerID: string, imageURL: string[]): Promise<any> {
+  async generateProductDetails(sellerID: string, imageURL: string[], titleTemplate: string): Promise<any> {
     try {
       // Call ChatGPT API to generate product details
-      const res = await main(imageURL).catch((err) => {
+      const res = await main(imageURL, titleTemplate).catch((err) => {
         console.error('Error occurred:', err);
       });
 
@@ -104,7 +104,6 @@ export class ProductService {
       // Save the response to the GeneratedResponse Database
       console.log(res);
       const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', seller: { user_id: sellerID } });
-      console.log(response);
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
     } catch (error) {
@@ -359,6 +358,16 @@ export class ProductService {
     return true;
   }
 
+  async deleteMultipleProducts(ids: string[]): Promise<boolean[]> {
+    try {
+      await ProductRepository.delete(ids);
+      return ids.map(() => true);
+    } catch (error) {
+      console.error('Error deleting products:', error);
+      return ids.map(() => false);
+    }
+  }
+
   async bulkUploadProducts(products: ProductType[]): Promise<Product[]> {
     const newProducts: Product[] = await Promise.all(
       products.map(async (product) => {
@@ -370,11 +379,11 @@ export class ProductService {
     return savedProducts;
   }
 
-  async inferenceImages(images: ImageData[]) {
+  async inferenceImages(images: ImageData[], titleTemplate: string) {
     try {
       const imageURLs = images.map((img) => img.url);
 
-      const res = await main(imageURLs).catch((err) => {
+      const res = await main(imageURLs, titleTemplate).catch((err) => {
         console.error('Error occurred:', err);
       });
 
@@ -383,7 +392,9 @@ export class ProductService {
         ...enhancedResponse,
         images: images,
         status: 'draft',
+
       });
+      await this.GeneratedResponseRepository.save(response);
       return response;
     } catch (error) {
       return null;

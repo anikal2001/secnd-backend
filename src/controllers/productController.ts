@@ -33,7 +33,7 @@ export class ProductController {
 
         console.log("Parsed Body:", req.body);
 
-        const productDetails = await ProductController.productService.generateProductDetails(sellerID, imageURL);
+        const productDetails = await ProductController.productService.generateProductDetails(sellerID, imageURL, req.body.titleTemplate);
 
         // Send success response
         return res.status(200).json(productDetails);
@@ -218,6 +218,15 @@ export class ProductController {
       res.status(500).json({ message: error.message });
     }
   };
+
+  public deleteMultipleProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await ProductController.productService.deleteMultipleProducts(req.body.ids);
+      res.status(200).send(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
  
   public saveDraft = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -298,7 +307,7 @@ export class ProductController {
         res.status(400).json({ message: "Request body must contain 'images' array with image_id and url for each image" });
         return;
       }
-      const products = await ProductController.productService.inferenceImages(images);
+      const products = await ProductController.productService.inferenceImages(images, req.body.titleTemplate);
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

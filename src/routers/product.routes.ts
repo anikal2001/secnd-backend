@@ -7,8 +7,10 @@ const productController = new ProductController();
 Router.get('/all', productController.fetchProducts);
 Router.post('/generate', productController.genProductInfo);
 Router.post('/add', productController.addProduct);
+
 Router.get('/get', productController.getProductById);
 Router.delete('/delete', productController.deleteProduct);
+Router.delete('/delete-multiple', productController.deleteMultipleProducts);
 Router.post('/update', productController.updateProduct);
 Router.get('/filter', productController.filterProducts);
 Router.post('/save-draft', productController.saveDraft);
