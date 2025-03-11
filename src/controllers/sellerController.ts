@@ -47,40 +47,38 @@ export class SellerController {
     }
   };
 
-  public getSellerProducts = async (req: Request, res: Response) => {
-    try {
-      const sellerId = req.params.id;
-      const { category, status, startDate, endDate, page, limit, includeImages, marketplaces } = req.query;
+public getSellerProducts = async (req: Request, res: Response) => {
+  try {
+    const sellerId = req.params.id;
+    const { category, status, startDate, endDate, page, limit, includeImages, marketplaces } = req.query;
 
-      // Validate category if provided
-      if (category && !Object.values(Category.getAllTopLevelCategories()).includes(category as string)) {
-        return res.status(400).json({ error: 'Invalid category' });
-      }
-
-      // Create filter object
-      const filter: ProductFilter = {
-        sellerId,
-        status: status ? Number(status) as ProductStatus : undefined,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined,
-        includeImages: includeImages ? Boolean(includeImages) : undefined,
-        category: category && typeof category === 'string' ? new Category(category) : undefined,
-        marketplaces: marketplaces && typeof marketplaces === 'string' ? marketplaces.split(',') : undefined
-      };
-
-      // Create pagination object
-      const pagination = {
-        page: page ? Number(page) : 1,
-        limit: limit ? Number(limit) : 10,
-      };
-
-      const products = await SellerController.sellerService.getSellerProducts(filter, pagination);
-      res.json(products);
-    } catch (error) {
-      console.error('Error in getSellerProducts:', error);
-      res.status(500).json({ error: 'Failed to get seller products' });
+    // Validate category if provided
+    if (category && !Object.values(Category.getAllTopLevelCategories()).includes(category as string)) {
+      return res.status(400).json({ error: 'Invalid category' });
     }
-  };
+
+    // Create filter object
+    const filter: ProductFilter = {
+      sellerId,
+      status: status ? Number(status) as ProductStatus : undefined,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      includeImages: includeImages ? Boolean(includeImages) : undefined,
+      category: category && typeof category === 'string' ? new Category(category) : undefined,
+      marketplaces: marketplaces && typeof marketplaces === 'string' ? marketplaces.split(',') : undefined
+    };
+
+    // Conditionally include pagination if limit is provided
+    const products = limit
+      ? await SellerController.sellerService.getSellerProducts(filter, { page: page ? Number(page) : 1, limit: Number(limit) })
+      : await SellerController.sellerService.getSellerProducts(filter);
+
+    res.json(products);
+  } catch (error) {
+    console.error('Error in getSellerProducts:', error);
+    res.status(500).json({ error: 'Failed to get seller products' });
+  }
+};
 
 
   getSellerProductById = async (req: Request, res: Response): Promise<void> => {

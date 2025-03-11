@@ -11,13 +11,22 @@ const ProductResponseSchema = z
   title: z.string(),
   description: z.string(),
   price: z.number(),
-  color: z.object({
-    primaryColor: z
-      .array(z.enum(Object.values(ProductColors) as [string, ...string[]])),
-    secondaryColor: z
-      .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
-      .nullable(),
-  }),
+  color:   z.object({
+      primaryColor: z
+        .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
+        .transform((colors) =>
+          colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors))
+        )
+        .nullable()
+        .catch(null),
+      secondaryColor: z
+        .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
+        .transform((colors) =>
+          colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors))
+        )
+        .nullable()
+        .catch(null),
+    }),
   // For listed_size, if it fails (e.g. receives "W36 L32") then fallback to null.
   listed_size: z
     .enum(Object.values(productSizes) as [string, ...string[]])
@@ -113,12 +122,13 @@ IMPORTANT: If ANY inferred placeholder is null and it is a PLACEHOLDER, it shoul
         {
           type: 'text',
           text: `
-Analyze the clothing item from the images below and output detailed attributes in JSON format.
+Analyze the clothing item from the following images and provide JSON with detailed attributes optimized for SEO.
 
-### Image Inputs:
-- **Front:** ${imageUrls[0]}
-- **Back:** ${imageUrls[1]}
-- **Detail:** ${imageUrls[2]}
+### **Task Instructions**:
+1. **Images to analyze:**
+   - Front: ${imageUrls[0]}
+   - Back: ${imageUrls[1]}
+   - Detail: ${imageUrls[2]}
 
 ### Analysis Steps: 
 1. **Determine Gender:** Choose "Menswear" or "Womenswear" (default to "Menswear" for unisex items).
@@ -127,8 +137,13 @@ ${CategoryHierarchy}
 3. **Extract Attributes & Build JSON:** Include:
     - **Title**: ${titleInstruction}
       ${titleFormat}
-   - **Description**: Follow the pattern:
-      "This [brand] [age] in [color] is size [size]. [Include additional detailed features]."
+   - **Description** (SEO-optimized format):  
+     - **First sentence:** A compelling 1-2 line summary using high-traffic keywords.  
+     - **Bullet points with details:**  
+       - **Era & Style:** Mention the decade (*1990s/Y2K*) and style category (*grunge, streetwear, retro*).  
+       - **Brand & Material:** Include recognized brands & primary material.  
+       - **Fit & Features:** Fit description (*baggy, cropped, slim*), notable design elements (*patchwork, embroidery, stripes*).  
+       - **Ideal Use Cases:** Styling suggestions (e.g., *“Perfect for layering with oversized blazers or casual streetwear looks”*).  
    - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
    - **Colors:**
        - **Primary:** Dominant colors (choose from: ${ProductColorsList}; map similar hues as needed)
@@ -161,6 +176,9 @@ Before finalizing your answer, carefully review each image for:
 ### Expectations:
 - Always guess the gender, category, and subcategory, even if uncertain.
 - Provide as much detail as possible.
+- Ensure there is sentence of the description that is **SEO-optimized** and compelling.
+- Use **high-traffic keywords** in titles and descriptions.
+- Do not predict on size if it is uncertain about it  
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
 
 ### IMPORTANT:
@@ -174,12 +192,20 @@ Before finalizing your answer, carefully review each image for:
   - Confusing similar materials (e.g., cotton blend vs 100% cotton)
   - Misidentifying decades (note: Y2K items span 1999-2004)
   - Inaccurate pricing (vintage band t-shirts command higher prices)
+- Spell out the sizes if they are letter sizes
+
+---
+Common mistakes to avoid:
+- Confusing similar materials (e.g., cotton blend vs 100% cotton)
+- Misidentifying decades (note: Y2K items are 1999-2004)
+- Inaccurate pricing (vintage band t-shirts command higher prices)
+- IF THE TITLE TEMPLATE IS EMPTY DO NOT RETURN TEMPLATE OPTIONS WITH @ symbols
 
 ### Example JSON Output - ONLY if template isn't provided:
 \`\`\`json
 {
-  "title": "Vintage 1990s Martinique carribean / Vacation Crewneck Sweatshirt",
-  "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.",
+  "title": "Vintage 1990s Levi’s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential",
+  "description": "Iconic 1990s Levi’s 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic. - Era & Style: Authentic 1990s vintage with a grunge and streetwear edge. - Brand & Material: Made by Levi’s, crafted from 100% durable cotton denim. - Fit & Features: High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly. - Ideal Use Cases: Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],
@@ -328,6 +354,7 @@ class ProductClassifier {
 export async function main(imageUrls: string[], titleTemplate: string): Promise<ProductResponse> {
   console.log('== Clothing Analysis using OpenAI ==');
   const classifier = new ProductClassifier();
+
   const result = await classifier.classifyThreeImages(imageUrls, titleTemplate);
   console.log('AI model returned:', result);
   return result;
