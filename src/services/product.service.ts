@@ -103,7 +103,7 @@ export class ProductService {
 
       // Save the response to the GeneratedResponse Database
       console.log(res);
-      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', seller: { user_id: sellerID } });
+      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', user_id: sellerID });
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
     } catch (error) {
@@ -379,7 +379,7 @@ export class ProductService {
     return savedProducts;
   }
 
-  async inferenceImages(images: ImageData[], titleTemplate: string) {
+  async inferenceImages(images: ImageData[], titleTemplate: string, sellerID: string) {
     try {
       const imageURLs = images.map((img) => img.url);
 
@@ -388,15 +388,24 @@ export class ProductService {
       });
 
       const enhancedResponse = res ? enhanceProductWithBrandMatch(res) : res;
+
+      const seller = await this.SellerService.getSellerById(sellerID);
+
+      if (!seller) {
+        throw new Error(`Seller with user_id ${sellerID} not found`);
+      }
+
       const response = plainToClass(GeneratedResponse, {
         ...enhancedResponse,
         images: images,
         status: 'draft',
-
+        seller: seller, // Pass the full Seller object
       });
+      console.log(response)
       await this.GeneratedResponseRepository.save(response);
       return response;
     } catch (error) {
+      console.error('Error during inference:', error);
       return null;
     }
   }

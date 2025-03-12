@@ -140,4 +140,8 @@ export class Product extends ProductBase {
 }
 
 @Entity()
-export class GeneratedResponse extends ProductBase {}
+export class GeneratedResponse extends ProductBase {
+  @ManyToOne(() => Seller, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'user_id' })
+  seller: Seller;
+}
