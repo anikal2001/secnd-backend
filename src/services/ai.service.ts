@@ -36,7 +36,7 @@ const ProductResponseSchema = z
   category: z.enum(Object.values(Category.getAllTopLevelCategories()) as [string, ...string[]]),
   subcategory: z.enum(Object.values(Category.getAllSubcategories()) as [string, ...string[]])
     .optional(),
-  material: z.string().nullable().catch(null),
+  material: z.enum(Object.values(Material) as [string, ...string[]]).nullable().catch(null),
   condition: z.string(),
   condition_notes: z.string().nullable().optional().catch(null),
   brand: z.string().nullable().catch(null),
@@ -138,8 +138,8 @@ ${CategoryHierarchy}
     - **Title**: ${titleInstruction}
       ${titleFormat}
    - **Description** (SEO-optimized format):  
-     - **First sentence:** A compelling 1-2 line summary using high-traffic keywords.  
-     - **Bullet points with details:**  
+     - **First sentence:** A 1-2 line summary using high-traffic keywords.
+     - **Bullet points with details:** (in new line)  
        - **Era & Style:** Mention the decade (*1990s/Y2K*) and style category (*grunge, streetwear, retro*).  
        - **Brand & Material:** Include recognized brands & primary material.  
        - **Fit & Features:** Fit description (*baggy, cropped, slim*), notable design elements (*patchwork, embroidery, stripes*).  

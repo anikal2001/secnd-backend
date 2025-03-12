@@ -379,7 +379,7 @@ export class ProductService {
     return savedProducts;
   }
 
-  async inferenceImages(images: ImageData[], titleTemplate: string, sellerID: string) {
+  async inferenceImages(images: ImageData[], titleTemplate: string, sellerID?: string) {
     try {
       const imageURLs = images.map((img) => img.url);
 
@@ -389,10 +389,13 @@ export class ProductService {
 
       const enhancedResponse = res ? enhanceProductWithBrandMatch(res) : res;
 
-      const seller = await this.SellerService.getSellerById(sellerID);
-
-      if (!seller) {
-        throw new Error(`Seller with user_id ${sellerID} not found`);
+      let seller = null;
+      if (sellerID) {
+        seller = await this.SellerService.getSellerById(sellerID);
+  
+        if (!seller) {
+          throw new Error(`Seller with user_id ${sellerID} not found`);
+        }
       }
 
       const response = plainToClass(GeneratedResponse, {
