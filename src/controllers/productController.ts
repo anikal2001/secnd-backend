@@ -307,7 +307,7 @@ export class ProductController {
         res.status(400).json({ message: "Request body must contain 'images' array with image_id and url for each image" });
         return;
       }
-      const products = await ProductController.productService.inferenceImages(images, req.body.titleTemplate, req.body.sellerID);
+      const products = await ProductController.productService.inferenceImages(images, req.body.titleTemplate, req.body.descriptionTemplate, req.body.sellerID);
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

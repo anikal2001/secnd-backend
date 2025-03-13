@@ -6,66 +6,62 @@ import { Category, categoryHierarchy } from '../utils/product/category';
 import { productSizes } from '../utils/product/size';
 
 const ProductResponseSchema = z
-.object({
-  // Assuming title, description, price and condition should be provided, so we leave those without fallback.
-  title: z.string(),
-  description: z.string(),
-  price: z.number(),
-  color:   z.object({
+  .object({
+    // Assuming title, description, price and condition should be provided, so we leave those without fallback.
+    title: z.string(),
+    description: z.string(),
+    price: z.number(),
+    color: z.object({
       primaryColor: z
         .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
-        .transform((colors) =>
-          colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors))
-        )
+        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)))
         .nullable()
         .catch(null),
       secondaryColor: z
         .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
-        .transform((colors) =>
-          colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors))
-        )
+        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)))
         .nullable()
         .catch(null),
     }),
-  // For listed_size, if it fails (e.g. receives "W36 L32") then fallback to null.
-  listed_size: z
-    .enum(Object.values(productSizes) as [string, ...string[]])
-    .nullable()
-    .catch(null),
-  gender: z.enum([Gender.Menswear, Gender.Womenswear]),
-  category: z.enum(Object.values(Category.getAllTopLevelCategories()) as [string, ...string[]]),
-  subcategory: z.enum(Object.values(Category.getAllSubcategories()) as [string, ...string[]])
-    .optional(),
-  material: z.enum(Object.values(Material) as [string, ...string[]]).nullable().catch(null),
-  condition: z.string(),
-  condition_notes: z.string().nullable().optional().catch(null),
-  brand: z.string().nullable().catch(null),
-  tags: z.array(z.string()),
-  age: z.string().nullable().catch(null),
-  item_style: z.string().nullable().catch(null),
-  fit_type: z.string().nullable().catch(null),
-  made_in: z.string().nullable().catch(null),
-  source: z
-    .array(z.enum(Object.values(ProductSource) as [string, ...string[]]))
-    .nullable()
-    .catch(null),
-  design: z.string().nullable().catch(null),
-  closure_type: z.string().nullable().catch(null),
-})
-.refine(
-  (data) =>
-    !data.subcategory ||
-    Category.validate(data.gender, data.category, data.subcategory),
-  {
+    // For listed_size, if it fails (e.g. receives "W36 L32") then fallback to null.
+    listed_size: z
+      .enum(Object.values(productSizes) as [string, ...string[]])
+      .nullable()
+      .catch(null),
+    gender: z.enum([Gender.Menswear, Gender.Womenswear]),
+    category: z.enum(Object.values(Category.getAllTopLevelCategories()) as [string, ...string[]]),
+    subcategory: z.enum(Object.values(Category.getAllSubcategories()) as [string, ...string[]]).optional(),
+    material: z
+      .enum(Object.values(Material) as [string, ...string[]])
+      .nullable()
+      .catch(null),
+    condition: z.string(),
+    condition_notes: z.string().nullable().optional().catch(null),
+    brand: z.string().nullable().catch(null),
+    tags: z.array(z.string()),
+    age: z.string().nullable().catch(null),
+    item_style: z.string().nullable().catch(null),
+    fit_type: z.string().nullable().catch(null),
+    made_in: z.string().nullable().catch(null),
+    source: z
+      .array(z.enum(Object.values(ProductSource) as [string, ...string[]]))
+      .nullable()
+      .catch(null),
+    design: z.string().nullable().catch(null),
+    closure_type: z.string().nullable().catch(null),
+  })
+  .refine((data) => !data.subcategory || Category.validate(data.gender, data.category, data.subcategory), {
     message: 'Invalid category/subcategory combination for gender.',
     path: ['product_subcategory'],
-  }
-);
-
+  });
 
 type ProductResponse = z.infer<typeof ProductResponseSchema>;
 
-function createThreeImageMessages(imageUrls: string[], titleTemplate: string): OpenAI.Chat.ChatCompletionMessageParam[] {
+function createThreeImageMessages(
+  imageUrls: string[],
+  titleTemplate?: string,
+  descriptionTemplate?: string,
+): OpenAI.Chat.ChatCompletionMessageParam[] {
   const ProductColorsList = Object.values(ProductColors).join(', ');
   const ProductMaterialsList = Object.values(Material).join(', ');
   const ProductSizesList = productSizes.join(', ');
@@ -78,6 +74,16 @@ function createThreeImageMessages(imageUrls: string[], titleTemplate: string): O
     ? `RECEIVED CUSTOM title template: ${titleTemplate}. Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}. 
     If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder`
     : `Compose a title using the default format (not provided CUSTOM template) below:`;
+
+  const descriptionInstruction = descriptionTemplate
+    ? `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce only one concise, SEO-friendly sentence that should replace the @descriptive_sentence placeholder. Do not include bullet points or additional details.`
+    : `Compose a description using the default format with bullet points as follows:
+- **Summary:** A concise 1-2 line overview using high-traffic keywords.
+- **Details:** A list of bullet points covering:
+  - Era & Style (e.g., "1990s grunge" or "Y2K streetwear"),
+  - Brand & Material,
+  - Fit & Features,
+  - Ideal Use Cases.`;
 
   // Define title formatting details
   const titleFormat = titleTemplate
@@ -137,13 +143,7 @@ ${CategoryHierarchy}
 3. **Extract Attributes & Build JSON:** Include:
     - **Title**: ${titleInstruction}
       ${titleFormat}
-   - **Description** (SEO-optimized format):  
-     - **First sentence:** A 1-2 line summary using high-traffic keywords.
-     - **Bullet points with details:** (in new line)  
-       - **Era & Style:** Mention the decade (*1990s/Y2K*) and style category (*grunge, streetwear, retro*).  
-       - **Brand & Material:** Include recognized brands & primary material.  
-       - **Fit & Features:** Fit description (*baggy, cropped, slim*), notable design elements (*patchwork, embroidery, stripes*).  
-       - **Ideal Use Cases:** Styling suggestions (e.g., *“Perfect for layering with oversized blazers or casual streetwear looks”*).  
+   - **Description** ${descriptionInstruction} 
    - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
    - **Colors:**
        - **Primary:** Dominant colors (choose from: ${ProductColorsList}; map similar hues as needed)
@@ -180,6 +180,8 @@ Before finalizing your answer, carefully review each image for:
 - Use **high-traffic keywords** in titles and descriptions.
 - Do not predict on size if it is uncertain about it  
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
+- If a custom description template is provided, return only the sentence that should be inserted for @descriptive_sentence in the final JSON.
+- Otherwise, produce the full description as per the default instructions.
 
 ### IMPORTANT:
 - **Placeholder Removal in Title:**  
@@ -308,8 +310,8 @@ class ProductClassifier {
     }
   }
 
-  async classifyThreeImages(imageUrls: string[], titleTemplate: string): Promise<ProductResponse> {
-    const messages = createThreeImageMessages(imageUrls, titleTemplate);
+  async classifyThreeImages(imageUrls: string[], titleTemplate?: string, descriptionTemplate?: string): Promise<ProductResponse> {
+    const messages = createThreeImageMessages(imageUrls, titleTemplate, descriptionTemplate);
 
     // Get relevant context from vector database
     const relevantContext = await this.getRagContext(imageUrls[0]);
@@ -351,11 +353,11 @@ class ProductClassifier {
 /**
  * Main function
  */
-export async function main(imageUrls: string[], titleTemplate: string): Promise<ProductResponse> {
+export async function main(imageUrls: string[], titleTemplate?: string, descriptionTemplate?: string): Promise<ProductResponse> {
   console.log('== Clothing Analysis using OpenAI ==');
   const classifier = new ProductClassifier();
 
-  const result = await classifier.classifyThreeImages(imageUrls, titleTemplate);
+  const result = await classifier.classifyThreeImages(imageUrls, titleTemplate, descriptionTemplate);
   console.log('AI model returned:', result);
   return result;
 }

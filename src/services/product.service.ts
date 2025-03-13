@@ -379,11 +379,11 @@ export class ProductService {
     return savedProducts;
   }
 
-  async inferenceImages(images: ImageData[], titleTemplate: string, sellerID?: string) {
+  async inferenceImages(images: ImageData[], titleTemplate?: string, descriptionTemplate?: string, sellerID?: string) {
     try {
       const imageURLs = images.map((img) => img.url);
 
-      const res = await main(imageURLs, titleTemplate).catch((err) => {
+      const res = await main(imageURLs, titleTemplate, descriptionTemplate).catch((err) => {
         console.error('Error occurred:', err);
       });
 
@@ -402,9 +402,8 @@ export class ProductService {
         ...enhancedResponse,
         images: images,
         status: 'draft',
-        seller: seller, // Pass the full Seller object
+        seller: seller,
       });
-      console.log(response)
       await this.GeneratedResponseRepository.save(response);
       return response;
     } catch (error) {
