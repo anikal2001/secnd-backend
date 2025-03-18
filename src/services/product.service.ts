@@ -231,6 +231,9 @@ export class ProductService {
       if (productData.status === undefined) {
         product.status = ProductStatus.active;
       }
+      if (productData.listed_size === "") {
+        product.listed_size = productData.listed_size === "" ? null : productData.listed_size;
+      }
 
       // Set the seller relationship
       if (productData.user_id) {
