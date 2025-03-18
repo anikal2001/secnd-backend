@@ -32,11 +32,33 @@ export interface TemplateConfig {
 /**
  * Zod schema for product response validation
  */
+export interface Measurement {
+  id: string;
+  label: string;
+  custom: string; // user override; if empty, display label
+  value?: number;
+  unit?: string;
+}
+
+export interface MeasurementsByCategory {
+  [key: string]: Measurement[];
+}
+
+// Create a Zod schema for the Measurement interface
+const MeasurementSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  custom: z.string(),
+  value: z.number().optional(),
+  unit: z.string().optional(),
+});
+
 export const ProductResponseSchema = z
   .object({
     // Assuming title, description, price and condition should be provided, so we leave those without fallback.
     title: z.string(),
     description: z.string(),
+    descriptionHtml: z.string().nullable().optional().catch(null),
     price: z.number(),
     color: z.object({
       primaryColor: z
@@ -76,7 +98,17 @@ export const ProductResponseSchema = z
       .catch(null),
     design: z.string().nullable().catch(null),
     closure_type: z.string().nullable().catch(null),
-    measurements: z.record(z.string(), z.string()).nullable().catch(null),
+    // Updated to use the Measurement interface for validation
+    measurements: z.union([
+      // Option 1: An array of Measurement objects
+      z.array(MeasurementSchema),
+      
+      // Option 2: A record where the key is a category and the value is an array of Measurement objects (MeasurementsByCategory)
+      z.record(z.string(), z.array(MeasurementSchema)),
+      
+      // Option 3: Allow null/undefined with a fallback
+      z.null()
+    ]).nullable().catch(null),
   })
   .refine((data) => !data.subcategory || Category.validate(data.gender, data.category, data.subcategory), {
     message: 'Invalid category/subcategory combination for gender.',
@@ -261,7 +293,8 @@ ${CategoryHierarchy}
 3. **Extract Attributes & Build JSON:** Include:
     - **Title**: ${titleInstruction}
       ${titleFormat}
-   - **Description** ${descriptionInstruction} 
+   - **Description** ${descriptionInstruction}
+   - **DescriptionHtml**: Provide the html version of the description 
    - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
    - **Colors:**
        - **Primary:** Dominant colors (choose from: ${ProductColorsList}; map similar hues as needed)
@@ -330,6 +363,7 @@ Common mistakes to avoid:
 {
   "title": "Vintage 1990s Levi's 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential",
   "description": "Iconic 1990s Levi's 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic. - Era & Style: Authentic 1990s vintage with a grunge and streetwear edge. - Brand & Material: Made by Levi's, crafted from 100% durable cotton denim. - Fit & Features: High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly. - Ideal Use Cases: Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.",
+  "descriptionHtml": "<h2>Iconic 1990s Levi&#39;s 501 High-Waisted Denim Jeans</h2><p>A must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a grunge and streetwear edge.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from 100% durable cotton denim.</li><li><strong>Fit &amp; Features:</strong> High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly.</li><li><strong>Ideal Use Cases:</strong> Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.</li></ul>",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],
@@ -352,11 +386,36 @@ Common mistakes to avoid:
   "fit_type": "slim",
   "design": "Single Stitch",
   "closure_type": "buttons",
-  "measurements": {
-    "chest": "21 inches",
-    "length": "27 inches",
-    "sleeve": "8 inches"
-  }
+  "measurements": [
+    {
+      id: "chest",
+      label: "Chest/Bust",
+      custom: "",
+      value: 54,
+      unit: "cm"
+    },
+    {
+      id: "length",
+      label: "Length",
+      custom: "Back Length",
+      value: 68,
+      unit: "cm"
+    },
+    {
+      id: "sleeve",
+      label: "Sleeve Length",
+      custom: "",
+      value: 63,
+      unit: "cm"
+    },
+    {
+      id: "shoulder",
+      label: "Shoulder Width",
+      custom: "",
+      value: 46,
+      unit: "cm"
+    }
+  ]
 }
 \`\`\`
 
@@ -365,6 +424,7 @@ Common mistakes to avoid:
 {
   "title": "@age @brand @design @style @category Size @size",
   "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.",
+  desdcriptionHtml: "<p>A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.</p>",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],

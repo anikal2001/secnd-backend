@@ -74,7 +74,7 @@ export class ProductService {
   async getProductById(id: string): Promise<Product | null> {
     const product = await ProductRepository.findOne({
       where: { product_id: id },
-      relations: ['imageURLS', 'seller', 'seller.user'],
+      relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
     });
 
     if (product) {
@@ -202,7 +202,6 @@ export class ProductService {
   }
 
   // Post Methods
-
   async createProduct(productData: any): Promise<Product | null> {
     try {
       console.log('Creating product:', productData);
@@ -212,27 +211,21 @@ export class ProductService {
         throw new Error('Picture IDs are required and must be an array');
       }
 
-      // Get the image URLs from the provided pictureIds
-      const images = await Promise.all(productData.pictureIds.map((id: string) => this.ImageService.findOne(id)));
-
-      // Filter out any null values and get URLs
-      const imageURLS = images.filter((img): img is { url: string } => img !== null).map((img) => img.url);
-
-      // Create the product with image URLs
-      const { pictureIds, ...restProductData } = productData;
-
       // Create a new product instance
       const product = new Product();
 
-      // Set basic product information
+      // Set basic product information - exclude pictureIds to handle separately
+      const { pictureIds, measurements, ...restProductData } = productData;
       Object.assign(product, restProductData);
 
       // Set status to active if not provided
       if (productData.status === undefined) {
         product.status = ProductStatus.active;
       }
-      if (productData.listed_size === "") {
-        product.listed_size = productData.listed_size === "" ? null : productData.listed_size;
+
+      // Set listed_size to null if empty string
+      if (productData.listed_size === '') {
+        product.listed_size = productData.listed_size === '' ? null : productData.listed_size;
       }
 
       // Set the seller relationship
@@ -247,20 +240,18 @@ export class ProductService {
         throw new Error('user_id is required to create a product');
       }
 
-      // Save the product to get an ID
+      // Save the product first to get an ID (without trying to handle relationships yet)
       const savedProduct = await ProductRepository.save(product);
 
-      // Update image associations
-      if (savedProduct) {
-        await Promise.all(
-          pictureIds.map((id: string, index: number) =>
-            this.ImageService.update(id, {
-              product_id: savedProduct.product_id,
-              image_type: index <= 2 ? index : 3,
-              product: savedProduct,
-            }),
-          ),
-        );
+      // Now handle image associations after product is saved
+      if (savedProduct && pictureIds && Array.isArray(pictureIds)) {
+        for (let i = 0; i < pictureIds.length; i++) {
+          const imageId = pictureIds[i];
+          await this.ImageService.update(imageId, {
+            product_id: savedProduct.product_id,
+            image_type: i <= 2 ? i : 3,
+          });
+        }
       }
 
       // Process marketplace data if provided
@@ -272,19 +263,15 @@ export class ProductService {
         await ProductRepository.save(savedProduct);
       }
 
-      if (productData.measurements) {
-        // Process measurements
-        const savedMeasurements = await this.MeasurementService.createMeasurementsForProduct(
-        productData.product_id,
-        productData.measurements,
-        );
+      // Process measurements if provided
+      if (measurements) {
+        await this.MeasurementService.createMeasurementsForProduct(savedProduct.product_id, measurements);
       }
-
 
       // Get the complete product with all relations
       const completeProduct = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
-        relations: ['imageURLS', 'seller', 'seller.user'],
+        relations: ['imageURLS', 'seller', 'seller.user', 'measurements'],
       });
 
       if (completeProduct) {
@@ -349,10 +336,7 @@ export class ProductService {
 
       if (productData.measurements) {
         // Process measurements
-        const savedMeasurements = await this.MeasurementService.createMeasurementsForProduct(
-        updatedProduct.product_id,
-        productData.measurements,
-        );
+        const savedMeasurements = await this.MeasurementService.createMeasurementsForProduct(updatedProduct.product_id, productData.measurements);
       }
 
       // Re-fetch marketplace listings and attach them.
@@ -401,7 +385,14 @@ export class ProductService {
     return savedProducts;
   }
 
-  async inferenceImages(images: ImageData[], titleTemplate?: string, descriptionTemplate?: string, sellerID?: string, exampleDescription?: string, tags?: string[]) {
+  async inferenceImages(
+    images: ImageData[],
+    titleTemplate?: string,
+    descriptionTemplate?: string,
+    sellerID?: string,
+    exampleDescription?: string,
+    tags?: string[],
+  ) {
     try {
       const imageURLs = images.map((img) => img.url);
 
@@ -414,7 +405,7 @@ export class ProductService {
       let seller = null;
       if (sellerID) {
         seller = await this.SellerService.getSellerById(sellerID);
-  
+
         if (!seller) {
           throw new Error(`Seller with user_id ${sellerID} not found`);
         }
