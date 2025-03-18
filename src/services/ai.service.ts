@@ -201,6 +201,7 @@ export function createImageAnalysisMessages(
   const CategoryHierarchy = Category.formatCategoryHierarchy();
 
   const forInferenceTags = tags || [];
+  console.log(forInferenceTags)
 
 
   // Create title instructions
@@ -306,7 +307,7 @@ ${CategoryHierarchy}
    - **Condition:** Use one of the options: ${ProductConditionsList}
    - **Brand:** Visible brand name, if present
    - **Gender:** As determined
-   - **Tags:** generate 13 SEO-friendly, relevant tags (e.g., "casual", "vintage"). Use only these tags if the array is not empty: ${forInferenceTags}.
+   - **Tags:** generate 13 SEO-friendly, relevant tags (e.g., "casual", "vintage"). Use only these tags if this array is not empty: ${forInferenceTags}.
    - **Age:** Inferred age (e.g., "1990s"); use only if you are 95% certain, otherwise set as null.
    - **Style:** Overall style (e.g., "vintage")
    - **Design:** Notable design elements (e.g., "flannel", "minimalist")
@@ -350,6 +351,7 @@ Before finalizing your answer, carefully review each image for:
 - Make sure most of the values are filled out unless very uncertain about the fields. The more information, the better. This is also for templates
 - If the title template is empty, do not return template options with @ symbols
 - If the option "@descriptive_sentence" is provided in the description template, replace it with the actual descriptive sentence. THIS IS MANDATORY
+- Make sure the tags are chosen only from this list ${forInferenceTags} if the array is not empty
 
 ---
 Common mistakes to avoid:
