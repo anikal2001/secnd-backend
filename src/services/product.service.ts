@@ -16,12 +16,14 @@ import { ImageData } from '../types/image';
 import { ProductStatus } from '../utils/products.enums';
 import { SellerService } from './seller.service';
 import { MarketplaceService } from './marketplace.service';
+import { MeasurementService } from './measurement.service';
 
 export class ProductService {
   private UserService: UserService = new UserService();
   private ImageService: ImageService = new ImageService();
   private SellerService: SellerService = new SellerService();
   private MarketplaceService: MarketplaceService = new MarketplaceService();
+  private MeasurementService: MeasurementService = new MeasurementService();
   private GeneratedResponseRepository = AppDataSource.getRepository(GeneratedResponse);
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
@@ -267,6 +269,15 @@ export class ProductService {
         await ProductRepository.save(savedProduct);
       }
 
+      if (productData.measurements) {
+        // Process measurements
+        const savedMeasurements = await this.MeasurementService.createMeasurementsForProduct(
+        productData.product_id,
+        productData.measurements,
+        );
+      }
+
+
       // Get the complete product with all relations
       const completeProduct = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
@@ -297,7 +308,7 @@ export class ProductService {
       // Get existing product (include marketplaceListings for processing removals)
       const existingProduct = await ProductRepository.findOne({
         where: { product_id: id },
-        relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings'],
+        relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
       });
 
       if (!existingProduct) {
@@ -332,6 +343,14 @@ export class ProductService {
 
       // Save the updated product.
       const updatedProduct = await ProductRepository.save(existingProduct);
+
+      if (productData.measurements) {
+        // Process measurements
+        const savedMeasurements = await this.MeasurementService.createMeasurementsForProduct(
+        updatedProduct.product_id,
+        productData.measurements,
+        );
+      }
 
       // Re-fetch marketplace listings and attach them.
       const marketplaceListings = await this.MarketplaceService.findByProductId(updatedProduct.product_id);
@@ -379,11 +398,11 @@ export class ProductService {
     return savedProducts;
   }
 
-  async inferenceImages(images: ImageData[], titleTemplate?: string, descriptionTemplate?: string, sellerID?: string) {
+  async inferenceImages(images: ImageData[], titleTemplate?: string, descriptionTemplate?: string, sellerID?: string, exampleDescription?: string, tags?: string[]) {
     try {
       const imageURLs = images.map((img) => img.url);
 
-      const res = await main(imageURLs, titleTemplate, descriptionTemplate).catch((err) => {
+      const res = await main(imageURLs, titleTemplate, descriptionTemplate, exampleDescription, tags).catch((err) => {
         console.error('Error occurred:', err);
       });
 

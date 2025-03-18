@@ -20,6 +20,7 @@ import { ProductInteraction } from './product_interactions.entity';
 import { MarketplaceListing } from './marketplace.entity';
 
 import { productSizes, ProductSize } from '../utils/product/size';
+import { Measurement } from './measurement.entity';
 
 // Abstract base class for Product
 export abstract class ProductBase {
@@ -137,6 +138,11 @@ export class Product extends ProductBase {
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   seller: Seller;
+
+  @OneToMany(() => Measurement, measurement => measurement.product, {
+    cascade: true
+  })
+  measurements: Measurement[];
 }
 
 @Entity()
