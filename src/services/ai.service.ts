@@ -331,7 +331,6 @@ Before finalizing your answer, carefully review each image for:
 - Provide as much detail as possible.
 - Ensure there is sentence of the description that is **SEO-optimized** and compelling.
 - Use **high-traffic keywords** in titles and descriptions.
-- Do not predict on size if it is uncertain about it  
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
 - If a custom description template is provided, return only the sentence that should be inserted for @descriptive_sentence in the final JSON.
 - Otherwise, produce the full description as per the default instructions.
