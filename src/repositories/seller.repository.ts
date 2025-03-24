@@ -63,6 +63,8 @@ export const SellerRepository = AppDataSource.getRepository(Seller).extend({
       } else {
         // Still join marketplaceListings so we can format them later
         queryBuilder = queryBuilder.leftJoinAndSelect('product.marketplaceListings', 'marketplaceListings');
+        // Get all measurements associated to products
+        queryBuilder = queryBuilder.leftJoinAndSelect('product.measurements', 'measurements');
       }
 
       // Get total count before pagination
