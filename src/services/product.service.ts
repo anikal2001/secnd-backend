@@ -158,28 +158,49 @@ export class ProductService {
 
   async _uploadAndSaveImage(image: Express.Multer.File): Promise<{ image_id: string; url: string }> {
     try {
-      // Create a unique filename with original extension
-      const fileExt = image.originalname.split('.').pop();
-      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Validate file type
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg', 'image/heic'];
+      if (!allowedMimeTypes.includes(image.mimetype)) {
+        throw new Error('Invalid file type. Only JPEG, PNG, GIF, HEIC and WebP images are allowed.');
+      }
 
-      // Set proper content type based on file mimetype
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (image.size > maxSize) {
+        throw new Error('File too large. Maximum file size is 5MB.');
+      }
+
+      // Create a unique filename with original extension
+      const fileExt = image.originalname.split('.').pop()?.toLowerCase();
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      if (!fileExt || !allowedExtensions.includes(fileExt)) {
+        throw new Error('Invalid file extension');
+      }
+
+      // Generate random filename to prevent path traversal attacks
+      const filename = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+
+      // Set proper content type and security settings
       const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
-        Region: process.env.AWS_REGION,
         Key: filename,
         Body: image.buffer,
         ContentType: image.mimetype,
-        ACL: 'public-read' as ObjectCannedACL,
+        ACL: 'private',
+        ServerSideEncryption: 'AES256',
       };
 
       // Upload to S3
       await S3.send(new PutObjectCommand(params));
-      const command = new GetObjectCommand(params);
-      const url = 'https://dq534dzir8764.cloudfront.net/' + filename;
-      // const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
 
-      // // Get a public URL instead of a signed URL
-      // const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${filename}`;
+      // Generate signed URL with short expiration
+      const getCommand = new GetObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: filename,
+      });
+
+      // Use pre-signed URL with short expiration
+      const url = await getSignedUrl(S3, getCommand, { expiresIn: 3600 });
 
       // Save to database
       const savedImage = await this.ImageService.create({
@@ -395,7 +416,6 @@ export class ProductService {
   ) {
     try {
       const imageURLs = images.map((img) => img.url);
-
       const res = await main(imageURLs, titleTemplate, descriptionTemplate, exampleDescription, tags).catch((err) => {
         console.error('Error occurred:', err);
       });

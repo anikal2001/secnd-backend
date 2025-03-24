@@ -1,6 +1,7 @@
 import express from "express";
-export const Router = express.Router();
 import UserController from "../controllers/userController";
+
+export const Router = express.Router();
 const userController = new UserController();
 
 Router.get("/get-users", userController.getAllUsers);
