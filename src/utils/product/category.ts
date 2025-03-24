@@ -205,6 +205,93 @@ export class Category {
 
     return result.trim();
   }
+
+  /**
+   * Find the correct category for a subcategory based on our hierarchy
+   * @param gender Gender enum value
+   * @param subcategory The subcategory to find the parent for
+   * @returns The correct category name, or undefined if not found
+   */
+  static findCorrectCategoryForSubcategory(gender: Gender, subcategory: string): string | undefined {
+    // Handle known special cases first
+    if (subcategory === 'Vests') {
+      console.log('Special case detected: Vests is always under Tops category');
+      return 'Tops';
+    }
+    
+    // Convert Menswear/Womenswear to men/women prefix
+    const genderPrefix = gender === Gender.Menswear ? 'men' : 'women';
+    const normalizeValue = (str: string) => str.replace(/-/g, '').replace(/\s+/g, '_').toLowerCase();
+    const targetValue = normalizeValue(subcategory);
+    
+    // Check each top-level category
+    const topLevelCategories = this.getCategories(gender);
+    
+    for (const category of topLevelCategories) {
+      const key = `${genderPrefix}_${category.toLowerCase()}` as CategoryKey;
+      const rootCategories = categoryHierarchy[key];
+      
+      if (!rootCategories) continue;
+      
+      // Search through this category tree
+      const found = this.searchCategoryTree(rootCategories, targetValue, normalizeValue);
+      if (found) {
+        return category;
+      }
+    }
+    
+    return undefined;
+  }
+  
+  /**
+   * Get a safe, valid category for a given subcategory - guaranteed to never return null
+   * Will try different strategies to find a valid category, with fallbacks
+   * @param gender Gender enum value
+   * @param subcategory The subcategory to find a category for
+   * @param originalCategory Optional original category to try first
+   * @returns A guaranteed valid category string
+   */
+  static getSafeCategory(gender: Gender, subcategory: string, originalCategory?: string): string {
+    // Strategy 1: Try the original category if provided
+    if (originalCategory && this.validate(gender, originalCategory, subcategory)) {
+      return originalCategory;
+    }
+    
+    // Strategy 2: Try to find the correct category from our hierarchy
+    const correctCategory = this.findCorrectCategoryForSubcategory(gender, subcategory);
+    if (correctCategory && this.validate(gender, correctCategory, subcategory)) {
+      console.log(`Found correct category for ${subcategory}: ${correctCategory}`);
+      return correctCategory;
+    }
+    
+    // Strategy 3: Use a safe default based on gender
+    // For simplicity, we'll just use 'Tops' as a default for both genders
+    // In a real system, you might have different defaults based on gender or subcategory patterns
+    const defaultCategory = gender === Gender.Menswear ? 'Tops' : 'Tops';
+    console.log(`No valid category found for ${subcategory}. Using default: ${defaultCategory}`);
+    return defaultCategory;
+  }
+
+  /**
+   * Recursive helper to search through category tree
+   * @private
+   */
+  private static searchCategoryTree(categories: Category[], targetValue: string, normalizeValue: (s: string) => string): boolean {
+    for (const cat of categories) {
+      // Check if current category matches
+      if (normalizeValue(cat.label) === targetValue) {
+        return true;
+      }
+      
+      // Check subcategories if any
+      if (cat.sub.length > 0) {
+        const found = this.searchCategoryTree(cat.sub, targetValue, normalizeValue);
+        if (found) return true;
+      }
+    }
+    
+    return false;
+  }
 }
 
 //----------------------------------------------------------------

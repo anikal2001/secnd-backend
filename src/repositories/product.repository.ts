@@ -82,6 +82,15 @@ export const ProductRepository = AppDataSource.getRepository(Product).extend({
       queryBuilder.andWhere('product.condition = :condition', { condition: filter.condition });
     }
     return queryBuilder.getMany();
-    
+  },
+  
+  async deleteProduct(productId: string): Promise<boolean> {
+    try {
+      const result = await this.delete({ product_id: productId });
+      return result.affected !== null && result.affected !== undefined && result.affected > 0;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      return false;
+    }
   }
 });

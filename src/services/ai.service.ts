@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import { Gender, ProductColors, ProductCondition, Material, ProductSource } from '../utils/products.enums';
 import { Category, categoryHierarchy } from '../utils/product/category';
 import { productSizes } from '../utils/product/size';
+import { ChatCompletion } from 'openai/resources/chat';
 
 const ProductResponseSchema = z
   .object({
@@ -23,8 +24,7 @@ const ProductResponseSchema = z
         .nullable()
         .catch(null),
     }),
-    // For listed_size, if it fails (e.g. receives "W36 L32") then fallback to null.
-    listed_size: z
+    size: z
       .enum(Object.values(productSizes) as [string, ...string[]])
       .nullable()
       .catch(null),
@@ -49,6 +49,23 @@ const ProductResponseSchema = z
       .catch(null),
     design: z.string().nullable().catch(null),
     closure_type: z.string().nullable().catch(null),
+  })
+  // Transform to correct category based on subcategory before validation
+  // This transformation guarantees that we'll never have a null category
+  .transform((data) => {
+    // Only proceed if we have both gender and subcategory
+    if (!data.gender || !data.subcategory) return data;
+
+    // Use our safe category method that handles special cases and provides fallbacks
+    const safeCategory = Category.getSafeCategory(data.gender, data.subcategory, data.category);
+
+    // Log the change if needed
+    if (safeCategory !== data.category) {
+      console.log(`Auto-correcting category for ${data.subcategory} from ${data.category || 'undefined'} to ${safeCategory}`);
+    }
+
+    // Return the data with the safe category
+    return { ...data, category: safeCategory };
   })
   .refine((data) => !data.subcategory || Category.validate(data.gender, data.category, data.subcategory), {
     message: 'Invalid category/subcategory combination for gender.',
@@ -79,9 +96,9 @@ function createThreeImageMessages(
     ? `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce only one concise, SEO-friendly sentence that should replace the @descriptive_sentence placeholder. Do not include bullet points or additional details.`
     : `Compose a description using the default format with bullet points as follows:
 - **Summary:** A concise 1-2 line overview using high-traffic keywords.
-- **Details:** A list of bullet points covering:
+- **Details:** A list of bullet points covering: (put each bullet point on a new line)
   - Era & Style (e.g., "1990s grunge" or "Y2K streetwear"),
-  - Brand & Material,
+  - Brand & Material
   - Fit & Features,
   - Ideal Use Cases.`;
 
@@ -207,14 +224,14 @@ Common mistakes to avoid:
 \`\`\`json
 {
   "title": "Vintage 1990s Levi’s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential",
-  "description": "Iconic 1990s Levi’s 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic. - Era & Style: Authentic 1990s vintage with a grunge and streetwear edge. - Brand & Material: Made by Levi’s, crafted from 100% durable cotton denim. - Fit & Features: High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly. - Ideal Use Cases: Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.",
+  "description": "Iconic 1990s Levi’s 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.\\n - Era & Style: Authentic 1990s vintage with a grunge and streetwear edge.\\n - Brand & Material: Made by Levi’s, crafted from 100% durable cotton denim.\\n - Fit & Features: High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly.\\n - Ideal Use Cases: Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],
     "secondaryColor": null
   },
   "material": "cotton",
-  "listed_size": "M",
+  "size": "M",
   "category": "Tops",
   "subcategory": "Polo",
   "condition": "new_with_tags",
@@ -237,14 +254,14 @@ Common mistakes to avoid:
 \`\`\`json
 {
   "title": "@age @brand @design @style @category Size @size",
-  "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.",
+  "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. \\n Classic fit with ribbed collar and cuffs. \\n",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],
     "secondaryColor": null
   },
   "material": "cotton",
-  "listed_size": "M",
+  "size": "M",
   "category": "Tops",
   "subcategory": "Polo",
   "condition": "new_with_tags",
@@ -323,13 +340,18 @@ class ProductClassifier {
       });
     }
 
-    // Make classification with context
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: messages,
-      max_tokens: 1000,
-      temperature: 0,
-    });
+    let response: ChatCompletion;
+    try {
+      response = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: messages,
+        max_tokens: 1000,
+        temperature: 0,
+      });
+    } catch (error) {
+      console.error('Error during AI inference:', error);
+      throw new Error('Failed to classify product');
+    }
 
     const rawJson = response.choices[0].message?.content?.replace(/```json\n?|```/g, '').trim();
 

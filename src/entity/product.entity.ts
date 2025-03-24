@@ -130,13 +130,14 @@ export abstract class ProductBase {
 
 @Entity()
 export class Product extends ProductBase {
-  @OneToOne(() => Product, (product) => product.product_id)
-  @JoinColumn({ name: 'product_id' })
-  product: Product;
-
+  // Removed self-referencing OneToOne relationship which could be causing deletion issues
+  
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   seller: Seller;
+
+  @Column({ nullable: true })
+  user_id: string;
 }
 
 @Entity()
@@ -144,4 +145,7 @@ export class GeneratedResponse extends ProductBase {
   @ManyToOne(() => Seller, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'user_id' })
   seller: Seller;
+
+  @Column({ nullable: true })
+  user_id: string;
 }
