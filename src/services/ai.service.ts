@@ -29,6 +29,20 @@ export interface TemplateConfig {
   attributes: Record<string, TemplateAttribute>;
 }
 
+export interface TemplateSettings {
+  mode?: 'strict' | 'hybrid' | 'ai';
+  excludedTerms?: string[];
+  positionRules?: { 
+    noTermsAtStart: string[]; 
+    noTermsAtEnd: string[] 
+  };
+  structurePreset?: 'custom' | 'brand_first' | 'product_type_first' | 'keywords_first' | 'keywords_last';
+  keywordFormat?: 'comma' | 'pipe' | 'sentence' | 'hashtags';
+  aiRewriteLevel?: number;
+  freeTextDescription?: string;
+  fallbackBehavior?: string;
+}
+
 /**
  * Zod schema for product response validation
  */
@@ -185,12 +199,10 @@ export function processDescriptionTemplate(template: string, descriptiveSentence
     .trim();
 }
 
-/**
- * Creates messages for image analysis with templates
- */
 export function createImageAnalysisMessages(
   imageUrls: string[],
   templateConfig: TemplateConfig,
+  templateSettings: TemplateSettings,
   tags?: string[]
 ): OpenAI.Chat.ChatCompletionMessageParam[] {
   const ProductColorsList = Object.values(ProductColors).join(', ');
@@ -201,39 +213,126 @@ export function createImageAnalysisMessages(
   const CategoryHierarchy = Category.formatCategoryHierarchy();
 
   const forInferenceTags = tags || [];
-  console.log(forInferenceTags)
 
+  // Get template mode and settings
+  const {
+    mode = 'hybrid', 
+    excludedTerms = [],
+    positionRules = { noTermsAtStart: [], noTermsAtEnd: [] },
+    structurePreset = 'custom',
+    keywordFormat = 'comma',
+    aiRewriteLevel = 50,
+    freeTextDescription = '',
+    fallbackBehavior = 'template_only'
+  } = templateSettings || {};
 
-  // Create title instructions
+  // Create title instructions based on template mode
   const titleTemplate = templateConfig.title?.content || '';
-  const titleInstruction = titleTemplate
-    ? `RECEIVED CUSTOM title template: ${titleTemplate}. Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}. 
-    If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder`
-    : `Compose a title using the default format (not provided CUSTOM template) below:`;
+  let titleInstruction = '';
+  
+  switch (mode) {
+    case 'strict':
+      titleInstruction = titleTemplate
+        ? `STRICT MODE: Use exactly this title template: "${titleTemplate}". Replace placeholders with values but preserve the exact structure and order. Never modify the template structure itself.`
+        : `Compose a descriptive title based on the item's attributes.`;
+      break;
+      
+    case 'ai':
+      titleInstruction = `AI-DRIVEN MODE (Level: ${aiRewriteLevel}%): ${titleTemplate 
+        ? `Use this template as inspiration: "${titleTemplate}", but optimize freely for SEO and readability.` 
+        : `Create an optimized title that highlights the most marketable features of this item.`}
+        ${freeTextDescription ? `Follow this guidance: "${freeTextDescription}"` : ''}`;
+      break;
+      
+    case 'hybrid':
+    default:
+      titleInstruction = titleTemplate
+        ? `HYBRID MODE: Use this template: "${titleTemplate}". Text inside [[double brackets]] must remain exactly as written. Other placeholders can be optimized while maintaining their semantic meaning. AI influence level: ${aiRewriteLevel}%.`
+        : `Compose a title that balances structure with natural language flow.`;
+  }
 
-  // Create description instructions
+  // Add structure preset instructions
+  if (structurePreset !== 'custom' && mode !== 'strict') {
+    switch (structurePreset) {
+      case 'brand_first':
+        titleInstruction += ` Structure the title with the brand name first, followed by other attributes.`;
+        break;
+      case 'product_type_first':
+        titleInstruction += ` Start the title with the product type/subcategory, followed by other attributes.`;
+        break;
+      case 'keywords_first':
+        titleInstruction += ` Place important keywords at the beginning of the title for better visibility.`;
+        break;
+      case 'keywords_last':
+        titleInstruction += ` Place important keywords at the end of the title.`;
+        break;
+    }
+  }
+
+  // Add excluded terms instructions
+  if (excludedTerms.length > 0) {
+    titleInstruction += ` NEVER include these terms in the title: ${excludedTerms.join(', ')}.`;
+    
+    // Add position rules
+    if (positionRules.noTermsAtStart.length > 0) {
+      titleInstruction += ` Don't start the title with: ${positionRules.noTermsAtStart.join(', ')}.`;
+    }
+    if (positionRules.noTermsAtEnd.length > 0) {
+      titleInstruction += ` Don't end the title with: ${positionRules.noTermsAtEnd.join(', ')}.`;
+    }
+  }
+
+  // Create description instructions based on template mode
   const descriptionTemplate = templateConfig.description?.content || '';
   const exampleDescription = templateConfig.exampleDescription || '';
   
   let descriptionInstruction = '';
-  console.log('descriptionTemplate:', descriptionTemplate);
-  if (descriptionTemplate) {
-    descriptionInstruction = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce only one concise, SEO-friendly sentence that should replace the @descriptive_sentence placeholder. Do not include bullet points or additional details.`;
-    if (exampleDescription) {
-      descriptionInstruction += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
+  
+  switch (mode) {
+    case 'strict':
+      if (descriptionTemplate) {
+        descriptionInstruction = `STRICT MODE: Use exactly this description template: "${descriptionTemplate}". Replace @descriptive_sentence with a single informative sentence that captures the item's key features. Do not modify the template structure.`;
+      } else {
+        descriptionInstruction = `Create a structured description with a concise summary and bullet points for details.`;
+      }
+      break;
+      
+    case 'ai':
+      descriptionInstruction = `AI-DRIVEN MODE (Level: ${aiRewriteLevel}%): ${descriptionTemplate 
+        ? `Use this template as a starting point: "${descriptionTemplate}", but optimize freely for conversion and SEO.` 
+        : `Create a compelling, SEO-optimized description that highlights the most appealing aspects of this item.`}
+        ${freeTextDescription ? `Follow this guidance: "${freeTextDescription}"` : ''}`;
+      break;
+      
+    case 'hybrid':
+    default:
+      if (descriptionTemplate) {
+        descriptionInstruction = `HYBRID MODE: Use this template: "${descriptionTemplate}". Text inside [[double brackets]] must remain exactly as written. Replace @descriptive_sentence with a compelling sentence that captures the item's essence. AI influence level: ${aiRewriteLevel}%.`;
+      } else {
+        descriptionInstruction = `Create a description that balances structure with natural language flow. Start with a compelling overview sentence, then include key details in bullet points.`;
+      }
+  }
+
+  // Add keyword formatting instructions
+  if (mode !== 'strict' && descriptionTemplate) {
+    switch (keywordFormat) {
+      case 'comma':
+        descriptionInstruction += ` Format any keyword lists as comma-separated values (e.g., "vintage, retro, classic").`;
+        break;
+      case 'pipe':
+        descriptionInstruction += ` Format any keyword lists with pipe separators (e.g., "vintage | retro | classic").`;
+        break;
+      case 'sentence':
+        descriptionInstruction += ` Format any keyword lists in sentence style without separators (e.g., "vintage retro classic").`;
+        break;
+      case 'hashtags':
+        descriptionInstruction += ` Format any keyword lists as hashtags (e.g., "#vintage #retro #classic").`;
+        break;
     }
-  } else {
-    descriptionInstruction = `Compose a description using the default format with bullet points as follows:
-- **Summary:** A concise 1-2 line overview using high-traffic keywords.
-- **Details:** A list of bullet points covering:
-  - Era & Style (e.g., "1990s grunge" or "Y2K streetwear"),
-  - Brand & Material,
-  - Fit & Features,
-  - Ideal Use Cases.`;
-    
-    if (exampleDescription) {
-      descriptionInstruction += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
-    }
+  }
+
+  if (exampleDescription) {
+    descriptionInstruction += `\n\nReference this example for tone and style: "${exampleDescription}"`;
   }
 
   // Define title formatting details
@@ -251,6 +350,7 @@ ${titleTemplate}
 
 IMPORTANT: If ANY inferred placeholder is null and it is a PLACEHOLDER, it shouldn't show up in the title template that you return, and you should leave it out.
  - For example: if the format is "@age @brand" and your inferred age is null, the returned title should just be "@brand" and "@age" should be left out.
+ - For text inside [[double brackets]], always preserve it exactly as written, never remove it.
 `
     : `
 - Vintage [age/decade] [brand/text] / [subcategory] / [fit type/design] / [style descriptor 1] [/ [style descriptor 2]]
@@ -271,7 +371,7 @@ IMPORTANT: If ANY inferred placeholder is null and it is a PLACEHOLDER, it shoul
     {
       role: 'system',
       content:
-        'You are an advanced clothing analysis assistant. Your role is to analyze clothing images step-by-step and produce detailed JSON output.',
+        'You are an advanced clothing analysis assistant specializing in template-based product listings. You analyze images and produce detailed JSON output that follows template settings precisely.',
     },
     {
       role: 'user',
@@ -279,7 +379,7 @@ IMPORTANT: If ANY inferred placeholder is null and it is a PLACEHOLDER, it shoul
         {
           type: 'text',
           text: `
-Analyze the clothing item from the following images and provide JSON with detailed attributes optimized for SEO.
+Analyze the clothing item from the following images and provide JSON with detailed attributes following the specified template mode: ${mode.toUpperCase()}.
 
 ### **Task Instructions**:
 1. **Images to analyze:**
@@ -294,8 +394,8 @@ ${CategoryHierarchy}
 3. **Extract Attributes & Build JSON:** Include:
     - **Title**: ${titleInstruction}
       ${titleFormat}
-   - **Description** ${descriptionInstruction}
-   - **DescriptionHtml**: Provide the html version of the description 
+   - **Description**: ${descriptionInstruction}
+   - **DescriptionHtml**: Provide the html version of the description
    - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
    - **Colors:**
        - **Primary:** Dominant colors (choose from: ${ProductColorsList}; map similar hues as needed)
@@ -317,6 +417,17 @@ ${CategoryHierarchy}
    - **Source:** List of two sources max. (e.g., "Vintage", "New"): Choose from: ${ProductSourceList}
    - **Condition Notes:** Specific details regarding the condition that would be essential for the buyer to know.
    - **Measurements:** Any visible or relevant measurements (e.g., chest, length, sleeve, etc.)
+
+### Template Mode Specific Instructions:
+${mode === 'strict' 
+  ? '- STRICT MODE: Follow templates exactly, preserving all structure and placeholders.\n- Replace placeholders with values but never change the structure.\n- If a template includes [[fixed text]], preserve it exactly.\n- If a value is null, remove its placeholder entirely.'
+  : mode === 'ai'
+  ? '- AI-DRIVEN MODE: Use templates as guidance but optimize freely for SEO and conversion.\n- Balance the provided template with creativity based on the AI rewrite level.\n- Focus on creating compelling, high-converting content.\n- Use the free text description as guidance for tone and style.'
+  : '- HYBRID MODE: Balance structure with optimization.\n- Preserve [[fixed text]] exactly as written.\n- Optimize other parts of the template while maintaining semantic meaning.\n- Apply the specified AI rewrite level, keyword format, and structure preferences.'
+}
+
+### Fallback Behavior:
+If you encounter difficulty generating content that matches the template requirements, follow this fallback behavior: ${fallbackBehavior.replace(/_/g, ' ')}.
 
 ### Detailed Inspection Guidelines:
 Before finalizing your answer, carefully review each image for:
@@ -340,8 +451,16 @@ Before finalizing your answer, carefully review each image for:
   When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title. Do not leave any extra spaces or tokens.  
   - **Example:**  
     If the title template is "@age @brand @design @style @category Size @size" and @age is null and @brand is null, the final title should be "@design @style @category Size @size" without extra spaces.
+- **Fixed Text Preservation:**
+  Any text enclosed in [[double brackets]] should be preserved exactly as written, regardless of template mode.
 - **Do Not Substitute Placeholders:**  
   If a template is provided, do not replace any placeholder tokens with their actual values in the output JSON. The output title should preserve the tokens for non-null values and exclude tokens corresponding to null attributes.
+- **Keyword Formatting:**
+  Format any keyword lists according to the specified format: ${keywordFormat.replace(/_/g, ' ')}.
+- **Structure Preference:**
+  Follow the structure preset preference: ${structurePreset.replace(/_/g, ' ')}.
+- **Excluded Terms:**
+  Never include these terms in the title or at the specified positions: ${excludedTerms.join(', ')}.
 - Avoid common mistakes such as:
   - Confusing similar materials (e.g., cotton blend vs 100% cotton)
   - Misidentifying decades (note: Y2K items span 1999-2004)
@@ -425,7 +544,7 @@ Common mistakes to avoid:
 {
   "title": "@age @brand @design @style @category Size @size",
   "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.",
-  desdcriptionHtml: "<p>A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.</p>",
+  "descriptionHtml": "<p>A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.</p>",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],
@@ -448,11 +567,22 @@ Common mistakes to avoid:
   "fit_type": "slim",
   "design": "Single Stitch",
   "closure_type": "buttons",
-  "measurements": {
-    "chest": "21 inches",
-    "length": "27 inches",
-    "sleeve": "8 inches"
-  }
+  "measurements": [
+    {
+      id: "chest",
+      label: "Chest/Bust",
+      custom: "",
+      value: 54,
+      unit: "cm"
+    },
+    {
+      id: "length",
+      label: "Length",
+      custom: "Back Length",
+      value: 68,
+      unit: "cm"
+    }
+  ]
 }
 \`\`\`
 Ensure that all placeholders remain intact during analysis. IF A TEMPLATE IS PROVIDED, DO NOT REPLACE THE PLACEHOLDERS WITH ACTUAL VALUES; however, when outputting the final title, any placeholder corresponding to a null value must be completely removed from the title string.
@@ -468,14 +598,14 @@ Ensure that all placeholders remain intact during analysis. IF A TEMPLATE IS PRO
 }
 
 /**
- * Create function for three-image messages
- * This is a direct replacement for the original createThreeImageMessages function
+ * Create function for three-image messages with template settings
  */
 export function createThreeImageMessages(
   imageUrls: string[],
   titleTemplate?: string,
   descriptionTemplate?: string,
   exampleDescription?: string,
+  templateSettings?: TemplateSettings,
   tags?: string[]
 ): OpenAI.Chat.ChatCompletionMessageParam[] {
   // Create template config from parameters
@@ -486,11 +616,20 @@ export function createThreeImageMessages(
     attributes: {},
   };
   
-  return createImageAnalysisMessages(imageUrls, templateConfig, tags);
+  return createImageAnalysisMessages(imageUrls, templateConfig, templateSettings || {
+    mode: 'hybrid',
+    excludedTerms: [],
+    positionRules: { noTermsAtStart: [], noTermsAtEnd: [] },
+    structurePreset: 'custom',
+    keywordFormat: 'comma',
+    aiRewriteLevel: 50,
+    freeTextDescription: '',
+    fallbackBehavior: 'template_only'
+  }, tags);
 }
 
 /**
- * Enhanced ProductClassifier class
+ * Enhanced ProductClassifier class with template settings support
  */
 export class ProductClassifier {
   private openai: OpenAI;
@@ -533,10 +672,18 @@ export class ProductClassifier {
     titleTemplate?: string, 
     descriptionTemplate?: string,
     exampleDescription?: string,
+    templateSettings?: TemplateSettings,
     tags?: string[]
   ): Promise<ProductResponse> {
-    // Get messages using new template system
-    const messages = createThreeImageMessages(imageUrls, titleTemplate, descriptionTemplate, exampleDescription, tags);
+    // Get messages using new template system with settings
+    const messages = createThreeImageMessages(
+      imageUrls, 
+      titleTemplate, 
+      descriptionTemplate, 
+      exampleDescription, 
+      templateSettings,
+      tags
+    );
 
     // Get relevant context from vector database
     const relevantContext = await this.getRagContext(imageUrls[0]);
@@ -567,9 +714,12 @@ export class ProductClassifier {
     
     // Process description template if necessary
     if (descriptionTemplate && parsedContent.description) {
-      // In this case, the description is likely just the descriptive sentence
-      // We need to insert it into the template
-      parsedContent.description = processDescriptionTemplate(descriptionTemplate, parsedContent.description);
+      // The response handling depends on template mode
+      if (templateSettings?.mode === 'strict') {
+        // In strict mode, we need to insert the descriptive sentence into the template
+        parsedContent.description = processDescriptionTemplate(descriptionTemplate, parsedContent.description);
+      }
+      // For AI and hybrid modes, the model should have already processed the template appropriately
     }
     
     return ProductResponseSchema.parse(parsedContent);
@@ -585,70 +735,17 @@ export class ProductClassifier {
 }
 
 /**
- * Functions for template management
- */
-
-/**
- * Generate a unique ID for templates
- */
-export function generateUniqueId(): string {
-  return `template_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
- * Create a template
- */
-export function createTemplate(name: string, content: string): Template {
-  return {
-    id: generateUniqueId(),
-    name,
-    content,
-  };
-}
-
-/**
- * Save template configuration to storage
- */
-export function saveTemplateConfig(config: TemplateConfig): void {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('templateConfig', JSON.stringify(config));
-  }
-}
-
-/**
- * Load template configuration from storage
- */
-export function loadTemplateConfig(): TemplateConfig {
-  if (typeof localStorage !== 'undefined') {
-    const savedConfig = localStorage.getItem('templateConfig');
-    if (savedConfig) {
-      try {
-        return JSON.parse(savedConfig) as TemplateConfig;
-      } catch (e) {
-        console.error('Error parsing saved template config:', e);
-      }
-    }
-  }
-  
-  return {
-    title: null,
-    description: null,
-    exampleDescription: null,
-    attributes: {},
-  };
-}
-
-/**
- * Main entry point function that can be directly substituted for the original
+ * Main entry point function with template settings support
  */
 export async function main(
   imageUrls: string[], 
   titleTemplate?: string, 
   descriptionTemplate?: string, 
   exampleDescription?: string,
+  templateSettings?: TemplateSettings,
   tags?: string[]
 ): Promise<ProductResponse> {
-  console.log('== Clothing Analysis using OpenAI ==');
+  console.log('== Clothing Analysis using OpenAI with Template Settings ==');
   const classifier = new ProductClassifier();
 
   const result = await classifier.classifyThreeImages(
@@ -656,11 +753,11 @@ export async function main(
     titleTemplate, 
     descriptionTemplate,
     exampleDescription,
+    templateSettings,
     tags
   );
   
   console.log('AI model returned:', result);
   return result;
 }
-
 export default main;
