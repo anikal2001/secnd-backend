@@ -3,9 +3,11 @@ import multer from 'multer';
 import bodyParser from 'body-parser';
 import { ProductService } from '../services/product.service';
 import { ProductStatus } from '../utils/products.enums';
+import { MeasurementService } from '../services/measurement.service';
 
 export class ProductController {
   static productService: ProductService = new ProductService();
+  static measurementService: MeasurementService = new MeasurementService();
 
   private upload: multer.Multer; // Multer instance
 
@@ -240,6 +242,7 @@ export class ProductController {
           res.status(404).json({ message: 'Draft not found' });
           return;
         }
+        console.log('Updating existing draft:', req.body);
 
         // Update existing draft - fix: pass product ID as first parameter
         const updatedDraft = await ProductController.productService.updateProduct(req.body.id, req.body);
@@ -307,7 +310,7 @@ export class ProductController {
         res.status(400).json({ message: "Request body must contain 'images' array with image_id and url for each image" });
         return;
       }
-      const products = await ProductController.productService.inferenceImages(images, req.body.titleTemplate, req.body.descriptionTemplate, req.body.sellerID);
+      const products = await ProductController.productService.inferenceImages(images, req.body.titleTemplate, req.body.descriptionTemplate, req.body.sellerID, req.body.exampleDescription, req.body.tags);
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

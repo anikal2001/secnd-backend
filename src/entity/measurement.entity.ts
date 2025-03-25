@@ -1,49 +1,27 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
-import { User } from './user.entity';
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Product } from './product.entity';
 
 @Entity('measurements')
 export class Measurement extends BaseEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  measurement_id: string;  // Auto-generated UUID for the primary key
 
-    @Column('float')
-    height: number;
+  @Column('varchar')
+  id: string;  // This will store 'chest', 'shoulderWidth', etc.
 
-    @Column('float')
-    chest: number;
+  @Column('varchar')
+  label: string;  // Display label
 
-    @Column('float')
-    shoulder: number;
+  @Column('varchar', { nullable: true })
+  custom: string;  // Custom name
 
-    @Column('float')
-    sleeve: number;
+  @Column('float')
+  value: number;  // Measurement value
 
-    @Column('float')
-    wrist: number;
+  @Column('varchar')
+  unit: string;  // Unit of measurement
 
-    @Column('float')
-    waist: number;
-
-    @Column('float')
-    hips: number;
-
-    @Column('float')
-    inseam: number;
-
-    @Column('float')
-    rise: number;
-
-    @Column({
-        type: 'enum',
-        enum: ['imperial', 'metric'],
-        default: 'metric'
-    })
-    unit: 'imperial' | 'metric';
-
-    @OneToOne(() => User)
-    @JoinColumn({ name: 'userId' })
-    user: User;
-
-    @Column('uuid')
-    userId: string;
+  @ManyToOne(() => Product, product => product.measurements, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'productId' })
+  product: Product;
 }
