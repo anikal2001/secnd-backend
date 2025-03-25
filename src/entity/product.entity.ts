@@ -40,6 +40,9 @@ export abstract class ProductBase {
   @Column({ type: 'varchar', nullable: true })
   description: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  descriptive_sentence: string;
+
   @Column({ type: 'float', nullable: true })
   price: number;
 
@@ -102,6 +105,7 @@ export abstract class ProductBase {
     cascade: true,
     onDelete: 'CASCADE',
   })
+
   marketplaceListings: MarketplaceListing[];
 
   @Column({ type: 'varchar', nullable: true })
