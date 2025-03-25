@@ -232,7 +232,7 @@ Compose a title using the following format:
   if (hasDescriptionTemplate) {
     console.log("has description template", templateConfig.description?.content)
     const descriptionTemplate = templateConfig.description?.content || '';
-    descriptionInstructions = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce only one concise, SEO-friendly sentence. Do not include bullet points or additional details.`;
+    descriptionInstructions = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce one direct, concise, SEO-friendly sentence using key e-commerce search terms. Focus on product features, materials, and usage rather than flowery language. Do not include bullet points or additional details.`;
     
     if (exampleDescription) {
       descriptionInstructions += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
@@ -285,7 +285,7 @@ ${CategoryHierarchy}
     - **Style:** Overall style (e.g., "vintage")
     - **Design:** Notable design elements (e.g., "flannel", "minimalist")
     - **Fit Type:** Clothing fit (e.g., "slim", "regular", "loose")
-    - **Closure Type:** Type of closure (e.g., "buttons", "zippers", "hooks")
+    - **Closure Type:** Type of closure (e.g., "buttons", "zippers", "hooks"). If none, leave as null.
     - **Made In:** Country of manufacture (e.g., "USA", "China")
     - **Source:** List of two sources max. (e.g., "Vintage", "New"): Choose from: ${ProductSourceList}
     - **Condition Notes:** Specific details regarding the condition that would be essential for the buyer to know.
