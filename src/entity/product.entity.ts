@@ -79,6 +79,21 @@ export abstract class ProductBase {
   @Column({ nullable: true })
   brand: string;
 
+  @Column({ nullable: true })
+  brand_label: string;
+
+  @Column({ nullable: true })
+  made_in: string;
+
+  @Column({ nullable: true })
+  fit_type: string;
+
+  @Column({ nullable: true })
+  design: string;
+
+  @Column({ nullable: true })
+  closure_type: string;
+
   @Column({ type: 'simple-array', default: [], nullable: true })
   tags: ProductTags[];
 
