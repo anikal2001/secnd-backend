@@ -146,7 +146,6 @@ export function processTemplate(template: string, values: Record<string, any>): 
 
   // First pass: Replace all placeholders that have non-null values
   let processedTemplate = template;
-
   Object.entries(values).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       const placeholder = `@${key}`;
@@ -169,7 +168,7 @@ export function processTemplate(template: string, values: Record<string, any>): 
 export function createImageAnalysisMessages(
   imageUrls: string[],
   templateConfig: TemplateConfig,
-  tags?: string[],
+  tags?: string[]
 ): OpenAI.Chat.ChatCompletionMessageParam[] {
   const ProductColorsList = Object.values(ProductColors).join(', ');
   const ProductMaterialsList = Object.values(Material).join(', ');
@@ -184,7 +183,7 @@ export function createImageAnalysisMessages(
   // Check if templates are provided
   const hasTitleTemplate = !!templateConfig.title?.content;
   const hasDescriptionTemplate = !!templateConfig.description?.content;
-
+  
   // Handle title configuration
   let titleInstructions = '';
   if (hasTitleTemplate) {
@@ -229,11 +228,12 @@ Compose a title using the following format:
   // Handle description configuration
   let descriptionInstructions = '';
   const exampleDescription = templateConfig.exampleDescription || '';
-
+  
   if (hasDescriptionTemplate) {
+    console.log("has description template", templateConfig.description?.content)
     const descriptionTemplate = templateConfig.description?.content || '';
     descriptionInstructions = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce only one concise, SEO-friendly sentence. Do not include bullet points or additional details.`;
-
+    
     if (exampleDescription) {
       descriptionInstructions += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
     }
@@ -245,7 +245,7 @@ Compose a title using the following format:
   - Brand & Material
   - Fit & Features,
   - Ideal Use Cases.`;
-
+    
     if (exampleDescription) {
       descriptionInstructions += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
     }
@@ -281,7 +281,7 @@ ${CategoryHierarchy}
     - **Brand:** Visible brand name, if present
     - **Gender:** As determined
     - **Tags:** generate 13 SEO-friendly, relevant tags (e.g., "casual", "vintage"). Use only these tags if this array is not empty: ${forInferenceTags}.
-    - **Age:** Inferred age (e.g., "1990s"); use only if you are 70% certain, otherwise set as null.
+    - **Age:** Inferred age (e.g., "1990s"); use only if you are 95% certain, otherwise set as null.
     - **Style:** Overall style (e.g., "vintage")
     - **Design:** Notable design elements (e.g., "flannel", "minimalist")
     - **Fit Type:** Clothing fit (e.g., "slim", "regular", "loose")
@@ -309,18 +309,14 @@ ${hasDescriptionTemplate ? '- Since a custom description template is provided, r
 ${hasTitleTemplate ? '- For title with template: When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title.' : ''}
 
 ### IMPORTANT:
-${
-  hasTitleTemplate
-    ? `
+${hasTitleTemplate ? `
 - **Placeholder Removal in Title:**  
   When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title. Do not leave any extra spaces or tokens.  
   - **Example:**  
     If the title template is "@age @brand @design @style @category Size @size" and @age is null and @brand is null, the final title should be "@design @style @category Size @size" without extra spaces.
 - **Do Not Substitute Placeholders:**  
   If a template is provided, do not replace any placeholder tokens with their actual values in the output JSON. The output title should preserve the tokens for non-null values and exclude tokens corresponding to null attributes.
-`
-    : ''
-}
+` : ''}
 - Avoid common mistakes such as:
   - Confusing similar materials (e.g., cotton blend vs 100% cotton)
   - Misidentifying decades (note: Y2K items span 1999-2004)
@@ -340,12 +336,10 @@ ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
 ### Example JSON Output:
 \`\`\`json
 {
-  "title": ${
-    hasTitleTemplate
-      ? '"@age @brand @design @style @category Size @size"'
-      : '"Vintage 1990s Levi\'s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential"'
-  },
-  "description": "Iconic 1990s Levi's 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.\\n - Era & Style: Authentic 1990s vintage with a grunge and streetwear edge.\\n - Brand & Material: Made by Levi's, crafted from 100% durable cotton denim.\\n - Fit & Features: High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly.\\n - Ideal Use Cases: Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.",
+  "title": ${hasTitleTemplate ? 
+    '"@age @brand @design @style @category Size @size"' : 
+    '"Vintage 1990s Levi\'s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential"'},
+  "description": "Iconic 1990s Levi's 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.\\n",
   "descriptionHtml": "<h2>Iconic 1990s Levi&#39;s 501 High-Waisted Denim Jeans</h2><p>A must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a grunge and streetwear edge.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from 100% durable cotton denim.</li><li><strong>Fit &amp; Features:</strong> High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly.</li><li><strong>Ideal Use Cases:</strong> Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.</li></ul>",
   "price": 45.99,
   "color": {
@@ -445,7 +439,6 @@ export function createThreeImageMessages(
     exampleDescription: exampleDescription || null,
     attributes: {},
   };
-
   return createImageAnalysisMessages(imageUrls, templateConfig, tags);
 }
 
@@ -529,9 +522,9 @@ export class ProductClassifier {
 
     console.log('== Raw JSON ==\n', rawJson);
     const parsedContent = JSON.parse(rawJson);
+    
     return ProductResponseSchema.parse(parsedContent);
   }
-
   catch(error: { errors: any }) {
     if (error instanceof z.ZodError) {
       console.error('Validation error:', error.errors);
@@ -586,7 +579,6 @@ export function loadTemplateConfig(): TemplateConfig {
       }
     }
   }
-
   return {
     title: null,
     description: null,

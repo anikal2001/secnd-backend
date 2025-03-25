@@ -336,7 +336,7 @@ export class ProductService {
 
       if (productData.measurements) {
         // Process measurements
-        await this.MeasurementService.createMeasurementsForProduct(updatedProduct.product_id, productData.measurements);
+        await this.MeasurementService.updateMeasurementsForProduct(updatedProduct.product_id, productData.measurements);
       }
 
       // Re-fetch marketplace listings and attach them.

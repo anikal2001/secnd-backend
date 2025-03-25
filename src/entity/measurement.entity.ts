@@ -15,7 +15,7 @@ export class Measurement extends BaseEntity {
   @Column('varchar', { nullable: true })
   custom: string;  // Custom name
 
-  @Column('float')
+  @Column('float', { nullable: true })
   value: number;  // Measurement value
 
   @Column('varchar')
