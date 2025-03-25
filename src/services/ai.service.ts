@@ -289,7 +289,6 @@ ${CategoryHierarchy}
     - **Made In:** Country of manufacture (e.g., "USA", "China")
     - **Source:** List of two sources max. (e.g., "Vintage", "New"): Choose from: ${ProductSourceList}
     - **Condition Notes:** Specific details regarding the condition that would be essential for the buyer to know.
-    - **Measurements:** Any visible or relevant measurements (e.g., chest, length, sleeve, etc.)
 
 ### Detailed Inspection Guidelines:
 Before finalizing your answer, carefully review each image for:
@@ -363,36 +362,6 @@ ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
   "fit_type": "slim",
   "design": "Single Stitch",
   "closure_type": "buttons",
-  "measurements": [
-    {
-      id: "chest",
-      label: "Chest/Bust",
-      custom: "",
-      value: 54,
-      unit: "cm"
-    },
-    {
-      id: "length",
-      label: "Length",
-      custom: "Back Length",
-      value: 68,
-      unit: "cm"
-    },
-    {
-      id: "sleeve",
-      label: "Sleeve Length",
-      custom: "",
-      value: 63,
-      unit: "cm"
-    },
-    {
-      id: "shoulder",
-      label: "Shoulder Width",
-      custom: "",
-      value: 46,
-      unit: "cm"
-    }
-  ]
 }
 \`\`\`
 ${hasTitleTemplate ? 'Ensure that all placeholders remain intact during analysis. DO NOT REPLACE THE PLACEHOLDERS WITH ACTUAL VALUES; however, when outputting the final title, any placeholder corresponding to a null value must be completely removed from the title string.' : ''}
