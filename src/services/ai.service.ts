@@ -99,16 +99,19 @@ export const ProductResponseSchema = z
     design: z.string().nullable().catch(null),
     closure_type: z.string().nullable().catch(null),
     // Updated to use the Measurement interface for validation
-    measurements: z.union([
-      // Option 1: An array of Measurement objects
-      z.array(MeasurementSchema),
-      
-      // Option 2: A record where the key is a category and the value is an array of Measurement objects (MeasurementsByCategory)
-      z.record(z.string(), z.array(MeasurementSchema)),
-      
-      // Option 3: Allow null/undefined with a fallback
-      z.null()
-    ]).nullable().catch(null),
+    measurements: z
+      .union([
+        // Option 1: An array of Measurement objects
+        z.array(MeasurementSchema),
+
+        // Option 2: A record where the key is a category and the value is an array of Measurement objects (MeasurementsByCategory)
+        z.record(z.string(), z.array(MeasurementSchema)),
+
+        // Option 3: Allow null/undefined with a fallback
+        z.null(),
+      ])
+      .nullable()
+      .catch(null),
   })
   // Transform to correct category based on subcategory before validation
   // This transformation guarantees that we'll never have a null category
@@ -143,7 +146,6 @@ export function processTemplate(template: string, values: Record<string, any>): 
 
   // First pass: Replace all placeholders that have non-null values
   let processedTemplate = template;
-  
   Object.entries(values).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       const placeholder = `@${key}`;
@@ -158,48 +160,6 @@ export function processTemplate(template: string, values: Record<string, any>): 
     .trim(); // Remove leading and trailing spaces
 
   return processedTemplate;
-}
-
-/**
- * Process a description template with a descriptive sentence
- */
-export function processDescriptionTemplate(template: string, descriptiveSentence: string): string {
-  if (!template) return descriptiveSentence;
-  
-  // Replace the @descriptive_sentence placeholder
-  let processedTemplate = template.replace('@descriptive_sentence', descriptiveSentence);
-  
-  // Replace any other placeholders marked in the UI
-  const templateAttrs = [
-    'Source', 'Age', 'Sub Category', 'Category', 'Brand', 'Fit', 'Made in', 
-    'Material', 'Size', 'Style', 'Gender', 'Closure Type', 'Condition', 
-    'Condition Notes', 'Primary Color', 'Secondary Color', 'Measurements'
-  ];
-  
-  // Create a map for case-insensitive replacement
-  const placeholderMap: Record<string, string> = {};
-  templateAttrs.forEach(attr => {
-    placeholderMap[attr.toLowerCase().replace(/\s+/g, '')] = '';
-  });
-  
-  // Replace all placeholders in the template
-  const regex = /@(\w+)/g;
-  let match;
-  
-  while ((match = regex.exec(processedTemplate)) !== null) {
-    const placeholder = match[1].toLowerCase();
-    if (placeholderMap.hasOwnProperty(placeholder)) {
-      processedTemplate = processedTemplate.replace(
-        new RegExp(`@${match[1]}`, 'g'), 
-        ''
-      );
-    }
-  }
-  
-  // Clean up extra whitespace
-  return processedTemplate
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 /**
@@ -218,44 +178,22 @@ export function createImageAnalysisMessages(
   const CategoryHierarchy = Category.formatCategoryHierarchy();
 
   const forInferenceTags = tags || [];
-  console.log(forInferenceTags)
+  console.log(forInferenceTags);
 
-
-  // Create title instructions
-  const titleTemplate = templateConfig.title?.content || '';
-  const titleInstruction = titleTemplate
-    ? `RECEIVED CUSTOM title template: ${titleTemplate}. Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}. 
-    If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder`
-    : `Compose a title using the default format (not provided CUSTOM template) below:`;
-
-  // Create description instructions
-  const descriptionTemplate = templateConfig.description?.content || '';
-  const exampleDescription = templateConfig.exampleDescription || '';
+  // Check if templates are provided
+  const hasTitleTemplate = !!templateConfig.title?.content;
+  const hasDescriptionTemplate = !!templateConfig.description?.content;
   
-  let descriptionInstruction = '';
-  console.log('descriptionTemplate:', descriptionTemplate);
-  if (descriptionTemplate) {
-    descriptionInstruction = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce only one concise, SEO-friendly sentence that should replace the @descriptive_sentence placeholder. Do not include bullet points or additional details.`;
-    if (exampleDescription) {
-      descriptionInstruction += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
-    }
-  } else {
-    descriptionInstruction = `Compose a description using the default format with bullet points as follows:
-- **Summary:** A concise 1-2 line overview using high-traffic keywords.
-- **Details:** A list of bullet points covering: (put each bullet point on a new line)
-  - Era & Style (e.g., "1990s grunge" or "Y2K streetwear"),
-  - Brand & Material
-  - Fit & Features,
-  - Ideal Use Cases.`;
-    
-    if (exampleDescription) {
-      descriptionInstruction += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
-    }
-  }
+  // Handle title configuration
+  let titleInstructions = '';
+  if (hasTitleTemplate) {
+    const titleTemplate = templateConfig.title?.content || '';
+    titleInstructions = `
+RECEIVED CUSTOM title template: ${titleTemplate}
+Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}. 
+If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder.
 
-  // Define title formatting details
-  const titleFormat = titleTemplate
-    ? `
+Format details:
 ${titleTemplate}
 - Age: If inferable (e.g., 1970s, 1980s, 1990s, 2000s, 2010s)
 - Source: Limited options: Vintage, Preloved, Reworked, Deadstock, Designer
@@ -268,8 +206,10 @@ ${titleTemplate}
 
 IMPORTANT: If ANY inferred placeholder is null and it is a PLACEHOLDER, it shouldn't show up in the title template that you return, and you should leave it out.
  - For example: if the format is "@age @brand" and your inferred age is null, the returned title should just be "@brand" and "@age" should be left out.
-`
-    : `
+`;
+  } else {
+    titleInstructions = `
+Compose a title using the following format:
 - Vintage [age/decade] [brand/text] / [subcategory] / [fit type/design] / [style descriptor 1] [/ [style descriptor 2]]
   - Example 1: "Vintage 1990s Martinique carribean / Vacation Crewneck Sweatshirt"
   - Example 2: "Vintage 2000s Plaid Button Up / Colourful / Flannel / Shirt"
@@ -283,19 +223,36 @@ IMPORTANT: If ANY inferred placeholder is null and it is a PLACEHOLDER, it shoul
 - Fit Type: Clothing fit (e.g., slim, regular, loose)
 - Size: Use only provided options (${ProductSizesList}); if applicable, provide waist size only.
 `;
+  }
 
-  return [
-    {
-      role: 'system',
-      content:
-        'You are an advanced clothing analysis assistant. Your role is to analyze clothing images step-by-step and produce detailed JSON output.',
-    },
-    {
-      role: 'user',
-      content: [
-        {
-          type: 'text',
-          text: `
+  // Handle description configuration
+  let descriptionInstructions = '';
+  const exampleDescription = templateConfig.exampleDescription || '';
+  
+  if (hasDescriptionTemplate) {
+    console.log("has description template", templateConfig.description?.content)
+    const descriptionTemplate = templateConfig.description?.content || '';
+    descriptionInstructions = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce one direct, concise, SEO-friendly sentence using key e-commerce search terms. Focus on product features, materials, and usage rather than flowery language. Do not include bullet points or additional details.`;
+    
+    if (exampleDescription) {
+      descriptionInstructions += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
+    }
+  } else {
+    descriptionInstructions = `Compose a description using the default format with bullet points as follows:
+- **Summary:** A concise 1-2 line overview using high-traffic keywords.
+- **Details:** A list of bullet points covering: (put each bullet point on a new line)
+  - Era & Style (e.g., "1990s grunge" or "Y2K streetwear"),
+  - Brand & Material
+  - Fit & Features,
+  - Ideal Use Cases.`;
+    
+    if (exampleDescription) {
+      descriptionInstructions += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
+    }
+  }
+
+  // Create the base instruction set
+  const baseInstructions = `
 Analyze the clothing item from the following images and provide JSON with detailed attributes optimized for SEO.
 
 ### **Task Instructions**:
@@ -309,31 +266,30 @@ Analyze the clothing item from the following images and provide JSON with detail
 2. **Identify Category and Subcategory:** Use the following hierarchy:
 ${CategoryHierarchy}
 3. **Extract Attributes & Build JSON:** Include:
-    - **Title**: ${titleInstruction}
-      ${titleFormat}
-   - **Description** ${descriptionInstruction}
-   - **DescriptionHtml**: Provide the html version of the description 
-   - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
-   - **Colors:**
+    - **Title**: ${titleInstructions}
+    - **Description**: ${descriptionInstructions}
+    - **DescriptionHtml**: Provide the html version of the description 
+    - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
+    - **Colors:**
        - **Primary:** Dominant colors (choose from: ${ProductColorsList}; map similar hues as needed)
        - **Secondary:** Accent colors
-   - **Material:** Primary material (from: ${ProductMaterialsList})
-   - **Size:** Must match one of the options: ${ProductSizesList} (if possible, provide waist size only)
-   - **Category:** Determined category (e.g., "Tops")
-   - **Subcategory:** Determined subcategory (e.g., "T-Shirts")
-   - **Condition:** Use one of the options: ${ProductConditionsList}
-   - **Brand:** Visible brand name, if present
-   - **Gender:** As determined
-   - **Tags:** generate 13 SEO-friendly, relevant tags (e.g., "casual", "vintage"). Use only these tags if this array is not empty: ${forInferenceTags}.
-   - **Age:** Inferred age (e.g., "1990s"); use only if you are 95% certain, otherwise set as null.
-   - **Style:** Overall style (e.g., "vintage")
-   - **Design:** Notable design elements (e.g., "flannel", "minimalist")
-   - **Fit Type:** Clothing fit (e.g., "slim", "regular", "loose")
-   - **Closure Type:** Type of closure (e.g., "buttons", "zippers", "hooks")
-   - **Made In:** Country of manufacture (e.g., "USA", "China")
-   - **Source:** List of two sources max. (e.g., "Vintage", "New"): Choose from: ${ProductSourceList}
-   - **Condition Notes:** Specific details regarding the condition that would be essential for the buyer to know.
-   - **Measurements:** Any visible or relevant measurements (e.g., chest, length, sleeve, etc.)
+    - **Material:** Primary material (from: ${ProductMaterialsList})
+    - **Size:** Must match one of the options: ${ProductSizesList} (if possible, provide waist size only)
+    - **Category:** Determined category (e.g., "Tops")
+    - **Subcategory:** Determined subcategory (e.g., "T-Shirts")
+    - **Condition:** Use one of the options: ${ProductConditionsList}
+    - **Brand:** Visible brand name, if present
+    - **Gender:** As determined
+    - **Tags:** generate 13 SEO-friendly, relevant tags (e.g., "casual", "vintage"). Use only these tags if this array is not empty: ${forInferenceTags}.
+    - **Age:** Inferred age (e.g., "1990s"); use only if you are 95% certain, otherwise set as null.
+    - **Style:** Overall style (e.g., "vintage")
+    - **Design:** Notable design elements (e.g., "flannel", "minimalist")
+    - **Fit Type:** Clothing fit (e.g., "slim", "regular", "loose")
+    - **Closure Type:** Type of closure (e.g., "buttons", "zippers", "hooks"). If none, leave as null.
+    - **Made In:** Country of manufacture (e.g., "USA", "China")
+    - **Source:** List of two sources max. (e.g., "Vintage", "New"): Choose from: ${ProductSourceList}
+    - **Condition Notes:** Specific details regarding the condition that would be essential for the buyer to know.
+    - **Measurements:** Any visible or relevant measurements (e.g., chest, length, sleeve, etc.)
 
 ### Detailed Inspection Guidelines:
 Before finalizing your answer, carefully review each image for:
@@ -349,24 +305,25 @@ Before finalizing your answer, carefully review each image for:
 - Ensure there is sentence of the description that is **SEO-optimized** and compelling.
 - Use **high-traffic keywords** in titles and descriptions.
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
-- If a custom description template is provided, return only the sentence that should be inserted for @descriptive_sentence in the final JSON.
-- Otherwise, produce the full description as per the default instructions.
+${hasDescriptionTemplate ? '- Since a custom description template is provided, return only the sentence that should be inserted for @descriptive_sentence in the final JSON.' : '- Produce the full description as per the default instructions.'}
+${hasTitleTemplate ? '- For title with template: When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title.' : ''}
 
 ### IMPORTANT:
+${hasTitleTemplate ? `
 - **Placeholder Removal in Title:**  
   When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title. Do not leave any extra spaces or tokens.  
   - **Example:**  
     If the title template is "@age @brand @design @style @category Size @size" and @age is null and @brand is null, the final title should be "@design @style @category Size @size" without extra spaces.
 - **Do Not Substitute Placeholders:**  
   If a template is provided, do not replace any placeholder tokens with their actual values in the output JSON. The output title should preserve the tokens for non-null values and exclude tokens corresponding to null attributes.
+` : ''}
 - Avoid common mistakes such as:
   - Confusing similar materials (e.g., cotton blend vs 100% cotton)
   - Misidentifying decades (note: Y2K items span 1999-2004)
   - Inaccurate pricing (vintage band t-shirts command higher prices)
 - Spell out the sizes if they are letter sizes
 - Make sure most of the values are filled out unless very uncertain about the fields. The more information, the better. This is also for templates
-- If the title template is empty, do not return template options with @ symbols
-- If the option "@descriptive_sentence" is provided in the description template, replace it with the actual descriptive sentence. THIS IS MANDATORY
+${hasTitleTemplate ? '' : '- Do not use @ symbols in the title when no template is provided'}
 - Make sure the tags are chosen only from this list ${forInferenceTags} if the array is not empty
 
 ---
@@ -374,13 +331,15 @@ Common mistakes to avoid:
 - Confusing similar materials (e.g., cotton blend vs 100% cotton)
 - Misidentifying decades (note: Y2K items are 1999-2004)
 - Inaccurate pricing (vintage band t-shirts command higher prices)
-- IF THE TITLE TEMPLATE IS EMPTY DO NOT RETURN TEMPLATE OPTIONS WITH @ symbols
+${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
 
-### Example JSON Output - ONLY if template isn't provided:
+### Example JSON Output:
 \`\`\`json
 {
-  "title": "Vintage 1990s Levi's 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential",
-  "description": "Iconic 1990s Levi's 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic. - Era & Style: Authentic 1990s vintage with a grunge and streetwear edge. - Brand & Material: Made by Levi's, crafted from 100% durable cotton denim. - Fit & Features: High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly. - Ideal Use Cases: Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.",
+  "title": ${hasTitleTemplate ? 
+    '"@age @brand @design @style @category Size @size"' : 
+    '"Vintage 1990s Levi\'s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential"'},
+  "description": "Iconic 1990s Levi's 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.\\n",
   "descriptionHtml": "<h2>Iconic 1990s Levi&#39;s 501 High-Waisted Denim Jeans</h2><p>A must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a grunge and streetwear edge.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from 100% durable cotton denim.</li><li><strong>Fit &amp; Features:</strong> High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly.</li><li><strong>Ideal Use Cases:</strong> Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.</li></ul>",
   "price": 45.99,
   "color": {
@@ -436,44 +395,22 @@ Common mistakes to avoid:
   ]
 }
 \`\`\`
+${hasTitleTemplate ? 'Ensure that all placeholders remain intact during analysis. DO NOT REPLACE THE PLACEHOLDERS WITH ACTUAL VALUES; however, when outputting the final title, any placeholder corresponding to a null value must be completely removed from the title string.' : ''}
+`;
 
-### Example JSON Output - IF TEMPLATE IS PROVIDED:
-\`\`\`json
-{
-  "title": "@age @brand @design @style @category Size @size",
-  "description": "A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.",
-  desdcriptionHtml: "<p>A sleek modern polo shirt in navy blue cotton featuring a subtle embroidered logo on the chest. Classic fit with ribbed collar and cuffs.</p>",
-  "price": 45.99,
-  "color": {
-    "primaryColor": ["navy"],
-    "secondaryColor": null
-  },
-  "material": "cotton",
-  "size": "M",
-  "category": "Tops",
-  "subcategory": "Polo",
-  "condition": "new_with_tags",
-  "condition_notes": null,
-  "brand": "Polo Ralph Lauren",
-  "gender": "Menswear",
-  "tags": ["90s", "denim", "streetwear", "levi's denim", "levi's pants", "levi's distressed", "levi's", "vintage levi's", "blue jeans"  /* up to 13 tags */],
-  "age": "1990s",
-  "item_style": "Modern",
-  "design": "minimalist",
-  "made_in": "USA",
-  "source": ["Vintage"],
-  "fit_type": "slim",
-  "design": "Single Stitch",
-  "closure_type": "buttons",
-  "measurements": {
-    "chest": "21 inches",
-    "length": "27 inches",
-    "sleeve": "8 inches"
-  }
-}
-\`\`\`
-Ensure that all placeholders remain intact during analysis. IF A TEMPLATE IS PROVIDED, DO NOT REPLACE THE PLACEHOLDERS WITH ACTUAL VALUES; however, when outputting the final title, any placeholder corresponding to a null value must be completely removed from the title string.
-`,
+  // Create the message structure
+  return [
+    {
+      role: 'system',
+      content:
+        'You are an advanced clothing analysis assistant. Your role is to analyze clothing images step-by-step and produce detailed JSON output.',
+    },
+    {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: baseInstructions,
         },
         ...imageUrls.map((url) => ({
           type: 'image_url' as const,
@@ -493,7 +430,7 @@ export function createThreeImageMessages(
   titleTemplate?: string,
   descriptionTemplate?: string,
   exampleDescription?: string,
-  tags?: string[]
+  tags?: string[],
 ): OpenAI.Chat.ChatCompletionMessageParam[] {
   // Create template config from parameters
   const templateConfig: TemplateConfig = {
@@ -502,7 +439,6 @@ export function createThreeImageMessages(
     exampleDescription: exampleDescription || null,
     attributes: {},
   };
-  
   return createImageAnalysisMessages(imageUrls, templateConfig, tags);
 }
 
@@ -546,11 +482,11 @@ export class ProductClassifier {
   }
 
   async classifyThreeImages(
-    imageUrls: string[], 
-    titleTemplate?: string, 
+    imageUrls: string[],
+    titleTemplate?: string,
     descriptionTemplate?: string,
     exampleDescription?: string,
-    tags?: string[]
+    tags?: string[],
   ): Promise<ProductResponse> {
     // Get messages using new template system
     const messages = createThreeImageMessages(imageUrls, titleTemplate, descriptionTemplate, exampleDescription, tags);
@@ -587,16 +523,8 @@ export class ProductClassifier {
     console.log('== Raw JSON ==\n', rawJson);
     const parsedContent = JSON.parse(rawJson);
     
-    // Process description template if necessary
-    if (descriptionTemplate && parsedContent.description) {
-      // In this case, the description is likely just the descriptive sentence
-      // We need to insert it into the template
-      parsedContent.description = processDescriptionTemplate(descriptionTemplate, parsedContent.description);
-    }
-    
     return ProductResponseSchema.parse(parsedContent);
   }
-  
   catch(error: { errors: any }) {
     if (error instanceof z.ZodError) {
       console.error('Validation error:', error.errors);
@@ -651,7 +579,6 @@ export function loadTemplateConfig(): TemplateConfig {
       }
     }
   }
-  
   return {
     title: null,
     description: null,
@@ -664,23 +591,17 @@ export function loadTemplateConfig(): TemplateConfig {
  * Main entry point function that can be directly substituted for the original
  */
 export async function main(
-  imageUrls: string[], 
-  titleTemplate?: string, 
-  descriptionTemplate?: string, 
+  imageUrls: string[],
+  titleTemplate?: string,
+  descriptionTemplate?: string,
   exampleDescription?: string,
-  tags?: string[]
+  tags?: string[],
 ): Promise<ProductResponse> {
   console.log('== Clothing Analysis using OpenAI ==');
   const classifier = new ProductClassifier();
 
-  const result = await classifier.classifyThreeImages(
-    imageUrls, 
-    titleTemplate, 
-    descriptionTemplate,
-    exampleDescription,
-    tags
-  );
-  
+  const result = await classifier.classifyThreeImages(imageUrls, titleTemplate, descriptionTemplate, exampleDescription, tags);
+
   console.log('AI model returned:', result);
   return result;
 }

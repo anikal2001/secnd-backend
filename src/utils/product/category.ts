@@ -341,7 +341,7 @@ const categoryHierarchy = {
   // women
   women_tops: createCategories([...sharedTopsData, ['Crop Tops', ['Tube Tops', 'Halter Tops']], 'Blouses', 'Corsets']),
   women_bottoms: createCategories([...sharedBottomsData, 'Leggings', ['Skirts', ['Maxi', 'Midi', 'Mini']]]),
-  women_dresses: createCategories([['Dresses', ['Maxi', 'Midi', 'Mini']]]),
+  women_dresses: createCategories(['Maxi', 'Midi', 'Mini']),
   women_outerwear: createCategories(sharedOuterwearData),
   women_suits: createCategories([['Suits', ['Jacket', 'Trousers', 'Waistcoat', 'One Piece']]]),
   women_onesies: createCategories(['Jumpsuits', 'Rompers']),

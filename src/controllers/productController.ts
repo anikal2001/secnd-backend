@@ -7,7 +7,6 @@ import { MeasurementService } from '../services/measurement.service';
 
 export class ProductController {
   static productService: ProductService = new ProductService();
-  static measurementService: MeasurementService = new MeasurementService();
 
   private upload: multer.Multer; // Multer instance
 

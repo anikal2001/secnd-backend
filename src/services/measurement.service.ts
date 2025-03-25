@@ -38,7 +38,7 @@ export class MeasurementService {
         entity.label = measurement.label;
         entity.custom = measurement.custom || "";
         entity.value = measurement.value;
-        entity.unit = measurement.unit;
+        entity.unit = measurement.unit || "cm";
         entity.product = product;              // Set the relationship
         
         measurementEntities.push(entity);

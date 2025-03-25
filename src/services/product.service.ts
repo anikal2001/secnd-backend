@@ -335,8 +335,7 @@ export class ProductService {
       const updatedProduct = await ProductRepository.save(existingProduct);
 
       if (productData.measurements) {
-        // Process measurements
-        const savedMeasurements = await this.MeasurementService.createMeasurementsForProduct(updatedProduct.product_id, productData.measurements);
+        await this.MeasurementService.updateMeasurementsForProduct(updatedProduct.product_id, productData.measurements);
       }
 
       // Re-fetch marketplace listings and attach them.
