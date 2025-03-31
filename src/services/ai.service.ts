@@ -424,30 +424,32 @@ export class ProductClassifier {
   }
 
   private async getRagContext(imageUrls: string): Promise<string> {
-    try {
-      // Make API call to your vector database backend
-      const response = await fetch(`http://68.183.204.156:8882/api/rag/process_multimodal`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image_url: imageUrls,
-          limit: 5,
-        }),
-      });
+    // try {
+    //   // Make API call to your vector database backend
+    //   const response = await fetch(`http://68.183.204.156:8882/api/rag/process_multimodal`, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       image_url: imageUrls,
+    //       limit: 5,
+    //     }),
+    //   });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch RAG context');
-      }
-      const data = await response.json();
-      const result = JSON.stringify(data.products) || '';
-      console.log('This is the result: ', result);
-      return result;
-    } catch (error) {
-      console.error('Error fetching RAG context:', error);
-      return '';
-    }
+    //   if (!response.ok) {
+    //     throw new Error('Failed to fetch RAG context');
+    //   }
+    //   const data = await response.json();
+    //   const result = JSON.stringify(data.products) || '';
+    //   console.log('This is the result: ', result);
+    //   return result;
+    // } catch (error) {
+    //   console.error('Error fetching RAG context:', error);
+    //   return '';
+    // }
+
+    return ''
   }
 
   async classifyThreeImages(
