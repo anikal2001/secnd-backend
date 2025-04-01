@@ -151,8 +151,8 @@ export abstract class ProductBase {
   @JoinColumn({ name: 'product_id' })
   imageURLS: Image[];
 
-  @Column({ type: 'simple-enum', enum: Material, nullable: true })
-  material: Material;
+  @Column({ type: 'varchar', nullable: true })
+  material: string;
 
   @Column({ type: 'simple-array', nullable: true })
   materials: string[];
@@ -225,9 +225,6 @@ export class ProductImport extends ProductBase {
 
   @Column({ type: 'varchar', nullable: true })
   condition: string;
-
-  @Column({ type: 'varchar', nullable: true })
-  material: string;
 
   @Column({ type: 'varchar', nullable: true })
   seller_id: string;
