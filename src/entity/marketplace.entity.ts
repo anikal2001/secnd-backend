@@ -18,4 +18,7 @@ export class MarketplaceListing {
 
   @Column({ nullable: true })
   slug?: string;
+
+  @Column({ nullable: true })
+  status?: string;
 }

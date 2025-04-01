@@ -32,8 +32,6 @@ export class ProductController {
         const imageURL = req.body.image;
         const sellerID = req.body.sellerID;
 
-        console.log("Parsed Body:", req.body);
-
         const productDetails = await ProductController.productService.generateProductDetails(sellerID, imageURL, req.body.titleTemplate);
 
         // Send success response
@@ -92,7 +90,6 @@ export class ProductController {
       res.status(statusCode).json(product);
     } catch (error: any) {
       console.error('Add product error:', error);
-      
       // Provide more specific error messages based on error type
       if (error.message.includes('Seller not found')) {
         res.status(404).json({ message: 'Seller not found. User may not be registered as a seller.' });
@@ -125,7 +122,6 @@ export class ProductController {
   public uploadImage = async (req: Request, res: Response): Promise<void> => {
     try {
       this.upload.single('image')(req, res, async (err) => {
-        console.log('Uploading Image...');
         if (err) {
           console.error('Error during file upload:', err);
           res.status(400).json({ message: err.message });
@@ -227,8 +223,8 @@ export class ProductController {
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
-  }
- 
+  };
+
   public saveDraft = async (req: Request, res: Response): Promise<void> => {
     try {
       // Always set status as draft
@@ -241,7 +237,6 @@ export class ProductController {
           res.status(404).json({ message: 'Draft not found' });
           return;
         }
-        console.log('Updating existing draft:', req.body);
 
         // Update existing draft - fix: pass product ID as first parameter
         const updatedDraft = await ProductController.productService.updateProduct(req.body.id, req.body);
@@ -305,17 +300,23 @@ export class ProductController {
   public inferenceImages = async (req: Request, res: Response): Promise<void> => {
     try {
       const images = req.body.images;
-      if (!Array.isArray(images) || !images.every(img => img.image_id && img.url)) {
+      if (!Array.isArray(images) || !images.every((img) => img.image_id && img.url)) {
         res.status(400).json({ message: "Request body must contain 'images' array with image_id and url for each image" });
         return;
       }
-      const products = await ProductController.productService.inferenceImages(images, req.body.titleTemplate, req.body.descriptionTemplate, req.body.sellerID, req.body.exampleDescription, req.body.tags);
+      const products = await ProductController.productService.inferenceImages(
+        images,
+        req.body.titleTemplate,
+        req.body.descriptionTemplate,
+        req.body.sellerID,
+        req.body.exampleDescription,
+        req.body.tags,
+      );
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
-  }
-
+  };
 
   // Marketplace related
   public deleteMarketplaceListing = async (req: Request, res: Response): Promise<void> => {
@@ -328,16 +329,51 @@ export class ProductController {
     }
 
     try {
-      // Delete the marketplace listing via the MarketplaceService.
-      await ProductController.productService.delistMarketplaceListing(product_id, marketplace);
-
-      // Optionally, update the product record if needed (e.g. remove the marketplace from the marketplaces array)
-      // You might call a method like:
-      // await ProductController.productService.removeMarketplaceFromProduct(productId, marketplaceName);
+      await ProductController.productService.deleteMarketplaceListing(product_id, marketplace);
 
       res.status(200).json({ success: true, message: 'Marketplace listing deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  };
+
+  public delistMarketplaceListing = async (req: Request, res: Response): Promise<void> => {
+    const product_id = req.query.product_id?.toString();
+    const marketplace = req.query.marketplace?.toString();
+
+    if (!product_id || !marketplace) {
+      res.status(400).json({ message: 'Product ID and Marketplace are required' });
+      return;
+    }
+
+    try {
+      await ProductController.productService.delistMarketplaceListing(product_id, marketplace);
+
+      res.status(200).json({ success: true, message: 'Marketplace listing deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  public getOtherMarketplaceListings = async (req: Request, res: Response): Promise<void> => {
+    const marketplaceId = req.query.marketplace_id?.toString();
+    const soldMarketplace = req.query.sold_marketplace?.toString();
+
+    if (!marketplaceId || !soldMarketplace) {
+      res.status(400).json({ success: false, message: 'Marketplace ID and Sold Marketplace are required' });
+      return;
+    }
+
+    try {
+      const result = await ProductController.productService.getOtherMarketplaceListings(marketplaceId, soldMarketplace);
+
+      res.status(200).json({
+        success: true,
+        product_id: result.product_id,
+        otherListings: result.otherListings,
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 }

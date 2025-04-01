@@ -77,6 +77,9 @@ export abstract class ProductBase {
   condition: ProductCondition;
 
   @Column({ nullable: true })
+  condition_notes: string;
+
+  @Column({ nullable: true })
   brand: string;
 
   @Column({ nullable: true })
@@ -84,6 +87,9 @@ export abstract class ProductBase {
 
   @Column({ nullable: true })
   made_in: string;
+
+  @Column({ type: 'simple-array', nullable: true })
+  source: string[]; 
 
   @Column({ nullable: true })
   fit_type: string;
@@ -104,6 +110,9 @@ export abstract class ProductBase {
   @Column({ type: 'simple-enum', enum: Material, nullable: true })
   material: Material;
 
+  @Column({ type: 'simple-array', nullable: true })
+  materials: string[];
+
   @Column({ type: 'varchar', nullable: true })
   dimensions: string;
 
@@ -120,7 +129,6 @@ export abstract class ProductBase {
     cascade: true,
     onDelete: 'CASCADE',
   })
-
   marketplaceListings: MarketplaceListing[];
 
   @Column({ type: 'varchar', nullable: true })

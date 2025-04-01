@@ -168,7 +168,7 @@ export function processTemplate(template: string, values: Record<string, any>): 
 export function createImageAnalysisMessages(
   imageUrls: string[],
   templateConfig: TemplateConfig,
-  tags?: string[]
+  tags?: string[],
 ): OpenAI.Chat.ChatCompletionMessageParam[] {
   const ProductColorsList = Object.values(ProductColors).join(', ');
   const ProductMaterialsList = Object.values(Material).join(', ');
@@ -178,12 +178,11 @@ export function createImageAnalysisMessages(
   const CategoryHierarchy = Category.formatCategoryHierarchy();
 
   const forInferenceTags = tags || [];
-  console.log(forInferenceTags);
 
   // Check if templates are provided
   const hasTitleTemplate = !!templateConfig.title?.content;
   const hasDescriptionTemplate = !!templateConfig.description?.content;
-  
+
   // Handle title configuration
   let titleInstructions = '';
   if (hasTitleTemplate) {
@@ -191,7 +190,7 @@ export function createImageAnalysisMessages(
     titleInstructions = `
 RECEIVED CUSTOM title template: ${titleTemplate}
 Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}. 
-If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder.
+If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder. Aim for more factual statements, instead of decorative or promotional language. Begin each product title with the most pertinent keywords, including the item's type, brand, and defining features. Example: Instead of "Stylish Vintage Jacket," use "Vintage Levi's Denim Jacket - Medium Wash, Size M."​ 
 
 Format details:
 ${titleTemplate}
@@ -199,7 +198,7 @@ ${titleTemplate}
 - Source: Limited options: Vintage, Preloved, Reworked, Deadstock, Designer
 - Style: Specific style (e.g., Heavy Metal, FC Barcelona, Streetwear)
 - Design: Details like Single Stitch, Double Stitch, Overlock, Bartack, Screen Print, Embroidery
-- Made In: Include only if 95% certain and if from North America/Europe
+- Made In: Include only if 55% certain and if from North America/Europe
 - Material: Primary material (from: ${ProductMaterialsList})
 - Color: Primary color(s) (from: ${ProductColorsList})
 - Size: Limited Options (do not provide anything but the following): ${ProductSizesList} 
@@ -215,7 +214,7 @@ Compose a title using the following format:
   - Example 2: "Vintage 2000s Plaid Button Up / Colourful / Flannel / Shirt"
   - Example 3: "Vintage 1990s Levi Strauss 501 Red Tab Button Fly Denim Jeans / Made in USA / American Vintage / Workwear / Streetwear"
 - Style: Aesthetic style (e.g. Football, Metal, Streetwear, etc.)
-- Age: Inferred era if possible, if not 99% sure, do not give an age.
+- Age: Inferred era if possible, if not 50% sure, do not give an age. Look for signs on the clothing like tags, graphics, or other indicators.
 - Color: Dominant color(s) (from: ${ProductColorsList})
 - Material: Primary material (from: ${ProductMaterialsList})
 - Subcategory: Item type based on provided hierarchy
@@ -228,28 +227,44 @@ Compose a title using the following format:
   // Handle description configuration
   let descriptionInstructions = '';
   const exampleDescription = templateConfig.exampleDescription || '';
-  
+
   if (hasDescriptionTemplate) {
-    console.log("has description template", templateConfig.description?.content)
     const descriptionTemplate = templateConfig.description?.content || '';
-    descriptionInstructions = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce one direct, concise, SEO-friendly sentence using key e-commerce search terms. Focus on product features, materials, and usage rather than flowery language. Do not include bullet points or additional details.`;
-    
+    descriptionInstructions = `RECEIVED CUSTOM description template: ${descriptionTemplate}. Produce one direct, concise, keyword-rich sentence using key e-commerce search terms. Focus on product features, rather than promotional language. Do not include bullet points or additional details. Include synonyms and related terms to capture a broader range of search queries.`;
+
     if (exampleDescription) {
       descriptionInstructions += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
     }
   } else {
     descriptionInstructions = `Compose a description using the default format with bullet points as follows:
-- **Summary:** A concise 1-2 line overview using high-traffic keywords.
-- **Details:** A list of bullet points covering: (put each bullet point on a new line)
-  - Era & Style (e.g., "1990s grunge" or "Y2K streetwear"),
-  - Brand & Material
-  - Fit & Features,
-  - Ideal Use Cases.`;
-    
+    - **Summary:** A brief 1-2 sentence factual overview focusing on essential details using high-traffic keywords. Avoid promotional language or ideal use cases. 
+    - **Use Product Features:** Use the product's specific features, such as material, color, size, and design, rather than subjective or promotional terms.  
+    - **Eliminate Subjective Terms:** Eliminate adjectives like "standout," "unique," or "stylish" and focus on descriptive keywords that are relevant to search queries.
+        - Example 1: ""
+        
+    `;
+
     if (exampleDescription) {
       descriptionInstructions += `\n\nHere's an example description to guide you: "${exampleDescription}"`;
     }
   }
+
+  const tagInstructions = tags?.length
+    ? `
+    Use ONLY these predefined tags: ${forInferenceTags.join(', ')}.
+    - **Predefined Tags Provided:** Use ONLY the following tags as they are highly optimized and context-specific.
+    - **Avoid Generating New Tags:** Since tags are predefined, do not generate or infer new tags.
+    - **Maintain Tag Consistency:** Ensure tags reflect the product’s key attributes, such as brand, team, material, and era.
+  `
+    : `
+    - **Brand/Team:** Prioritize official brands, team names, and associations. Example: Toronto Blue Jays, Levi's, Nike.
+    - **Alternate Spellings & Variations:** Use variations and alternate spellings to capture a broader audience. Example: "Blue Jays," "Blue-Jays," "BlueJays."
+    - **Product Type/Category:** Include item descriptors like "graphic tee," "vintage jacket," "denim jeans."
+    - **Style and Material:** Include terms that describe the style, era, and material (e.g., "Y2K," "cotton," "streetwear"). Include synonyms for style descriptors.
+    - **Relevant Trends & Aesthetics:** Capture keywords reflecting popular trends or aesthetics (e.g., "minimalist," "oversized," "retro").
+    - **Condition/Source:** Include relevant terms to indicate product condition and origin (e.g., "deadstock," "preloved," "reworked").
+    - **Limit to 13 Tags:** Generate **13 highly relevant tags** that cover a range of potential buyer search terms.
+    `;
 
   // Create the base instruction set
   const baseInstructions = `
@@ -280,8 +295,8 @@ ${CategoryHierarchy}
     - **Condition:** Use one of the options: ${ProductConditionsList}
     - **Brand:** Visible brand name, if present
     - **Gender:** As determined
-    - **Tags:** generate 13 SEO-friendly, relevant tags (e.g., "casual", "vintage"). Use only these tags if this array is not empty: ${forInferenceTags}.
-    - **Age:** Inferred age (e.g., "1990s"); use only if you are 95% certain, otherwise set as null.
+    - **Tags:** Generate 13 SEO-friendly, relevant tags, with the following instructions: ${tagInstructions}
+    - **Age:** Inferred age (e.g., "1990s"); use only if you are at least 50% certain, otherwise set as null.
     - **Style:** Overall style (e.g., "vintage")
     - **Design:** Notable design elements (e.g., "flannel", "minimalist")
     - **Fit Type:** Clothing fit (e.g., "slim", "regular", "loose")
@@ -304,18 +319,22 @@ Before finalizing your answer, carefully review each image for:
 - Ensure there is sentence of the description that is **SEO-optimized** and compelling.
 - Use **high-traffic keywords** in titles and descriptions.
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
-${hasDescriptionTemplate ? '- Since a custom description template is provided, return only the sentence that should be inserted for @descriptive_sentence in the final JSON.' : '- Produce the full description as per the default instructions.'}
+${hasDescriptionTemplate ? '- Return only the sentence as per the instructions that should be inserted for @descriptive_sentence in the final JSON' : '- Produce the full description as per the default instructions.'}
 ${hasTitleTemplate ? '- For title with template: When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title.' : ''}
 
 ### IMPORTANT:
-${hasTitleTemplate ? `
+${
+  hasTitleTemplate
+    ? `
 - **Placeholder Removal in Title:**  
   When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title. Do not leave any extra spaces or tokens.  
   - **Example:**  
     If the title template is "@age @brand @design @style @category Size @size" and @age is null and @brand is null, the final title should be "@design @style @category Size @size" without extra spaces.
 - **Do Not Substitute Placeholders:**  
   If a template is provided, do not replace any placeholder tokens with their actual values in the output JSON. The output title should preserve the tokens for non-null values and exclude tokens corresponding to null attributes.
-` : ''}
+`
+    : ''
+}
 - Avoid common mistakes such as:
   - Confusing similar materials (e.g., cotton blend vs 100% cotton)
   - Misidentifying decades (note: Y2K items span 1999-2004)
@@ -335,17 +354,19 @@ ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
 ### Example JSON Output:
 \`\`\`json
 {
-  "title": ${hasTitleTemplate ? 
-    '"@age @brand @design @style @category Size @size"' : 
-    '"Vintage 1990s Levi\'s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential"'},
-  "description": "Iconic 1990s Levi's 501 high-waisted denim jeans, a must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.\\n",
-  "descriptionHtml": "<h2>Iconic 1990s Levi&#39;s 501 High-Waisted Denim Jeans</h2><p>A must-have for vintage and streetwear lovers, featuring classic distressed details for an effortlessly grunge aesthetic.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a grunge and streetwear edge.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from 100% durable cotton denim.</li><li><strong>Fit &amp; Features:</strong> High-waisted, straight-leg fit with a relaxed, lived-in feel; features natural fading, distressed accents, and the signature button fly.</li><li><strong>Ideal Use Cases:</strong> Perfect for pairing with oversized band tees, chunky boots, or layering with a flannel for a true 90s grunge vibe.</li></ul>",
+  "title": ${
+    hasTitleTemplate
+      ? '"@age @brand @design @style @category Size @size"'
+      : '"Vintage 1990s Levi\'s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential"'
+  },
+  "description": ${hasDescriptionTemplate ? '"Vintage Levi\'s 501 jeans from the 1990s, featuring a high-waisted, straight-leg cut.​"' : '"Vintage Carhartt Jacket features durable canvas, flannel lining, and original "Wayne Feeds" and "W. Tonner Farms" embroidery on the chest. With a faded look, ribbed trims, and a hood."'},
+  "descriptionHtml": "<h2>Iconic 1990s Levi&#39;s 501 High-Waisted Denim Jeans</h2><p>A must-have for vintage and streetwear lovers, featuring classic distressed details for a grunge aesthetic.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a grunge and streetwear edge.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from 100% cotton denim.</li></ul>",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],
     "secondaryColor": null
   },
-  "material": "cotton",
+  "material": "Cotton",
   "size": "M",
   "category": "Tops",
   "subcategory": "Polo",
@@ -353,7 +374,11 @@ ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
   "condition_notes": null,
   "brand": "Polo Ralph Lauren",
   "gender": "Menswear",
-  "tags": ["90s", "denim", "streetwear", "levi's denim", "levi's pants", "levi's distressed", "levi's", "vintage levi's", "blue jeans"  /* up to 13 tags */],
+  "tags": ${
+    tags?.length
+      ? `[${forInferenceTags.map((tag) => `"${tag}"`).join(', ')}]`
+      : '["Toronto Blue Jays", "Blue-Jays", "Blue Jays", "Baseball", "Jersey", "graphic tee", "vintage sportswear", "retro", "collectible", "cotton", "crewneck", "short sleeve", "blue"]'
+  }
   "age": "1990s",
   "item_style": "Smart",
   "design": "minimalist",
@@ -442,7 +467,6 @@ export class ProductClassifier {
       }
       const data = await response.json();
       const result = JSON.stringify(data.products) || '';
-      console.log('This is the result: ', result);
       return result;
     } catch (error) {
       console.error('Error fetching RAG context:', error);
@@ -491,7 +515,7 @@ export class ProductClassifier {
 
     console.log('== Raw JSON ==\n', rawJson);
     const parsedContent = JSON.parse(rawJson);
-    
+
     return ProductResponseSchema.parse(parsedContent);
   }
   catch(error: { errors: any }) {

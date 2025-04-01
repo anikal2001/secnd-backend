@@ -19,7 +19,10 @@ export class MarketplaceService {
    * @returns Array of marketplace listings
    */
   async findByProductId(productId: string): Promise<MarketplaceListing[]> {
-    return await this.marketplaceRepository.findByProductId(productId);
+    return await this.marketplaceRepository.find({
+      where: { product: { product_id: productId } },
+      relations: ['product'],
+    });
   }
 
   /**
@@ -45,8 +48,8 @@ export class MarketplaceService {
       .createQueryBuilder()
       .delete()
       .from(MarketplaceListing)
-      .where("product_id = :product_id", { product_id })
-      .andWhere("marketplace = :marketplace", { marketplace })
+      .where('product_id = :product_id', { product_id })
+      .andWhere('marketplace = :marketplace', { marketplace })
       .execute();
   }
 
@@ -141,7 +144,6 @@ export class MarketplaceService {
     });
   }
 
-
   /**
    * Check if any marketplace listing exists for a product
    * @param product_id The product ID
@@ -153,5 +155,78 @@ export class MarketplaceService {
       where: { product: { product_id } },
     });
     return listing !== null;
+  }
+
+  /**
+   * Update the status of a marketplace listing for a product
+   * @param product_id The product ID
+   * @param marketplace The marketplace name
+   * @param status The new status
+   */
+  async updateListingStatus(product_id: string, marketplace: string, status: string): Promise<void> {
+    await this.marketplaceRepository.update({ product: { product_id }, marketplace }, { status });
+  }
+
+  /**
+   * Find all marketplace listings for a product by one of its listing IDs
+   * @param marketplaceId The listing ID from one marketplace
+   * @param sourceMarketplace The marketplace where the listing ID is from (optional for cross-checking)
+   * @returns All marketplace listings for the same product
+   */
+  async findByMarketplaceId(marketplaceId: string, sourceMarketplace?: string): Promise<MarketplaceListing[]> {
+    // First, find the specific listing to get its product_id
+    let whereClause: any = { marketplace_id: marketplaceId };
+
+    // If sourceMarketplace is provided, use it for more accurate lookup
+    if (sourceMarketplace) {
+      whereClause.marketplace = sourceMarketplace;
+    }
+
+    const listing = await this.marketplaceRepository.findOne({
+      where: whereClause,
+      relations: ['product'], // Need to join with product to get product_id
+    });
+
+    if (!listing || !listing.product) {
+      console.log(`No listing found with ID ${marketplaceId}${sourceMarketplace ? ` on ${sourceMarketplace}` : ''}`);
+      return []; // No listing found with this ID
+    }
+
+    const productId = listing.product.product_id;
+    console.log(`Found product ${productId} for listing ${marketplaceId}`);
+
+    // Now find all listings for this product
+    const allListings = await this.findByProductId(productId);
+
+    console.log(`Found ${allListings.length} marketplace listings for product ${productId}`);
+    return allListings;
+  }
+
+  /**
+   * Get other marketplace listings for a product that's been sold
+   * @param marketplaceId The ID of the sold listing
+   * @param soldMarketplace The marketplace where it was sold
+   * @returns Object with product_id and array of marketplace listings on other platforms
+   */
+  async getOtherMarketplaceListings(
+    marketplaceId: string,
+    soldMarketplace: string,
+  ): Promise<{ product_id: string; otherListings: MarketplaceListing[] }> {
+    // Find all marketplace listings for this product
+    const allListings = await this.findByMarketplaceId(marketplaceId, soldMarketplace);
+
+    if (allListings.length === 0) {
+      console.log(`No listings found for marketplace ID ${marketplaceId} on ${soldMarketplace}`);
+      return { product_id: '', otherListings: [] };
+    }
+
+    // Get the product_id from the first listing
+    const productId = allListings[0]?.product?.product_id || '';
+
+    // Filter out the listing from the marketplace where it was sold
+    const otherListings = allListings.filter((listing) => listing.marketplace !== soldMarketplace);
+
+    console.log(`Found ${otherListings.length} other marketplace listings to delist after sale on ${soldMarketplace}`);
+    return { product_id: productId, otherListings };
   }
 }
