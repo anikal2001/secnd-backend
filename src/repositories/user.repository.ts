@@ -21,7 +21,6 @@ export const UserRepository = AppDataSource.getRepository(User).extend({
         expiryToken: (new Date().getUTCSeconds()).toString(),
         avatar: '',
         cart: [],
-        orders: [],
         transactions: [],
         interactions: [],
       }])
