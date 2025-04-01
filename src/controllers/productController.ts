@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import { ProductService } from '../services/product.service';
 import { ProductStatus } from '../utils/products.enums';
 import { MeasurementService } from '../services/measurement.service';
+import { randomUUID } from 'crypto';
 
 export class ProductController {
   static productService: ProductService = new ProductService();
@@ -255,6 +256,18 @@ export class ProductController {
       res.status(500).json({ message: error.message });
     }
   };
+
+  public importProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // console.log('Importing products:', req.body);
+      req.body.product_id = randomUUID()
+      const imports = await ProductController.productService.saveImports(req.body);
+      res.json(imports);
+    }
+    catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 
   // Current Products that have the most wishlist + likes + views
   public getTrendingProducts = async (req: Request, res: Response): Promise<void> => {

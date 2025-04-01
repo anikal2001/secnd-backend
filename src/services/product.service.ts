@@ -2,7 +2,7 @@ import { PutObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 import S3 from '../utils/AWSClient';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { plainToClass, plainToInstance } from 'class-transformer';
-import { Product, GeneratedResponse } from '../entity/product.entity';
+import { Product, GeneratedResponse, ProductImport } from '../entity/product.entity';
 import { ProductFilters, ProductType } from '../types/product';
 import { Category } from '../utils/product/category';
 import { ProductRepository } from '../repositories/product.repository';
@@ -25,6 +25,7 @@ export class ProductService {
   private MarketplaceService: MarketplaceService = new MarketplaceService();
   private MeasurementService: MeasurementService = new MeasurementService();
   private GeneratedResponseRepository = AppDataSource.getRepository(GeneratedResponse);
+  private ProductImportRepository = AppDataSource.getRepository(ProductImport);
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
     // If the id is undefined, it will return all orders
@@ -104,8 +105,7 @@ export class ProductService {
       }
 
       // Save the response to the GeneratedResponse Database
-      console.log(res);
-      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', user_id: sellerID });
+      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', user_id: sellerID, attributes: res?.attributes });
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
     } catch (error) {
@@ -291,6 +291,8 @@ export class ProductService {
     }
   }
 
+
+
   async updateProduct(id: string, productData: Product): Promise<Product | null> {
     try {
       console.log('Updating product with ID:', id, 'Data:', productData);
@@ -347,6 +349,16 @@ export class ProductService {
       return updatedProduct;
     } catch (error) {
       console.error('Error updating product:', error);
+      throw error;
+    }
+  }
+
+  async saveImports(imports: ProductImport[]): Promise<ProductImport[]> {
+    try {
+      const savedImports = await this.ProductImportRepository.save(imports);
+      return savedImports;
+    } catch (error) {
+      console.error('Error saving imports:', error);
       throw error;
     }
   }
@@ -410,11 +422,36 @@ export class ProductService {
         }
       }
 
+      const mappedAttributes = {
+        pattern: enhancedResponse?.attributes?.pattern,
+        waist_rise: enhancedResponse?.attributes?.waist_rise,
+        pants_length_type: enhancedResponse?.attributes?.pants_length_type,
+        dress_style: enhancedResponse?.attributes?.dress_style,
+        one_piece_style: enhancedResponse?.attributes?.one_piece_style,
+        skirt_style: enhancedResponse?.attributes?.skirt_style,
+        neckline: enhancedResponse?.attributes?.neckline,
+        sleeve_length_type: enhancedResponse?.attributes?.sleeve_length_type,
+        care_instructions: enhancedResponse?.attributes?.care_instructions,
+        activewear_style: enhancedResponse?.attributes?.activewear_style,
+        length_type: enhancedResponse?.attributes?.length_type,
+        age_group: enhancedResponse?.attributes?.age_group,
+        clothing_features: enhancedResponse?.attributes?.clothing_features,
+        fit: enhancedResponse?.attributes?.fit,
+        best_uses: enhancedResponse?.attributes?.best_uses,
+        outerwear_clothing_features: enhancedResponse?.attributes?.outerwear_clothing_features,
+        top_length_type: enhancedResponse?.attributes?.top_length_type,
+        dress_occasion: enhancedResponse?.attributes?.dress_occasion,
+        activewear_clothing_features: enhancedResponse?.attributes?.activewear_clothing_features,
+      }
+
+      console.log('Mapped attributes:', mappedAttributes);
+
       const response = plainToClass(GeneratedResponse, {
         ...enhancedResponse,
         images: images,
         status: 'draft',
         seller: seller,
+        attributes: mappedAttributes,
       });
       await this.GeneratedResponseRepository.save(response);
       return response;

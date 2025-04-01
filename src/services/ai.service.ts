@@ -5,6 +5,8 @@ import { Gender, ProductColors, ProductCondition, Material, ProductSource } from
 import { Category } from '../utils/product/category';
 import { productSizes } from '../utils/product/size';
 import { ChatCompletion } from 'openai/resources/chat';
+import { mens_attributes, womens_attributes } from '../utils/product/features';
+import { features } from '../utils/product/features';
 
 /**
  * Interfaces for the template system
@@ -53,6 +55,12 @@ const MeasurementSchema = z.object({
   value: z.number().optional(),
   unit: z.string().optional(),
 });
+
+// Define a dynamic attributes schema that can accept any string key with array of strings value
+const DynamicAttributesSchema = z.record(z.string(), z.union([
+  z.array(z.string()),
+  z.null()
+]).catch(null));
 
 export const ProductResponseSchema = z
   .object({
@@ -112,6 +120,8 @@ export const ProductResponseSchema = z
       ])
       .nullable()
       .catch(null),
+    // Add dynamic attributes schema
+    attributes: DynamicAttributesSchema.nullable().catch(null),
   })
   // Transform to correct category based on subcategory before validation
   // This transformation guarantees that we'll never have a null category
@@ -136,6 +146,85 @@ export const ProductResponseSchema = z
   });
 
 export type ProductResponse = z.infer<typeof ProductResponseSchema>;
+
+/**
+ * Helper to convert a attribute name to a feature key
+ * Converts "Sleeve length type" to "sleeve-length-type" format
+ */
+export function attributeNameToFeatureKey(attributeName: string): string {
+  return attributeName.toLowerCase().replace(/\s+/g, '-');
+}
+
+/**
+ * Get attribute options for a specific attribute
+ */
+export function getAttributeOptions(attributeName: string): { handle: string; displayName: string; id?: string }[] {
+  const key = attributeNameToFeatureKey(attributeName);
+  const options = (key in features ? features[key as keyof typeof features] : []) || [];
+  
+  // Normalize the options to ensure all have the correct property names
+  return options.map(option => ({
+    handle: option.handle,
+    displayName: option.displayName || option['displayName'] || '',
+    id: option.id
+  }));
+}
+
+/**
+ * Get the attributes for a specific gender, category, and subcategory
+ */
+export function getAttributesForProduct(gender: Gender, category: string, subcategory?: string): string[] {
+  const attributeMap = gender === Gender.Menswear ? mens_attributes : womens_attributes;
+  
+  // Create a key in the format: gender_category_subcategory or gender_category_default
+  let key = '';
+  
+  if (subcategory) {
+    key = `${gender.toLowerCase()}_${category.toLowerCase()}_${subcategory}`;
+    // Check if there's a specific entry for this subcategory
+    if (key in attributeMap) {
+        return attributeMap[key as keyof typeof attributeMap];
+      }
+  }
+  
+  // Try with default subcategory
+  key = `${gender.toLowerCase()}_${category.toLowerCase()}_default`;
+    if (key in attributeMap) {
+        return attributeMap[key as keyof typeof attributeMap];
+      }
+   
+  // Fallback to category only
+  key = `${gender.toLowerCase()}_${category.toLowerCase()}`;
+    if (key in attributeMap) {
+        return attributeMap[key as keyof typeof attributeMap];
+      }
+  
+  // Return empty array if no attributes found
+  return [];
+}
+
+/**
+ * Get formatted attribute options for instructions
+ */
+export function getFormattedAttributeOptionsForInstructions(): string {
+  const formattedOptions = Object.entries(features).map(([key, options]) => {
+    // Convert key from kebab-case to Title Case
+    const formattedKey = key
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    // Format the options
+    const optionsList = options
+      .filter(option => option.handle !== 'other')
+      .map(option => option.displayName)
+      .join(', ');
+    
+    return `- **${formattedKey}**: ${optionsList}`;
+  }).join('\n');
+  
+  return formattedOptions;
+}
 
 /**
  * Process a template string by replacing placeholders with values
@@ -289,6 +378,7 @@ ${CategoryHierarchy}
     - **Made In:** Country of manufacture (e.g., "USA", "China")
     - **Source:** List of two sources max. (e.g., "Vintage", "New"): Choose from: ${ProductSourceList}
     - **Condition Notes:** Specific details regarding the condition that would be essential for the buyer to know.
+    - **Attributes:** After determining gender, category, and subcategory, include specific attributes relevant to the item. Each attribute should be an array of one or more values (even if there's only one value, it should be in an array).
 
 ### Detailed Inspection Guidelines:
 Before finalizing your answer, carefully review each image for:
@@ -332,6 +422,55 @@ Common mistakes to avoid:
 - Inaccurate pricing (vintage band t-shirts command higher prices)
 ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
 
+### Dynamic Attributes Instructions:
+After determining the gender, category, and subcategory of the item, you must include relevant attributes from the following mapping:
+
+For Menswear items, identify applicable attributes from this list based on the category/subcategory:
+- T-Shirts: Sleeve length type, Age group, Neckline, Top length type, Clothing features
+- Hoodies: Age group, Neckline, Top length type, Clothing features
+- Sweaters: Age group, Neckline, Top length type, Clothing features (with variations for Cardigans, Crewneck, etc.)
+- Shirts: Age group, Neckline, Top length type, Clothing features (with variations for Polo, Casual, etc.)
+- Jeans: Age group, Fit, Waist rise, Pants length type, Clothing features (with variations for different fits)
+- Outerwear: Sleeve length type, Age group, Neckline, Care instructions, Outerwear clothing features
+
+For Womenswear items, identify applicable attributes from this list based on the category/subcategory:
+- T-Shirts: Sleeve length type, Age group, Neckline, Top length type, Clothing features
+- Hoodies: Activity, Neckline, Activewear clothing features
+- Sweaters: Age group, Neckline, Top length type, Clothing features (with variations)
+- Dresses: Sleeve length type, Age group, Neckline, Skirt/Dress length type, Clothing features, Dress occasion, Dress style
+- Bottoms: Various attributes depending on type (skirts, jeans, leggings, etc.)
+
+Include these applicable attributes in the "attributes" field of your JSON response. Important: each attribute should contain an array of values, even if there's only one value for that attribute.
+
+### Attribute Options
+When filling in attribute values, use the following standardized options:
+
+- **Sleeve Length Type**: Short, Long, 3/4, Cap, Sleeveless, Spaghetti Strap, Strapless
+- **Age Group**: Adults, All Ages, Babies, Kids, Newborn, Teens, Toddlers, Universal
+- **Neckline**: Asymmetric, Bardot, Boat, Cowl, Crew, Halter, Hooded, Mandarin, Mock, Plunging, Round, Split, Square, Sweetheart, Turtle, V-Neck, Wrap
+- **Top Length Type**: Bodysuit, Crop Top, Long, Medium
+- **Clothing Features**: Hypoallergenic, Insulated, Moisture Wicking, Quick Drying, Reversible, Stretchable, UV Protection, Vegan Friendly, Water Resistant, Windproof, Wrinkle Resistant
+- **Fit**: Boyfriend, Mom, Skinny Leg, Slim, Straight Leg, Tapered Leg, Wide
+- **Waist Rise**: High, Low, Mid
+- **Pants Length Type**: Above the Knee, Capri, Cropped, Footed, Knee, Long
+- **Activewear Clothing Features**: Adjustable Waistband, Anti-Chafing Design, Anti-Static Properties, Body Contouring Fit, Breathable Design, Compression, Flatlock Seams, Four-Way Stretch, Hidden Pockets, High Visibility Accents, Mesh Panels, Moisture Wicking, Odor Resistant, Quick Drying, Reflective, Removable Padding, Seamless, Sweatproof Pockets, Temperature Regulation, Thumbholes, UV Protection, Vegan Friendly, Ventilation, Waterproof Coating
+- **Care Instructions**: Dry Clean Only, Dryer Safe, Hand Wash, Ironing Instructions, Machine Washable, Tumble Dry
+- **Outerwear Clothing Features**: Breathable Design, Hooded, Hypoallergenic, Insulated, Lightweight, Pockets, Quick Drying, Thermal, UV Protection, Waterproof, Windproof, Wrinkle Resistant
+- **Skirt/Dress Length Type**: Knee, Maxi, Midi, Mini, Short
+- **Dress Occasion**: Birthday, Casual, Dance, Everyday, Formal, Holiday, Party, Portrait, Religious Ceremony, School, Wedding
+- **Dress Style**: A-Line, Babydoll, Blouson, Caftan, Drop Waist, Empire Waist, Flared, Gown, Jacket, Mermaid, Pencil, Peplum, Sheath, Shift, Shirt, Skater, Slip, Sweater, Tank, Trumpet, Wrap
+- **Activity**: Aerobics, Aikido, Baseball, Basketball, Boxing, Climbing, Cycling, Dancing, Football, Golf, Gymnastics, Handball, Hockey, Running, Soccer, Tennis, Volleyball, Wrestling, Yoga
+
+Include these applicable attributes in the "attributes" field of your JSON response. IMPORTANT: Each attribute must be an array of values, even if there's only one value. For example:
+
+\`\`\`json
+"attributes": {
+  "sleeve_length_type": ["Short"],
+  "age_group": ["Adult"],
+  "clothing_features": ["Moisture Wicking", "Quick Drying", "Stretchable"]
+}
+\`\`\`
+
 ### Example JSON Output:
 \`\`\`json
 {
@@ -353,7 +492,7 @@ ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
   "condition_notes": null,
   "brand": "Polo Ralph Lauren",
   "gender": "Menswear",
-  "tags": ["90s", "denim", "streetwear", "levi's denim", "levi's pants", "levi's distressed", "levi's", "vintage levi's", "blue jeans"  /* up to 13 tags */],
+  "tags": ["90s", "denim", "streetwear", "levi's denim", "levi's pants", "levi's distressed", "levi's", "vintage levi's", "blue jeans"],
   "age": "1990s",
   "item_style": "Smart",
   "design": "minimalist",
@@ -362,6 +501,13 @@ ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
   "fit_type": "slim",
   "design": "Single Stitch",
   "closure_type": "buttons",
+  "attributes": {
+    "sleeve_length_type": "Short sleeve",
+    "age_group": "Adult",
+    "neckline": "Polo collar",
+    "top_length_type": "Regular",
+    "clothing_features": "Logo embroidery"
+  }
 }
 \`\`\`
 ${hasTitleTemplate ? 'Ensure that all placeholders remain intact during analysis. DO NOT REPLACE THE PLACEHOLDERS WITH ACTUAL VALUES; however, when outputting the final title, any placeholder corresponding to a null value must be completely removed from the title string.' : ''}
@@ -459,6 +605,9 @@ export class ProductClassifier {
     exampleDescription?: string,
     tags?: string[],
   ): Promise<ProductResponse> {
+    // Log that attribute options are loaded
+    console.log('Attribute options loaded for classification');
+    
     // Get messages using new template system
     const messages = createThreeImageMessages(imageUrls, titleTemplate, descriptionTemplate, exampleDescription, tags);
 
@@ -493,6 +642,61 @@ export class ProductClassifier {
 
     console.log('== Raw JSON ==\n', rawJson);
     const parsedContent = JSON.parse(rawJson);
+    
+    // Before validation, ensure that attributes are added if they don't exist
+    if (!parsedContent.attributes && parsedContent.gender && parsedContent.category) {
+      // Get the relevant attributes for this product type
+      const attributesList = getAttributesForProduct(
+        parsedContent.gender, 
+        parsedContent.category, 
+        parsedContent.subcategory
+      );
+      
+      // Initialize attributes object if needed
+      if (attributesList.length > 0 && !parsedContent.attributes) {
+        parsedContent.attributes = {};
+        // Initialize with empty arrays
+        attributesList.forEach(attr => {
+          parsedContent.attributes[attr] = [];
+        });
+      }
+    }
+    
+    // Convert string values to arrays if needed
+    if (parsedContent.attributes) {
+      Object.entries(parsedContent.attributes).forEach(([attributeName, value]) => {
+        // If the value is a string, convert it to an array
+        if (typeof value === 'string') {
+          parsedContent.attributes[attributeName] = [value];
+        }
+        // If the value is null, convert to empty array
+        else if (value === null) {
+          parsedContent.attributes[attributeName] = [];
+        }
+      });
+    }
+    
+    // Validate attribute values against the allowed options
+    if (parsedContent.attributes) {
+      Object.entries(parsedContent.attributes).forEach(([attributeName, values]) => {
+        if (Array.isArray(values) && values.length > 0) {
+          const options = getAttributeOptions(attributeName);
+          
+          // Filter out invalid values
+          if (options.length > 0) {
+            const validValues = values.filter(value => 
+              // Either the value matches a known option or we keep it if no options are defined
+              options.some(option => option.displayName.toLowerCase() === value.toLowerCase())
+            );
+            
+            if (validValues.length !== values.length) {
+              console.warn(`Invalid attribute values found for ${attributeName}`);
+              parsedContent.attributes[attributeName] = validValues.length > 0 ? validValues : [];
+            }
+          }
+        }
+      });
+    }
     
     return ProductResponseSchema.parse(parsedContent);
   }

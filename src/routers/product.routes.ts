@@ -15,6 +15,7 @@ Router.post('/update', productController.updateProduct);
 Router.get('/filter', productController.filterProducts);
 Router.post('/save-draft', productController.saveDraft);
 Router.post('/upload-image', productController.uploadImage);
+Router.post('/import', productController.importProducts);
 // Router.get('/search', productController.searchProducts);
 // Router.get('/categories', productController.getCategories);
 Router.get('/categories/:category', productController.getProductsByCategory);

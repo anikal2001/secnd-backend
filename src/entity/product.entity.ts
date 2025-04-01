@@ -22,6 +22,65 @@ import { MarketplaceListing } from './marketplace.entity';
 import { productSizes, ProductSize } from '../utils/product/size';
 import { Measurement } from './measurement.entity';
 
+export class Attributes {
+  @Column({ type: 'simple-json', nullable: true })
+  pattern: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  waist_rise: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  pants_length_type: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  dress_style: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  one_piece_style: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  skirt_style: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  neckline: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  sleeve_length_type: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  care_instructions: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  activewear_style: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  length_type: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  age_group: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  clothing_features: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  fit: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  best_uses: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  outerwear_clothing_features: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  top_length_type: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  dress_occasion: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  activewear_clothing_features: string[];
+}
+
 // Abstract base class for Product
 export abstract class ProductBase {
   @PrimaryColumn('uuid')
@@ -46,12 +105,6 @@ export abstract class ProductBase {
   @Column({ type: 'float', nullable: true })
   price: number;
 
-  @Column({ type: 'simple-json', nullable: true })
-  color: {
-    primaryColor: ProductColors[];
-    secondaryColor: ProductColors[];
-  };
-
   @Column({ type: 'simple-array', nullable: true })
   primaryColor: string[];
 
@@ -66,15 +119,6 @@ export abstract class ProductBase {
 
   @Column({ nullable: true })
   subcategory: string;
-
-  @Column({ type: 'enum', enum: productSizes, nullable: true })
-  listed_size: ProductSize;
-
-  @Column({ type: 'json', nullable: true, enum: ProductStyles })
-  styles: ProductStyles[];
-
-  @Column({ type: 'simple-enum', nullable: true, enum: ProductCondition })
-  condition: ProductCondition;
 
   @Column({ nullable: true })
   brand: string;
@@ -101,9 +145,6 @@ export abstract class ProductBase {
   @JoinColumn({ name: 'product_id' })
   imageURLS: Image[];
 
-  @Column({ type: 'simple-enum', enum: Material, nullable: true })
-  material: Material;
-
   @Column({ type: 'varchar', nullable: true })
   dimensions: string;
 
@@ -120,7 +161,6 @@ export abstract class ProductBase {
     cascade: true,
     onDelete: 'CASCADE',
   })
-
   marketplaceListings: MarketplaceListing[];
 
   @Column({ type: 'varchar', nullable: true })
@@ -147,19 +187,76 @@ export abstract class ProductBase {
   @UpdateDateColumn()
   updated_at: Date;
 }
+@Entity()
+export class ProductImport extends ProductBase {
+  @Column({ type: 'varchar', nullable: true })
+  product_id: string;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.product_id) {
+      this.product_id = randomUUID(); // Auto-generate UUID if not provided
+    }
+  }
+
+  @Column({ type: 'simple-json', nullable: true })
+  color: {
+    primaryColor: string[];
+    secondaryColor: string[];
+  };
+
+  @Column({ type: 'varchar', nullable: true })
+  listed_size: string;
+
+  @Column({ type: 'json', nullable: true })
+  styles: string[];
+
+  @Column({ type: 'varchar', nullable: true })
+  condition: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  material: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  seller_id: string;
+
+  @Column(() => Attributes)
+  attributes: Attributes;
+}
 
 @Entity()
 export class Product extends ProductBase {
   // Removed self-referencing OneToOne relationship which could be causing deletion issues
-  
+
   @ManyToOne(() => Seller, (seller) => seller.Products, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   seller: Seller;
 
-  @OneToMany(() => Measurement, measurement => measurement.product, {
-    cascade: true
+  @Column({ type: 'simple-json', nullable: true })
+  color: {
+    primaryColor: ProductColors[];
+    secondaryColor: ProductColors[];
+  };
+
+  @Column({ type: 'enum', enum: productSizes, nullable: true })
+  listed_size: ProductSize;
+
+  @Column({ type: 'json', nullable: true, enum: ProductStyles })
+  styles: ProductStyles[];
+
+  @Column({ type: 'simple-enum', nullable: true, enum: ProductCondition })
+  condition: ProductCondition;
+
+  @Column({ type: 'simple-enum', enum: Material, nullable: true })
+  material: Material;
+
+  @OneToMany(() => Measurement, (measurement) => measurement.product, {
+    cascade: true,
   })
   measurements: Measurement[];
+
+  @Column(() => Attributes)
+  attributes: Attributes;
 }
 
 @Entity()
@@ -170,4 +267,30 @@ export class GeneratedResponse extends ProductBase {
 
   @Column({ nullable: true })
   user_id: string;
+
+  @Column({ type: 'simple-json', nullable: true })
+  color: {
+    primaryColor: ProductColors[];
+    secondaryColor: ProductColors[];
+  };
+
+  @Column({ type: 'enum', enum: productSizes, nullable: true })
+  listed_size: ProductSize;
+
+  @Column({ type: 'json', nullable: true, enum: ProductStyles })
+  styles: ProductStyles[];
+
+  @Column({ type: 'simple-enum', nullable: true, enum: ProductCondition })
+  condition: ProductCondition;
+
+  @Column({ type: 'simple-enum', enum: Material, nullable: true })
+  material: Material;
+
+  @OneToMany(() => Measurement, (measurement) => measurement.product, {
+    cascade: true,
+  })
+  measurements: Measurement[];
+
+  @Column(() => Attributes)
+  attributes: Attributes;
 }
