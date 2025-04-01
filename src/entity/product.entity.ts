@@ -121,6 +121,9 @@ export abstract class ProductBase {
   subcategory: string;
 
   @Column({ nullable: true })
+  condition_notes: string;
+
+  @Column({ nullable: true })
   brand: string;
 
   @Column({ nullable: true })
@@ -128,6 +131,9 @@ export abstract class ProductBase {
 
   @Column({ nullable: true })
   made_in: string;
+
+  @Column({ type: 'simple-array', nullable: true })
+  source: string[]; 
 
   @Column({ nullable: true })
   fit_type: string;
@@ -144,6 +150,12 @@ export abstract class ProductBase {
   @OneToMany(() => Image, (image) => image.product)
   @JoinColumn({ name: 'product_id' })
   imageURLS: Image[];
+
+  @Column({ type: 'simple-enum', enum: Material, nullable: true })
+  material: Material;
+
+  @Column({ type: 'simple-array', nullable: true })
+  materials: string[];
 
   @Column({ type: 'varchar', nullable: true })
   dimensions: string;

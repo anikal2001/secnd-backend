@@ -32,22 +32,44 @@ export enum ProductSize {
 }
 
 export enum Material {
-  Cotton = "cotton",
-  Polyester = "polyester",
-  Wool = "wool",
-  Silk = "silk",
-  Linen = "linen",
-  Nylon = "nylon",
-  Rayon = "rayon",
-  Viscose = "viscose",
-  Spandex = "spandex",
-  Denim = "denim",
-  Leather = "leather",
-  Velvet = "velvet",
-  Fleece = "fleece",
-  Satin = "satin",
-  Fur = "fur",
+  Acrylic = "Acrylic",
+  Canvas = "Canvas",
+  Cashmere = "Cashmere",
+  Corduroy = "Corduroy",
+  Cotton = "Cotton",
+  CottonOrganic = "Cotton - Organic",
+  CottonRecycled = "Cotton - Recycled",
+  Crochet = "Crochet",
+  Denim = "Denim",
+  Elastane = "Elastane / Lycra / Spandex",
+  Embellished = "Embellished",
+  FauxFur = "Faux fur",
+  FauxLeather = "Faux leather",
+  Fleece = "Fleece",
+  Fur = "Fur",
+  Hemp = "Hemp",
+  Jersey = "Jersey",
+  Knitted = "Knitted",
+  Lace = "Lace",
+  Leather = "Leather",
+  Linen = "Linen",
+  Lyocell = "Lyocell",
+  Modal = "Modal",
+  Nylon = "Nylon",
+  Polyester = "Polyester",
+  PolyesterRecycled = "Polyester - Recycled",
+  Rayon = "Rayon",
+  Rubber = "Rubber",
+  Satin = "Satin",
+  Silk = "Silk",
+  Spandex = "Spandex", 
+  Suede = "Suede",
+  Tweed = "Tweed",
+  Velvet = "Velvet",
+  Viscose = "Viscose",
+  Wool = "Wool"
 }
+
 
 export enum ProductColors {
   BLACK = 'black',
@@ -101,6 +123,7 @@ export enum ProductStatus {
   active = 1,
   sold = 2,
   pendingAction = 3,
+  deactivated = 4, // same as delisted 
 }
 
 export enum MaterialOptions {

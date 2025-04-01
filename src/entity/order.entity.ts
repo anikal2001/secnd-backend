@@ -1,48 +1,79 @@
-import { Entity, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedColumn, JoinColumn, JoinTable } from 'typeorm';
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  ManyToOne, 
+  JoinColumn, 
+  CreateDateColumn, 
+  UpdateDateColumn 
+} from 'typeorm';
 import { Product } from './product.entity';
-import { User } from './user.entity'; 
 
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn('uuid')
-  id!: number;
+  transaction_id: string;
 
-  @ManyToOne(() => User, (user) => user.orders)
-  @JoinTable()
-  customer!: User;
+  @ManyToOne(() => Product, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'product_id' })
+  product: Product;
 
-  @OneToMany(() => OrderItem, (orderItem) => orderItem.order)
-  orderItems!: OrderItem[];
+  @Column({ type: 'varchar', nullable: false })
+  marketplace: string;
+  
+  @Column({ type: 'varchar', nullable: false })
+  marketplace_order_id: string;
+  
+  @Column({ type: 'varchar', nullable: true })
+  marketplace_listing_id: string;
+  
+  @Column({ type: 'varchar', nullable: true })
+  marketplace_transaction_id: string;
+  
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  buyer_paid: number;
+  
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  seller_paid: number;
 
-  @Column("money")
-  totalAmount!: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  tax_amount: number;
 
-  @Column({
-    type: 'enum',
-    enum: ['recieved', 'pending', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending',
-  })
-  status!: string;
-
-  @Column("varchar")
-  paymentMethod!: string;
-
-  @Column({ type: 'timestamptz' })
-  createdAt!: Date;
-
-  @Column({ type: 'timestamptz' })
-  updatedAt!: Date;
+  @Column({ type: 'varchar', length: 3, nullable: true })
+  currency: string;
+  
+  @Column({ type: 'timestamp', nullable: true })
+  sold_timestamp: Date;
+  
+  @Column({ type: 'varchar', nullable: true })
+  buyer_username: string;
+  
+  @Column({ type: 'jsonb', nullable: true })
+  buyer_address: {
+    name?: string;
+    street_address?: string;
+    address2?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    postal_code?: string;
+  };
+  
+  @Column({ type: 'varchar', nullable: true })
+  shipping_status: string;
+  
+  @Column({ type: 'varchar', nullable: true })
+  shipping_method: string;
+  
+  @Column({ type: 'varchar', nullable: true })
+  tracking_number: string;
+  
+  @Column({ type: 'varchar', nullable: true })
+  shipping_carrier: string;
+  
+  @CreateDateColumn()
+  created_at: Date;
+  
+  @UpdateDateColumn()
+  updated_at: Date;
 }
-
-@Entity()
-export class OrderItem {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
-  @ManyToOne(() => Order, (order) => order.orderItems)
-  order!: Order;
-
-  @ManyToOne(() => Product)
-  product!: Product;
-}
-

@@ -7,6 +7,7 @@ import { Router as userRouter } from "./routers/user.routes";
 import { Router as productRouter } from "./routers/product.routes";
 import { Router as SellerRouter } from "./routers/seller.routes";
 import { Router as cartRouter } from "./routers/cart.routes";
+import { Router as orderRouter } from "./routers/order.routes";
 
 dotenv.config();
 const cors = require('cors')
@@ -25,6 +26,7 @@ app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/sellers", SellerRouter);
 app.use('/api/cart', cartRouter)
+app.use('/api/orders', orderRouter)
 
 AppDataSource.initialize()
   .then(() => {

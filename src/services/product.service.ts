@@ -17,6 +17,7 @@ import { ProductStatus } from '../utils/products.enums';
 import { SellerService } from './seller.service';
 import { MarketplaceService } from './marketplace.service';
 import { MeasurementService } from './measurement.service';
+import { MarketplaceListing } from '../entity/marketplace.entity';
 
 export class ProductService {
   private UserService: UserService = new UserService();
@@ -464,18 +465,37 @@ export class ProductService {
   // Marketplace related
   async delistMarketplaceListing(product_id: string, marketplace: string): Promise<void> {
     try {
-      await this.MarketplaceService.deleteListingByProductAndMarketplace(product_id, marketplace);
+      if (marketplace === 'etsy') {
+        await this.MarketplaceService.updateListingStatus(product_id, marketplace, 'inactive');
+      } else {
+        await this.MarketplaceService.deleteListingByProductAndMarketplace(product_id, marketplace);
+      }
 
-      // Now, check if there are any listings left for this product.
+      // Now, check if there are any active listings left for this product.
       const exists = await this.MarketplaceService.doesAnyListingExist(product_id);
 
-      // If no marketplace listing remains, update the product status to draft.
+      // If no active marketplace listing remains, update the product status.
       if (!exists) {
-        await ProductRepository.update(product_id, { status: ProductStatus.draft });
+        const status = marketplace === 'etsy' ? ProductStatus.deactivated : ProductStatus.draft;
+        await ProductRepository.update(product_id, { status });
       }
     } catch (error) {
       console.error('Error deleting marketplace listing:', error);
       throw error;
     }
+  }
+
+  async deleteMarketplaceListing(product_id: string, marketplace: string): Promise<void> {
+    try {
+      await this.MarketplaceService.deleteListingByProductAndMarketplace(product_id, marketplace);
+    } catch (error) {
+      console.error('Error removing marketplace listing:', error);
+      throw error;
+    }
+  }
+
+  async getOtherMarketplaceListings(marketplaceId: string, soldMarketplace: string): Promise<{ product_id: string; otherListings: MarketplaceListing[] }> {
+    const { product_id, otherListings } = await this.MarketplaceService.getOtherMarketplaceListings(marketplaceId, soldMarketplace);
+    return { product_id, otherListings };
   }
 }

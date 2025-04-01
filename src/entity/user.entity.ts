@@ -62,9 +62,6 @@ export abstract class User extends BaseEntity {
   @Column({ type: "timestamptz", default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updated_at!: Date;
 
-  @OneToMany(() => Order, (order) => order.customer)
-  orders!: Order[];
-
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
   

@@ -42,7 +42,7 @@ export function findClosestBrandMatch(
   
   // Default options
   const defaultOptions = {
-    cutoff: 95,
+    cutoff: 90,
     forceAscii: true,     // Strip non-ascii characters
     useCollator: true,    // Use Intl.Collator for locale-sensitive string comparison
     ...options
