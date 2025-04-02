@@ -439,6 +439,7 @@ Common mistakes to avoid:
 - Confusing similar materials (e.g., cotton blend vs 100% cotton)
 - Misidentifying decades (note: Y2K items are 1999-2004)
 - Inaccurate pricing (vintage band t-shirts command higher prices)
+- Choose only from the attribute options provided in the instructions. DO NOT USE ANY OTHER VALUES OTHER THAN THE ONES PROVIDED.
 ${hasTitleTemplate ? '' : '- DO NOT USE @ SYMBOLS IN THE TITLE'}
 
 ### Dynamic Attributes Instructions:

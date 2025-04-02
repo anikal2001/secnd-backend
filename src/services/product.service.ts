@@ -106,7 +106,13 @@ export class ProductService {
       }
 
       // Save the response to the GeneratedResponse Database
-      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', user_id: sellerID, attributes: res?.attributes });
+      const response = plainToClass(GeneratedResponse, {
+        ...res,
+        imageURL: imageURL,
+        status: 'draft',
+        user_id: sellerID,
+        attributes: res?.attributes,
+      });
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
     } catch (error) {
@@ -240,6 +246,30 @@ export class ProductService {
       } else {
         throw new Error('user_id is required to create a product');
       }
+      const mappedAttributes = {
+        pattern: productData?.attributes?.pattern,
+        waist_rise: productData?.attributes?.waist_rise,
+        pants_length_type: productData?.attributes?.pants_length_type,
+        dress_style: productData?.attributes?.dress_style,
+        one_piece_style: productData?.attributes?.one_piece_style,
+        skirt_style: productData?.attributes?.skirt_style,
+        neckline: productData?.attributes?.neckline,
+        sleeve_length_type: productData?.attributes?.sleeve_length_type,
+        care_instructions: productData?.attributes?.care_instructions,
+        activewear_style: productData?.attributes?.activewear_style,
+        length_type: productData?.attributes?.length_type,
+        age_group: productData?.attributes?.age_group,
+        clothing_features: productData?.attributes?.clothing_features,
+        fit: productData?.attributes?.fit,
+        best_uses: productData?.attributes?.best_uses,
+        outerwear_clothing_features: productData?.attributes?.outerwear_clothing_features,
+        top_length_type: productData?.attributes?.top_length_type,
+        dress_occasion: productData?.attributes?.dress_occasion,
+        activewear_clothing_features: productData?.attributes?.activewear_clothing_features,
+        skirt_dress_length_type: productData?.attributes?.skirt_dress_length,
+      };
+
+      console.log('Mapped attributes:', mappedAttributes);
 
       // Save the product first to get an ID (without trying to handle relationships yet)
       const savedProduct = await ProductRepository.save(product);
@@ -292,8 +322,6 @@ export class ProductService {
     }
   }
 
-
-
   async updateProduct(id: string, productData: Product): Promise<Product | null> {
     try {
       console.log('Updating product with ID:', id, 'Data:', productData);
@@ -333,9 +361,31 @@ export class ProductService {
           }
         }
       }
+      const mappedAttributes = {
+        pattern: productData?.attributes?.pattern,
+        waist_rise: productData?.attributes?.waist_rise,
+        pants_length_type: productData?.attributes?.pants_length_type,
+        dress_style: productData?.attributes?.dress_style,
+        one_piece_style: productData?.attributes?.one_piece_style,
+        skirt_style: productData?.attributes?.skirt_style,
+        neckline: productData?.attributes?.neckline,
+        sleeve_length_type: productData?.attributes?.sleeve_length_type,
+        care_instructions: productData?.attributes?.care_instructions,
+        activewear_style: productData?.attributes?.activewear_style,
+        length_type: productData?.attributes?.length_type,
+        age_group: productData?.attributes?.age_group,
+        clothing_features: productData?.attributes?.clothing_features,
+        fit: productData?.attributes?.fit,
+        best_uses: productData?.attributes?.best_uses,
+        outerwear_clothing_features: productData?.attributes?.outerwear_clothing_features,
+        top_length_type: productData?.attributes?.top_length_type,
+        dress_occasion: productData?.attributes?.dress_occasion,
+        activewear_clothing_features: productData?.attributes?.activewear_clothing_features,
+        skirt_dress_length_type: productData?.attributes?.skirt_dress_length_type,
+      };
 
       // Save the updated product.
-      const updatedProduct = await ProductRepository.save(existingProduct);
+      const updatedProduct = await ProductRepository.save({...existingProduct, attributes: mappedAttributes});
 
       if (productData.measurements) {
         await this.MeasurementService.updateMeasurementsForProduct(updatedProduct.product_id, productData.measurements);
@@ -443,7 +493,8 @@ export class ProductService {
         top_length_type: enhancedResponse?.attributes?.top_length_type,
         dress_occasion: enhancedResponse?.attributes?.dress_occasion,
         activewear_clothing_features: enhancedResponse?.attributes?.activewear_clothing_features,
-      }
+        skirt_dress_length_type: enhancedResponse?.attributes?.skirt_dress_length,
+      };
 
       console.log('Mapped attributes:', mappedAttributes);
 
