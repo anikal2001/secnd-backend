@@ -106,7 +106,13 @@ export class ProductService {
       }
 
       // Save the response to the GeneratedResponse Database
-      const response = plainToClass(GeneratedResponse, { ...res, imageURL: imageURL, status: 'draft', user_id: sellerID, attributes: res?.attributes });
+      const response = plainToClass(GeneratedResponse, {
+        ...res,
+        imageURL: imageURL,
+        status: 'draft',
+        user_id: sellerID,
+        attributes: res?.attributes,
+      });
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
     } catch (error) {
@@ -292,8 +298,6 @@ export class ProductService {
     }
   }
 
-
-
   async updateProduct(id: string, productData: Product): Promise<Product | null> {
     try {
       console.log('Updating product with ID:', id, 'Data:', productData);
@@ -309,8 +313,11 @@ export class ProductService {
         return null;
       }
 
+      // Extract measurements from product data to handle separately
+      const { measurements, ...productDataWithoutMeasurements } = productData;
+
       // Merge the existing product with the new data.
-      Object.assign(existingProduct, productData);
+      Object.assign(existingProduct, productDataWithoutMeasurements);
 
       // Set status to active if not provided.
       if (productData.status === undefined) {
@@ -337,8 +344,10 @@ export class ProductService {
       // Save the updated product.
       const updatedProduct = await ProductRepository.save(existingProduct);
 
-      if (productData.measurements) {
-        await this.MeasurementService.updateMeasurementsForProduct(updatedProduct.product_id, productData.measurements);
+      if (measurements && Array.isArray(measurements) && measurements.length > 0) {
+        // Since MeasurementService.updateMeasurementsForProduct deletes and recreates,
+        // we just pass the measurements directly
+        await this.MeasurementService.updateMeasurementsForProduct(updatedProduct.product_id, measurements);
       }
 
       // Re-fetch marketplace listings and attach them.
@@ -347,7 +356,13 @@ export class ProductService {
         updatedProduct.marketplaceListings = marketplaceListings;
       }
 
-      return updatedProduct;
+      // Fetch the fully updated product with all relations
+      const refreshedProduct = await ProductRepository.findOne({
+        where: { product_id: updatedProduct.product_id },
+        relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
+      });
+
+      return refreshedProduct || updatedProduct;
     } catch (error) {
       console.error('Error updating product:', error);
       throw error;
@@ -443,7 +458,7 @@ export class ProductService {
         top_length_type: enhancedResponse?.attributes?.top_length_type,
         dress_occasion: enhancedResponse?.attributes?.dress_occasion,
         activewear_clothing_features: enhancedResponse?.attributes?.activewear_clothing_features,
-      }
+      };
 
       console.log('Mapped attributes:', mappedAttributes);
 
@@ -494,7 +509,10 @@ export class ProductService {
     }
   }
 
-  async getOtherMarketplaceListings(marketplaceId: string, soldMarketplace: string): Promise<{ product_id: string; otherListings: MarketplaceListing[] }> {
+  async getOtherMarketplaceListings(
+    marketplaceId: string,
+    soldMarketplace: string,
+  ): Promise<{ product_id: string; otherListings: MarketplaceListing[] }> {
     const { product_id, otherListings } = await this.MarketplaceService.getOtherMarketplaceListings(marketplaceId, soldMarketplace);
     return { product_id, otherListings };
   }
