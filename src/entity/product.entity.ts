@@ -79,6 +79,9 @@ export class Attributes {
 
   @Column({ type: 'simple-json', nullable: true })
   activewear_clothing_features: string[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  skirt_dress_length_type: string[];
 }
 
 // Abstract base class for Product
