@@ -57,10 +57,7 @@ const MeasurementSchema = z.object({
 });
 
 // Define a dynamic attributes schema that can accept any string key with array of strings value
-const DynamicAttributesSchema = z.record(z.string(), z.union([
-  z.array(z.string()),
-  z.null()
-]).catch(null));
+const DynamicAttributesSchema = z.record(z.string(), z.union([z.array(z.string()), z.null()]).catch(null));
 
 export const ProductResponseSchema = z
   .object({
@@ -161,12 +158,12 @@ export function attributeNameToFeatureKey(attributeName: string): string {
 export function getAttributeOptions(attributeName: string): { handle: string; displayName: string; id?: string }[] {
   const key = attributeNameToFeatureKey(attributeName);
   const options = (key in features ? features[key as keyof typeof features] : []) || [];
-  
+
   // Normalize the options to ensure all have the correct property names
-  return options.map(option => ({
+  return options.map((option) => ({
     handle: option.handle,
     displayName: option.displayName || option['displayName'] || '',
-    id: option.id
+    id: option.id,
   }));
 }
 
@@ -175,30 +172,30 @@ export function getAttributeOptions(attributeName: string): { handle: string; di
  */
 export function getAttributesForProduct(gender: Gender, category: string, subcategory?: string): string[] {
   const attributeMap = gender === Gender.Menswear ? mens_attributes : womens_attributes;
-  
+
   // Create a key in the format: gender_category_subcategory or gender_category_default
   let key = '';
-  
+
   if (subcategory) {
     key = `${gender.toLowerCase()}_${category.toLowerCase()}_${subcategory}`;
     // Check if there's a specific entry for this subcategory
     if (key in attributeMap) {
-        return attributeMap[key as keyof typeof attributeMap];
-      }
+      return attributeMap[key as keyof typeof attributeMap];
+    }
   }
-  
+
   // Try with default subcategory
   key = `${gender.toLowerCase()}_${category.toLowerCase()}_default`;
-    if (key in attributeMap) {
-        return attributeMap[key as keyof typeof attributeMap];
-      }
-   
+  if (key in attributeMap) {
+    return attributeMap[key as keyof typeof attributeMap];
+  }
+
   // Fallback to category only
   key = `${gender.toLowerCase()}_${category.toLowerCase()}`;
-    if (key in attributeMap) {
-        return attributeMap[key as keyof typeof attributeMap];
-      }
-  
+  if (key in attributeMap) {
+    return attributeMap[key as keyof typeof attributeMap];
+  }
+
   // Return empty array if no attributes found
   return [];
 }
@@ -207,22 +204,24 @@ export function getAttributesForProduct(gender: Gender, category: string, subcat
  * Get formatted attribute options for instructions
  */
 export function getFormattedAttributeOptionsForInstructions(): string {
-  const formattedOptions = Object.entries(features).map(([key, options]) => {
-    // Convert key from kebab-case to Title Case
-    const formattedKey = key
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
-    // Format the options
-    const optionsList = options
-      .filter(option => option.handle !== 'other')
-      .map(option => option.displayName)
-      .join(', ');
-    
-    return `- **${formattedKey}**: ${optionsList}`;
-  }).join('\n');
-  
+  const formattedOptions = Object.entries(features)
+    .map(([key, options]) => {
+      // Convert key from kebab-case to Title Case
+      const formattedKey = key
+        .split('-')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      // Format the options
+      const optionsList = options
+        .filter((option) => option.handle !== 'other')
+        .map((option) => option.displayName)
+        .join(', ');
+
+      return `- **${formattedKey}**: ${optionsList}`;
+    })
+    .join('\n');
+
   return formattedOptions;
 }
 
@@ -278,22 +277,64 @@ export function createImageAnalysisMessages(
     const titleTemplate = templateConfig.title?.content || '';
     titleInstructions = `
 RECEIVED CUSTOM title template: ${titleTemplate}
-Optimize the following user provided CUSTOM title template for natural flow and SEO while preserving all @placeholders: ${titleTemplate}. 
-If the title does not look good enough with the placeholder, optimize the title further for preserving placeholder. Aim for more factual statements, instead of decorative or promotional language. Begin each product title with the most pertinent keywords, including the item's type, brand, and defining features. Example: Instead of "Stylish Vintage Jacket," use "Vintage Levi's Denim Jacket - Medium Wash, Size M."​ 
+### **Instructions for Optimization**  
+1. **CRITICAL: Transform Template Structure - Don't Just Fill Placeholders**
+   - You MUST restructure the given template by ADDING your own text between and around placeholders
+   - Never return the template unchanged - always enhance it with additional descriptive text
+   - Your goal is to create a naturally flowing title that incorporates the placeholders 
+   - Include specific product details that would improve searchability
 
-Format details:
-${titleTemplate}
-- Age: If inferable (e.g., 1970s, 1980s, 1990s, 2000s, 2010s)
-- Source: Limited options: Vintage, Preloved, Reworked, Deadstock, Designer
-- Style: Specific style (e.g., Heavy Metal, FC Barcelona, Streetwear)
-- Design: Details like Single Stitch, Double Stitch, Overlock, Bartack, Screen Print, Embroidery
-- Made In: Include only if 55% certain and if from North America/Europe
-- Material: Primary material (from: ${ProductMaterialsList})
-- Color: Primary color(s) (from: ${ProductColorsList})
-- Size: Limited Options (do not provide anything but the following): ${ProductSizesList} 
+2. **Expand The Template With Product Details**
+   - Add specific product details like character names, design elements, or era-specific details
+   - Example transformation:
+     - Original template: "@design @subcategory | @brand | @item_style @source @fit_type"
+     - Enhanced template: "@design Looney Tunes Bugs Bunny @subcategory | @brand Classic Animation | @item_style @source Y2K @fit_type"
 
-IMPORTANT: If ANY inferred placeholder is null and it is a PLACEHOLDER, it shouldn't show up in the title template that you return, and you should leave it out.
- - For example: if the format is "@age @brand" and your inferred age is null, the returned title should just be "@brand" and "@age" should be left out.
+3. **Handle Missing Values Intelligently**  
+   - When a value is null (like @brand), replace the entire token with relevant alternative text
+   - Example: If @brand is null, replace "@brand" with a more descriptive phrase about the product;
+
+Example 1: Concert Tour Jacket (Missing Critical Info)
+
+Item Description
+	•	Category: Jacket
+	•	Brand: Levi’s
+	•	Design: Graphic Print
+	•	Notable Text: “U2 Joshua Tree Tour 1987” (on back)
+	•	Color: Black
+	•	Size: L
+
+Given Template
+
+@design @brand @subcategory Size @size
+
+Problems with This Template
+	1.	Missing critical information – The tour name and year are essential for SEO.
+	2.	Too generic – This structure works for regular clothing but not for a band tour jacket.
+
+Optimized Title Output:  "U2 Joshua Tree Tour 1987 Levi’s Concert Jacket - Black, Size L"
+✅ Expected Title response: "U2 Joshua Tree Tour 1987 Levi’s Concert @sub_category - @primary_color, Size @size"
+
+Example 2: Cartoon Character Sweatshirt (Template Enhancement)
+
+Item Description
+- Category: Sweatshirt
+- Design: Graphic Print with Looney Tunes characters
+- Color: Black with green accents
+- Size: M
+- Item Style: Casual
+- Source: Vintage (1990s)
+- Fit Type: Regular/Oversized
+
+Given Template
+@design @subcategory | @brand | @item_style @source @fit_type
+
+Problems with This Template
+1. Too generic – Doesn't specify that it features Looney Tunes characters
+2. Missing key identifiers – The specific characters should be included for SEO
+
+ INCORRECT Output: "Graphic Print Sweatshirt | null | Casual Vintage regular"
+✅ CORRECT Output: "Looney Tunes Sylvester & Tweety Graphic Print @subcategory | Classic Animation | @item_style @source 90s @fit_type"
 `;
   } else {
     titleInstructions = `
@@ -346,13 +387,29 @@ Compose a title using the following format:
     - **Maintain Tag Consistency:** Ensure tags reflect the product’s key attributes, such as brand, team, material, and era.
   `
     : `
-    - **Brand/Team:** Prioritize official brands, team names, and associations. Example: Toronto Blue Jays, Levi's, Nike.
-    - **Alternate Spellings & Variations:** Use variations and alternate spellings to capture a broader audience. Example: "Blue Jays," "Blue-Jays," "BlueJays."
-    - **Product Type/Category:** Include item descriptors like "graphic tee," "vintage jacket," "denim jeans."
-    - **Style and Material:** Include terms that describe the style, era, and material (e.g., "Y2K," "cotton," "streetwear"). Include synonyms for style descriptors.
-    - **Relevant Trends & Aesthetics:** Capture keywords reflecting popular trends or aesthetics (e.g., "minimalist," "oversized," "retro").
-    - **Condition/Source:** Include relevant terms to indicate product condition and origin (e.g., "deadstock," "preloved," "reworked").
-    - **Limit to 13 Tags:** Generate **13 highly relevant tags** that cover a range of potential buyer search terms.
+- **Brand/Team:** Include official brand names, team names, or notable affiliations associated with the item. Example: "Levi's," "Nike," "Toronto Blue Jays."
+
+- **Product Type/Category:** Clearly define the item descriptor. Example: "vintage graphic tee," "denim jacket," "band t-shirt."
+
+- **Era & Style:** Specify the time period and style associated with the item. Example: "90s grunge," "80s hip-hop," "Y2K fashion."
+
+- **Trends & Aesthetics:** Incorporate terms that reflect current trends or popular aesthetics relevant to the item. Example: "streetwear," "boho chic," "punk rock."
+
+- **Material & Key Features:** Highlight significant materials or distinctive design elements. Example: "cotton blend," "distressed denim," "embroidered."
+
+- **Avoid Redundancy:** Ensure each tag provides unique information without overlapping meanings. For instance, use "vintage graphic tee" instead of separate tags for "vintage" and "graphic tee."
+
+- **Limit to 13 Tags:** Generate exactly 13 highly relevant tags that encompass a broad range of potential buyer search terms.
+
+- **Character Limit:** Each tag should not exceed 20 characters to maintain conciseness and effectiveness.
+
+- **Descriptive Phrases:** Utilize multi-word phrases for specificity. Example: "90s band t-shirt" instead of just "90s" or "band."
+
+- **Avoid Generic Terms:** Steer clear of vague descriptors like "casual," "classic," or "timeless" in favor of more specific terms that accurately describe the item.
+
+- **Singular Form:** Use singular rather than plural forms to align with common search behaviors. Example: "denim jacket" instead of "denim jackets."
+
+- **Clarity & Specificity:** Ensure each tag clearly conveys its meaning without ambiguity, directly relating to the item's attributes and appeal.
     `;
 
   // Create the base instruction set
@@ -385,12 +442,12 @@ ${CategoryHierarchy}
     - **Brand:** Visible brand name, if present
     - **Gender:** As determined
     - **Tags:** Generate 13 SEO-friendly, relevant tags, with the following instructions: ${tagInstructions}
-    - **Age:** Inferred age (e.g., "1990s"); use only if you are at least 50% certain, otherwise set as null.
+    - **Age:** Inferred age (e.g., "1990s");
     - **Style:** Overall style (e.g., "vintage")
     - **Design:** Notable design elements (e.g., "flannel", "minimalist")
     - **Fit Type:** Clothing fit (e.g., "slim", "regular", "loose")
     - **Closure Type:** Type of closure (e.g., "buttons", "zippers", "hooks"). If none, leave as null.
-    - **Made In:** Country of manufacture (e.g., "USA", "China")
+    - **Made In:** Country of manufacture (e.g., "USA", "China"). If unsure, make a guess. 
     - **Source:** List of two sources max. (e.g., "Vintage", "New"): Choose from: ${ProductSourceList}
     - **Condition Notes:** Specific details regarding the condition that would be essential for the buyer to know.
     - **Attributes:** After determining gender, category, and subcategory, include specific attributes relevant to the item. Each attribute should be an array of one or more values (even if there's only one value, it should be in an array).
@@ -406,8 +463,7 @@ Before finalizing your answer, carefully review each image for:
 ### Expectations:
 - Always guess the gender, category, and subcategory, even if uncertain.
 - Provide as much detail as possible.
-- Ensure there is sentence of the description that is **SEO-optimized** and compelling.
-- Use **high-traffic keywords** in titles and descriptions.
+- Ensure there is sentence of the description that is **SEO-optimized**.
 - Use **null** for attributes that cannot be determined, except "title", "description", "price", and "condition".
 ${hasDescriptionTemplate ? '- Return only the sentence as per the instructions that should be inserted for @descriptive_sentence in the final JSON' : '- Produce the full description as per the default instructions.'}
 ${hasTitleTemplate ? '- For title with template: When forming the title string from the provided template, if any inferred attribute value is null, completely remove its corresponding placeholder token (e.g., @brand, @age) from the final title.' : ''}
@@ -421,7 +477,7 @@ ${
   - **Example:**  
     If the title template is "@age @brand @design @style @category Size @size" and @age is null and @brand is null, the final title should be "@design @style @category Size @size" without extra spaces.
 - **Do Not Substitute Placeholders:**  
-  If a template is provided, do not replace any placeholder tokens with their actual values in the output JSON. The output title should preserve the tokens for non-null values and exclude tokens corresponding to null attributes.
+  Do not replace any placeholder tokens with their actual values in the output JSON. The output title should preserve the placeholder tokens for non-null values and exclude tokens corresponding to null attributes. Remember to add additional text around it, if possible to improve readability and searchability.
 `
     : ''
 }
@@ -431,7 +487,7 @@ ${
   - Inaccurate pricing (vintage band t-shirts command higher prices)
 - Spell out the sizes if they are letter sizes
 - Make sure most of the values are filled out unless very uncertain about the fields. The more information, the better. This is also for templates
-${hasTitleTemplate ? '' : '- Do not use @ symbols in the title when no template is provided'}
+${hasTitleTemplate ? '' : '- Do not use @ symbols in the title.'}
 - Make sure the tags are chosen only from this list ${forInferenceTags} if the array is not empty
 
 ---
@@ -491,15 +547,18 @@ Include these applicable attributes in the "attributes" field of your JSON respo
 \`\`\`
 
 ### Example JSON Output:
+
+${hasTitleTemplate ? 'Given title template: @age @brand @subcategory @design @style Size @size' : ''}
+
 \`\`\`json
 {
   "title": ${
     hasTitleTemplate
-      ? '"@age @brand @design @style @category Size @size"'
+      ? '"Iconic @age NASCAR Dale Earnhardt The Intimidator @brand Racing @subcategory Championship @design Collector\'s Edition @style Size @size"'
       : '"Vintage 1990s Levi\'s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential"'
   },
   "description": ${hasDescriptionTemplate ? '"Vintage Levi\'s 501 jeans from the 1990s, featuring a high-waisted, straight-leg cut.​"' : '"Vintage Carhartt Jacket features durable canvas, flannel lining, and original "Wayne Feeds" and "W. Tonner Farms" embroidery on the chest. With a faded look, ribbed trims, and a hood."'},
-  "descriptionHtml": "<h2>Iconic 1990s Levi&#39;s 501 High-Waisted Denim Jeans</h2><p>A must-have for vintage and streetwear lovers, featuring classic distressed details for a grunge aesthetic.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a grunge and streetwear edge.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from 100% cotton denim.</li></ul>",
+  "descriptionHtml": "<h2>Vintage Levi&#39;s 501 Jeans from the 1990s</h2><p>Featuring a high-waisted, straight-leg cut, these iconic jeans are a staple for any vintage denim enthusiast.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a classic fit.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from durable 100% cotton denim.</li></ul>",
   "price": 45.99,
   "color": {
     "primaryColor": ["navy"],
@@ -507,16 +566,16 @@ Include these applicable attributes in the "attributes" field of your JSON respo
   },
   "material": "Cotton",
   "size": "M",
-  "category": "Tops",
-  "subcategory": "Polo",
+  "category": "Outerwear",
+  "subcategory": "Jacket",
   "condition": "new_with_tags",
-  "condition_notes": null,
+  "condition_notes": "Some small holes in trousers, content label faded",
   "brand": "Polo Ralph Lauren",
   "gender": "Menswear",
   "tags": ${
     tags?.length
       ? `[${forInferenceTags.map((tag) => `"${tag}"`).join(', ')}]`
-      : '["Toronto Blue Jays", "Blue-Jays", "Blue Jays", "Baseball", "Jersey", "graphic tee", "vintage sportswear", "retro", "collectible", "cotton", "crewneck", "short sleeve", "blue"]'
+      : '["Levi’s denim jacket", "90s denim jacket", “oversized fit”, "distressed", "grunge", "light wash", "90s", "blue", ""]'
   }
   "age": "1990s",
   "item_style": "Smart",
@@ -535,16 +594,23 @@ Include these applicable attributes in the "attributes" field of your JSON respo
   }
 }
 \`\`\`
-${hasTitleTemplate ? 'Ensure that all placeholders remain intact during analysis. DO NOT REPLACE THE PLACEHOLDERS WITH ACTUAL VALUES; however, when outputting the final title, any placeholder corresponding to a null value must be completely removed from the title string.' : ''}
+${
+  hasTitleTemplate
+    ? `Ensure that all placeholders remain intact during analysis. DO NOT REPLACE THE PLACEHOLDERS WITH ACTUAL VALUES; however, when outputting the final title, any placeholder corresponding to a null value must be completely removed from the title string.  
+  FINAL REMINDER:
+- NEVER return the title template exactly as provided - you MUST enhance it with additional text. 
+- NEVER use promotional language or phrases in title or description. We want to keep the language concise, descriptive, and focused on the product.
+- For a title template like "@design @subcategory | @brand | @item_style @source @fit_type", 
+  you must add descriptive text between and around each placeholder token
+- If the placeholder value is null (like @brand is null), replace the entire placeholder with descriptive text
+- The final output should read naturally and be optimized for search
+`
+    : ''
+}
 `;
 
   // Create the message structure
   return [
-    {
-      role: 'system',
-      content:
-        'You are an advanced clothing analysis assistant. Your role is to analyze clothing images step-by-step and produce detailed JSON output.',
-    },
     {
       role: 'user',
       content: [
@@ -620,7 +686,7 @@ export class ProductClassifier {
     //   return '';
     // }
 
-    return ''
+    return '';
   }
 
   async classifyThreeImages(
@@ -630,13 +696,9 @@ export class ProductClassifier {
     exampleDescription?: string,
     tags?: string[],
   ): Promise<ProductResponse> {
-    // Log that attribute options are loaded
-    console.log('Attribute options loaded for classification');
-    
     // Get messages using new template system
     const messages = createThreeImageMessages(imageUrls, titleTemplate, descriptionTemplate, exampleDescription, tags);
 
-    // Get relevant context from vector database
     const relevantContext = await this.getRagContext(imageUrls[0]);
     // Add context to the messages if available
     if (relevantContext) {
@@ -667,26 +729,22 @@ export class ProductClassifier {
 
     console.log('== Raw JSON ==\n', rawJson);
     const parsedContent = JSON.parse(rawJson);
-    
+
     // Before validation, ensure that attributes are added if they don't exist
     if (!parsedContent.attributes && parsedContent.gender && parsedContent.category) {
       // Get the relevant attributes for this product type
-      const attributesList = getAttributesForProduct(
-        parsedContent.gender, 
-        parsedContent.category, 
-        parsedContent.subcategory
-      );
-      
+      const attributesList = getAttributesForProduct(parsedContent.gender, parsedContent.category, parsedContent.subcategory);
+
       // Initialize attributes object if needed
       if (attributesList.length > 0 && !parsedContent.attributes) {
         parsedContent.attributes = {};
         // Initialize with empty arrays
-        attributesList.forEach(attr => {
+        attributesList.forEach((attr) => {
           parsedContent.attributes[attr] = [];
         });
       }
     }
-    
+
     // Convert string values to arrays if needed
     if (parsedContent.attributes) {
       Object.entries(parsedContent.attributes).forEach(([attributeName, value]) => {
@@ -700,20 +758,20 @@ export class ProductClassifier {
         }
       });
     }
-    
+
     // Validate attribute values against the allowed options
     if (parsedContent.attributes) {
       Object.entries(parsedContent.attributes).forEach(([attributeName, values]) => {
         if (Array.isArray(values) && values.length > 0) {
           const options = getAttributeOptions(attributeName);
-          
+
           // Filter out invalid values
           if (options.length > 0) {
-            const validValues = values.filter(value => 
+            const validValues = values.filter((value) =>
               // Either the value matches a known option or we keep it if no options are defined
-              options.some(option => option.displayName.toLowerCase() === value.toLowerCase())
+              options.some((option) => option.displayName.toLowerCase() === value.toLowerCase()),
             );
-            
+
             if (validValues.length !== values.length) {
               console.warn(`Invalid attribute values found for ${attributeName}`);
               parsedContent.attributes[attributeName] = validValues.length > 0 ? validValues : [];
@@ -722,7 +780,7 @@ export class ProductClassifier {
         }
       });
     }
-    
+
     return ProductResponseSchema.parse(parsedContent);
   }
   catch(error: { errors: any }) {
