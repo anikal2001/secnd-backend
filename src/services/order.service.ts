@@ -568,4 +568,51 @@ export class OrderService {
       marketplaceTrends,
     };
   }
+
+  async getAnalyticsAverageTurnoverTime(sellerID: string, period: 'day' | 'week' | 'month' | 'year' = 'month'): Promise<number> {
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate = new Date(now);
+
+    switch (period) {
+      case 'day':
+        startDate.setDate(now.getDate() - 1);
+        break;
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+      case 'year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+    }
+
+    // Get orders with date filtering
+    const orders = await this.orderRepository
+      .createQueryBuilder('order')
+      .innerJoin('order.product', 'product')
+      .innerJoin('product.seller', 'seller')
+      .where('seller.user_id = :sellerID', { sellerID })
+      .andWhere('order.sold_timestamp IS NOT NULL')
+      .andWhere('order.sold_timestamp >= :startDate', { startDate })
+      .select('order.sold_timestamp', 'sold_timestamp')
+      .addSelect('product.created_at', 'created_at')
+      .getRawMany();
+
+    if (!orders?.length) return 0;
+
+    // Calculate average with null checks
+    const totalTurnoverTime = orders.reduce((acc, order) => {
+      const createdDate = order.created_at ? new Date(order.created_at).getTime() : 0;
+      const soldDate = order.sold_timestamp ? new Date(order.sold_timestamp).getTime() : 0;
+
+      if (!createdDate || !soldDate) return acc;
+
+      return acc + (soldDate - createdDate) / (1000 * 60 * 60 * 24); // Days
+    }, 0);
+
+    return totalTurnoverTime / orders.length;
+  }
 }

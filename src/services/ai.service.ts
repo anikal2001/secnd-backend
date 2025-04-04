@@ -279,10 +279,17 @@ export function createImageAnalysisMessages(
 RECEIVED CUSTOM title template: ${titleTemplate}
 ### **Instructions for Optimization**  
 1. **CRITICAL: Transform Template Structure - Don't Just Fill Placeholders**
-   - You MUST restructure the given template by ADDING your own text between and around placeholders
+   - You MUST restructure the given template by ADDING your own text between and around placeholders, but keep the original structure the same. 
    - Never return the template unchanged - always enhance it with additional descriptive text
    - Your goal is to create a naturally flowing title that incorporates the placeholders 
-   - Include specific product details that would improve searchability
+   - Include specific product details that are missing from the template that would improve searchability
+
+    **CORE PRINCIPLE: PRESERVE TEMPLATE STRUCTURE (80%) WHILE ENHANCING (20%)**
+    - MAINTAIN the exact placement and order of all placeholders (@tokens) from the original template
+    - Only add enhancements between or around placeholders without disrupting the core structure
+    - When a placeholder is null, replace ONLY that token with relevant alternative text
+    - **ALWAYS** include specific product type keywords (Hawaiian Shirt, Concert Jacket, Race Jacket etc.)
+    - When in doubt, follow the template structure first, then enhance with missing details
 
 2. **Expand The Template With Product Details**
    - Add specific product details like character names, design elements, or era-specific details
@@ -330,7 +337,7 @@ Given Template
 @design @subcategory | @brand | @item_style @source @fit_type
 
 Problems with This Template
-1. Too generic – Doesn't specify that it features Looney Tunes characters
+1. Too generic – Doesn't specify that it features Looney Tunes characters. Mentioning "Graphic Print" isn't enough, detail what the print is of. NBA, NASCAR, Looney Tunes, specific characters/brands must be mentioned.
 2. Missing key identifiers – The specific characters should be included for SEO
 
  INCORRECT Output: "Graphic Print Sweatshirt | null | Casual Vintage regular"
@@ -344,7 +351,7 @@ Compose a title using the following format:
   - Example 2: "Vintage 2000s Plaid Button Up / Colourful / Flannel / Shirt"
   - Example 3: "Vintage 1990s Levi Strauss 501 Red Tab Button Fly Denim Jeans / Made in USA / American Vintage / Workwear / Streetwear"
 - Style: Aesthetic style (e.g. Football, Metal, Streetwear, etc.)
-- Age: Inferred era if possible, if not 50% sure, do not give an age. Look for signs on the clothing like tags, graphics, or other indicators.
+- Age: Always inferred an age. Look for signs on the clothing like tags, graphics, or other indicators.
 - Color: Dominant color(s) (from: ${ProductColorsList})
 - Material: Primary material (from: ${ProductMaterialsList})
 - Subcategory: Item type based on provided hierarchy
@@ -442,7 +449,7 @@ ${CategoryHierarchy}
     - **Brand:** Visible brand name, if present
     - **Gender:** As determined
     - **Tags:** Generate 13 SEO-friendly, relevant tags, with the following instructions: ${tagInstructions}
-    - **Age:** Inferred age (e.g., "1990s");
+    - **Age:** Inferred age (e.g., "1990s, 2000s"). Always infer an age. We can assume most of the items are at least y2k or vintage.
     - **Style:** Overall style (e.g., "vintage")
     - **Design:** Notable design elements (e.g., "flannel", "minimalist")
     - **Fit Type:** Clothing fit (e.g., "slim", "regular", "loose")

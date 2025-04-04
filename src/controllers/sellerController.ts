@@ -47,39 +47,38 @@ export class SellerController {
     }
   };
 
-public getSellerProducts = async (req: Request, res: Response) => {
-  try {
-    const sellerId = req.params.id;
-    const { category, status, startDate, endDate, page, limit, includeImages, marketplaces } = req.query;
+  public getSellerProducts = async (req: Request, res: Response) => {
+    try {
+      const sellerId = req.params.id;
+      const { category, status, startDate, endDate, page, limit, includeImages, marketplaces } = req.query;
 
-    // Validate category if provided
-    if (category && !Object.values(Category.getAllTopLevelCategories()).includes(category as string)) {
-      return res.status(400).json({ error: 'Invalid category' });
+      // Validate category if provided
+      if (category && !Object.values(Category.getAllTopLevelCategories()).includes(category as string)) {
+        return res.status(400).json({ error: 'Invalid category' });
+      }
+
+      // Create filter object
+      const filter: ProductFilter = {
+        sellerId,
+        status: status ? (Number(status) as ProductStatus) : undefined,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        includeImages: includeImages ? Boolean(includeImages) : undefined,
+        category: category && typeof category === 'string' ? new Category(category) : undefined,
+        marketplaces: marketplaces && typeof marketplaces === 'string' ? marketplaces.split(',') : undefined,
+      };
+
+      // Conditionally include pagination if limit is provided
+      const products = limit
+        ? await SellerController.sellerService.getSellerProducts(filter, { page: page ? Number(page) : 1, limit: Number(limit) })
+        : await SellerController.sellerService.getSellerProducts(filter);
+
+      res.json(products);
+    } catch (error) {
+      console.error('Error in getSellerProducts:', error);
+      res.status(500).json({ error: 'Failed to get seller products' });
     }
-
-    // Create filter object
-    const filter: ProductFilter = {
-      sellerId,
-      status: status ? Number(status) as ProductStatus : undefined,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-      includeImages: includeImages ? Boolean(includeImages) : undefined,
-      category: category && typeof category === 'string' ? new Category(category) : undefined,
-      marketplaces: marketplaces && typeof marketplaces === 'string' ? marketplaces.split(',') : undefined
-    };
-
-    // Conditionally include pagination if limit is provided
-    const products = limit
-      ? await SellerController.sellerService.getSellerProducts(filter, { page: page ? Number(page) : 1, limit: Number(limit) })
-      : await SellerController.sellerService.getSellerProducts(filter);
-
-    res.json(products);
-  } catch (error) {
-    console.error('Error in getSellerProducts:', error);
-    res.status(500).json({ error: 'Failed to get seller products' });
-  }
-};
-
+  };
 
   getSellerProductById = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -96,7 +95,7 @@ public getSellerProducts = async (req: Request, res: Response) => {
       res.status(500).json({ message: error.message });
     }
   };
-  
+
   getProductInteractions = async (req: Request, res: Response): Promise<void> => {
     try {
       const sellerID = Number(req.params.id);
@@ -192,7 +191,7 @@ public getSellerProducts = async (req: Request, res: Response) => {
       res.status(500).json({ message: error.message });
     }
   };
-  
+
   public getTopSellers = async (req: Request, res: Response): Promise<void> => {
     try {
       const topSellers = await SellerController.sellerService.getTopSellers();
@@ -227,6 +226,95 @@ public getSellerProducts = async (req: Request, res: Response) => {
     } catch (error: any) {
       console.error('Error in getSellerCategoryCounts:', error);
       res.status(500).json({ error: 'Failed to get seller category counts' });
+    }
+  };
+
+  public getAnalyticsActiveListings = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sellerId = req.params.id;
+      const activeListings = await SellerController.sellerService.getAnalyticsActiveListings(sellerId);
+      res.json(activeListings);
+    } catch (error: any) {
+      console.error('Error in getAnalyticsActiveListings:', error);
+      res.status(500).json({ error: 'Failed to get analytics active listings' });
+    }
+  };
+
+  public getAnalyticsInventoryPrice = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sellerId = req.params.id;
+      const inventoryPrice = await SellerController.sellerService.getAnalyticsInventoryPrice(sellerId);
+      res.json(inventoryPrice);
+    } catch (error: any) {
+      console.error('Error in getAnalyticsInventoryPrice:', error);
+      res.status(500).json({ error: 'Failed to get analytics inventory price' });
+    }
+  };
+
+  public getAnalyticsAverageSalePrice = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sellerId = req.params.id;
+      const averageSalePrice = await SellerController.sellerService.getAnalyticsAverageSalePrice(sellerId);
+      res.json(averageSalePrice);
+    } catch (error: any) {
+      console.error('Error in getAnalyticsAverageSalePrice:', error);
+      res.status(500).json({ error: 'Failed to get analytics average sale price' });
+    }
+  };
+
+  public getAverageTurnoverTime = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sellerId = req.params.id;
+      const averageTurnoverTime = await SellerController.sellerService.getAnalyticsAverageTurnoverTime(sellerId);
+      res.json(averageTurnoverTime);
+    } catch (error: any) {
+      console.error('Error in getAnalyticsAverageTurnoverTime:', error);
+      res.status(500).json({ error: 'Failed to get analytics average turnover time' });
+    }
+  };
+
+  // In SellerController.ts
+
+  /**
+   * Get comprehensive dashboard data with statistics and graphs
+   */
+  public getSellerDashboard = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sellerId = req.params.id;
+
+      // Get query parameters with defaults
+      const timeFrame = (req.query.timeFrame as string) || 'last30days';
+      const graphMetric = (req.query.graphMetric as string) || 'revenue';
+
+      // Validate time frame parameter
+      const validTimeFrames = ['today', 'yesterday', 'last7days', 'last30days', 'thisMonth', 'thisYear', 'lastYear', 'allTime'];
+
+      if (!validTimeFrames.includes(timeFrame)) {
+        res.status(400).json({
+          error: 'Invalid timeFrame parameter',
+          validOptions: validTimeFrames.join(', '),
+        });
+        return;
+      }
+
+      // Validate graph metric parameter
+      const validMetrics = ['revenue', 'orders', 'listings'];
+
+      if (!validMetrics.includes(graphMetric)) {
+        res.status(400).json({
+          error: 'Invalid graphMetric parameter',
+          validOptions: validMetrics.join(', '),
+        });
+        return;
+      }
+
+      // Get dashboard data
+      const dashboardData = await SellerController.sellerService.getSellerDashboard(sellerId, timeFrame, graphMetric);
+
+      res.json(dashboardData);
+    } catch (error: any) {
+      console.error('Error in getSellerDashboard:', error);
+      res.status(500).json({ error: 'Failed to get seller dashboard' });
     }
   };
 }
