@@ -20,3 +20,8 @@ Router.get('/revenues/:id', sellerController.getSellerRevenues);
 Router.get('/orders/:id', sellerController.getSellerOrders);
 Router.get('/customers/:id', sellerController.getSellerCustomers);
 Router.get('/:id/category-counts', sellerController.getSellerCategoryCounts);
+Router.get('/analytics/active-listings/:id', sellerController.getAnalyticsActiveListings);
+Router.get('/analytics/inventory-price/:id', sellerController.getAnalyticsInventoryPrice);
+Router.get('/analytics/average-sale-price/:id', sellerController.getAnalyticsAverageSalePrice);
+Router.get('/analytics/average-turnover-time/:id', sellerController.getAverageTurnoverTime);
+Router.get('/dashboard/:id', sellerController.getSellerDashboard);
