@@ -13,11 +13,13 @@ import { enhanceProductWithBrandMatch } from '../utils/product/brandMatcher';
 import { AppDataSource } from '../database/config';
 import { ImageService } from './image.service';
 import { ImageData } from '../types/image';
-import { ProductStatus } from '../utils/products.enums';
 import { SellerService } from './seller.service';
 import { MarketplaceService } from './marketplace.service';
 import { MeasurementService } from './measurement.service';
 import { MarketplaceListing } from '../entity/marketplace.entity';
+import { ProductImportRepository } from '../repositories/productImport.repository';
+import { validate } from 'class-validator';
+import { Gender, Material, ProductColors, ProductStatus, ProductSize, ProductCondition, ProductStyles } from '../utils/products.enums';
 
 export class ProductService {
   private UserService: UserService = new UserService();
@@ -26,7 +28,6 @@ export class ProductService {
   private MarketplaceService: MarketplaceService = new MarketplaceService();
   private MeasurementService: MeasurementService = new MeasurementService();
   private GeneratedResponseRepository = AppDataSource.getRepository(GeneratedResponse);
-  private ProductImportRepository = AppDataSource.getRepository(ProductImport);
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
     // If the id is undefined, it will return all orders
@@ -388,7 +389,7 @@ export class ProductService {
       };
 
       // Save the updated product.
-      const updatedProduct = await ProductRepository.save({...existingProduct, attributes: mappedAttributes});
+      const updatedProduct = await ProductRepository.save({ ...existingProduct, attributes: mappedAttributes });
 
       if (measurements && Array.isArray(measurements) && measurements.length > 0) {
         // Since MeasurementService.updateMeasurementsForProduct deletes and recreates,
@@ -415,14 +416,347 @@ export class ProductService {
     }
   }
 
-  async saveImports(imports: ProductImport[]): Promise<ProductImport[]> {
-    try {
-      const savedImports = await this.ProductImportRepository.save(imports);
-      return savedImports;
-    } catch (error) {
-      console.error('Error saving imports:', error);
-      throw error;
+    async saveImports(importData: any): Promise<any> {     
+    try {       
+      const validateImport = await validate(importData);       
+      if (validateImport.length > 0) {         
+        throw new Error('Validation failed');       
+      }        
+      console.log('Import data:', importData);
+      const { user_id, marketplaceData, ...rest } = importData;
+      if (marketplaceData) {
+        const firstValue = Object.values(marketplaceData[0])[0] as { marketplace_id: string };
+        const id = firstValue.marketplace_id;
+        const key = Object.keys(marketplaceData[0])[0] as string;
+        console.log('id', id, key);
+        // Check if marketplaceID already exists
+        const existingMarketplace = await this.MarketplaceService.findByMarketplaceId(id, key);
+        if (existingMarketplace.length > 0) {
+          throw new Error(`Marketplace with ID ${id} already exists`);
+        }
+      }
+      const seller = await this.SellerService.getSellerById(user_id);       
+      if (!seller) {         
+        throw new Error(`Seller with user_id ${user_id} not found`);       
+      }       
+      importData.seller = seller;       
+      importData.image_urls = importData.pictureIds;        
+
+      // Validate the import data       
+      const validatedImport = plainToClass(ProductImport, importData);       
+      const validationErrors = await validate(validatedImport);       
+      if (validationErrors.length > 0) {         
+        console.error('Validation errors:', validationErrors);         
+        throw new Error('Validation failed');       
+      }       
+      const savedImports = await ProductImportRepository.createAndSave(validatedImport);        
+
+      // Convert the import data to a Product using our custom conversion function
+      const convertedProduct = await this.convertImportToProduct(validatedImport);
+      
+      // Log the converted product for debugging
+      console.log('Converted product:', JSON.stringify({
+        gender: convertedProduct.gender,
+        condition: convertedProduct.condition,
+        status: convertedProduct.status,
+      }, null, 2));
+      
+      // Validate the converted product
+      const validatedProduct = await validate(convertedProduct);       
+      if (validatedProduct.length > 0) {
+        console.error('Product validation errors:', validatedProduct);
+        throw new Error('Product validation failed: ' + JSON.stringify(validatedProduct));
+      }       
+      
+      // Save the converted product
+      const savedProduct = await ProductRepository.createAndSave(convertedProduct, user_id);
+    
+      if (savedProduct && importData.marketplaceData && Array.isArray(importData.marketplaceData)) {
+        console.log('Marketplace data:', importData.marketplaceData);
+        // Process marketplace listings and get marketplace names
+        savedProduct.marketplaces = await this.MarketplaceService.processMarketplaces(savedProduct, importData.marketplaceData);
+
+        // Save the product again with the updated marketplaces array
+        await ProductRepository.save(savedProduct);
+      }
+
+      // Process image IDs
+      const imageIds = await Promise.all(importData.pictureIds.map(async (image: any) => {         
+        return await this.ImageService.create({           
+          product_id: savedProduct?.product_id,           
+          url: typeof image === 'string' ? image : image.url,         
+        });       
+      }));        
+
+      return savedImports;     
+    } catch (error) {       
+      console.error('Error saving imports:', error);       
+      throw error;     
+    }   
+  }
+  async convertImportToProduct(importData: ProductImport): Promise<Product> {
+    const convertedProduct = new Product();
+
+    // Copy basic fields that don't need special conversion
+    Object.keys(importData).forEach((key: string) => {
+      if (
+        typeof (importData as unknown as Record<string, unknown>)[key] !== 'undefined' &&
+        !['gender', 'status', 'condition', 'material', 'listed_size', 'styles', 'color'].includes(key)
+      ) {
+        (convertedProduct as unknown as Record<string, unknown>)[key] = (importData as unknown as Record<string, unknown>)[key];
+      }
+    });
+
+    // 1. Gender conversion
+    if (importData.gender) {
+      try {
+        const genderMap: Record<string, Gender> = {
+          male: Gender.Menswear,
+          Male: Gender.Menswear,
+          men: Gender.Menswear,
+          Men: Gender.Menswear,
+          mens: Gender.Menswear,
+          Mens: Gender.Menswear,
+          menswear: Gender.Menswear,
+          Menswear: Gender.Menswear,
+
+          female: Gender.Womenswear,
+          Female: Gender.Womenswear,
+          women: Gender.Womenswear,
+          Women: Gender.Womenswear,
+          womens: Gender.Womenswear,
+          Womens: Gender.Womenswear,
+          womenswear: Gender.Womenswear,
+          Womenswear: Gender.Womenswear,
+        };
+
+        convertedProduct.gender = genderMap[importData.gender] || null;
+
+        if (!convertedProduct.gender) {
+          console.warn(`Gender value '${importData.gender}' not recognized, setting to default value`);
+          convertedProduct.gender = Gender.Unisex;
+        }
+      } catch (error: any) {
+        console.error(`Error converting gender: ${error.message}`);
+        convertedProduct.gender = Gender.Unisex;
+      }
     }
+
+    // 2. Status conversion
+    if (importData.status !== undefined) {
+      try {
+        // ProductStatus is numeric in your enum
+        const statusValue: number = typeof importData.status === 'string' ? parseInt(importData.status, 10) : importData.status;
+
+        if (Object.values(ProductStatus).includes(statusValue)) {
+          convertedProduct.status = statusValue as ProductStatus;
+        } else {
+          console.warn(`Invalid status: ${importData.status}, defaulting to draft (0)`);
+          convertedProduct.status = ProductStatus.draft;
+        }
+      } catch (error: any) {
+        console.error(`Error converting status: ${error.message}`);
+        convertedProduct.status = ProductStatus.draft;
+      }
+    } else {
+      convertedProduct.status = ProductStatus.draft;
+    }
+
+    // 3. Condition conversion
+    if (importData.condition) {
+      try {
+        const conditionMap: Record<string, ProductCondition> = {
+          'new with tags': ProductCondition.NewWithTags,
+          'New With Tags': ProductCondition.NewWithTags,
+          new_with_tags: ProductCondition.NewWithTags,
+          'like new': ProductCondition.LikeNew,
+          'Like New': ProductCondition.LikeNew,
+          like_new: ProductCondition.LikeNew,
+          'used good': ProductCondition.UsedGood,
+          'Used Good': ProductCondition.UsedGood,
+          used_good: ProductCondition.UsedGood,
+          'used fair': ProductCondition.UsedFair,
+          'Used Fair': ProductCondition.UsedFair,
+          used_fair: ProductCondition.UsedFair,
+        };
+
+        convertedProduct.condition = conditionMap[importData.condition] || null;
+
+        if (!convertedProduct.condition) {
+          console.warn(`Condition '${importData.condition}' not recognized, setting to null`);
+        }
+      } catch (error: any) {
+        console.error(`Error converting condition: ${error.message}`);
+        convertedProduct.condition = ProductCondition.NA;
+      }
+    }
+
+    // 4. Material conversion
+    if (importData.material) {
+      try {
+        // Try direct match first
+        if (Object.values(Material).includes(importData.material as Material)) {
+          convertedProduct.material = importData.material as Material;
+        } else {
+          // Try case-insensitive match
+          const materialKey = Object.keys(Material).find(
+            (key) => Material[key as keyof typeof Material].toLowerCase() === importData.material.toLowerCase(),
+          );
+
+          if (materialKey) {
+            convertedProduct.material = Material[materialKey as keyof typeof Material];
+          } else {
+            console.warn(`Material '${importData.material}' not recognized, setting to null`);
+            convertedProduct.material = Material.NA;
+          }
+        }
+      } catch (error: any) {
+        console.error(`Error converting material: ${error.message}`);
+        convertedProduct.material = Material.NA;
+      }
+    }
+
+    // 5. Listed Size conversion
+    if (importData.listed_size) {
+      try {
+        // Try direct match first
+        if (Object.values(ProductSize).includes(importData.listed_size as ProductSize)) {
+          convertedProduct.listed_size = importData.listed_size as ProductSize;
+        } else {
+          // Try matching by abbreviation or full name (case-insensitive)
+          const sizeKey = Object.keys(ProductSize).find(
+            (key) =>
+              ProductSize[key as keyof typeof ProductSize].toLowerCase() === importData.listed_size.toLowerCase() ||
+              key.toLowerCase() === importData.listed_size.toLowerCase(),
+          );
+
+          if (sizeKey) {
+            convertedProduct.listed_size = ProductSize[sizeKey as keyof typeof ProductSize];
+          } else {
+            console.warn(`Size '${importData.listed_size}' not recognized, setting to empty string`);
+            convertedProduct.listed_size = ProductSize.NA;
+          }
+        }
+      } catch (error: any) {
+        console.error(`Error converting size: ${error.message}`);
+        convertedProduct.listed_size = ProductSize.NA;
+      }
+    }
+
+    // 6. Styles conversion (array of enums)
+    if (importData.styles && Array.isArray(importData.styles)) {
+      try {
+        const validStyles: ProductStyles[] = [];
+
+        for (const style of importData.styles) {
+          if (typeof style === 'string') {
+            // Try direct match first
+            if (Object.values(ProductStyles).includes(style as ProductStyles)) {
+              validStyles.push(style as ProductStyles);
+              continue;
+            }
+
+            // Try case-insensitive match
+            const styleKey = Object.keys(ProductStyles).find(
+              (key) => ProductStyles[key as keyof typeof ProductStyles].toLowerCase() === style.toLowerCase(),
+            );
+
+            if (styleKey) {
+              validStyles.push(ProductStyles[styleKey as keyof typeof ProductStyles]);
+            } else {
+              console.warn(`Style '${style}' not recognized, skipping`);
+            }
+          }
+        }
+
+        convertedProduct.styles = validStyles;
+      } catch (error: any) {
+        console.error(`Error converting styles: ${error.message}`);
+        convertedProduct.styles = [];
+      }
+    } else {
+      convertedProduct.styles = [];
+    }
+
+    // 8. Colors conversion (complex object)
+    convertedProduct.color = {
+      primaryColor: [],
+      secondaryColor: [],
+    };
+
+    if (importData.color && importData.color.primaryColor) {
+      try {
+        const validPrimaryColors: ProductColors[] = [];
+
+        for (const color of importData.color.primaryColor) {
+          if (typeof color === 'string') {
+            // Try direct match first
+            if (Object.values(ProductColors).includes(color as ProductColors)) {
+              validPrimaryColors.push(color as ProductColors);
+              continue;
+            }
+
+            // Try case-insensitive match
+            const colorKey = Object.keys(ProductColors).find(
+              (key) => ProductColors[key as keyof typeof ProductColors].toLowerCase() === color.toLowerCase(),
+            );
+
+            if (colorKey) {
+              validPrimaryColors.push(ProductColors[colorKey as keyof typeof ProductColors]);
+            } else {
+              console.warn(`Primary color '${color}' not recognized, skipping`);
+            }
+          }
+        }
+
+        convertedProduct.color.primaryColor = validPrimaryColors;
+      } catch (error: any) {
+        console.error(`Error converting primary colors: ${error.message}`);
+      }
+    }
+
+    if (importData.color && importData.color.secondaryColor) {
+      try {
+        const validSecondaryColors: ProductColors[] = [];
+
+        for (const color of importData.color.secondaryColor) {
+          if (typeof color === 'string') {
+            // Try direct match first
+            if (Object.values(ProductColors).includes(color as ProductColors)) {
+              validSecondaryColors.push(color as ProductColors);
+              continue;
+            }
+
+            // Try case-insensitive match
+            const colorKey = Object.keys(ProductColors).find(
+              (key) => ProductColors[key as keyof typeof ProductColors].toLowerCase() === color.toLowerCase(),
+            );
+
+            if (colorKey) {
+              validSecondaryColors.push(ProductColors[colorKey as keyof typeof ProductColors]);
+            } else {
+              console.warn(`Secondary color '${color}' not recognized, skipping`);
+            }
+          }
+        }
+
+        convertedProduct.color.secondaryColor = validSecondaryColors;
+      } catch (error: any) {
+        console.error(`Error converting secondary colors: ${error.message}`);
+      }
+    }
+
+    // 9. Copy attributes
+    if (importData.attributes) {
+      convertedProduct.attributes = importData.attributes;
+    }
+
+    // 10. Set the seller
+    if (importData.seller) {
+      convertedProduct.seller = importData.seller;
+    }
+
+    return convertedProduct;
   }
 
   async deleteProduct(id: string): Promise<boolean> {

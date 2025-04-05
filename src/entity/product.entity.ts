@@ -114,9 +114,6 @@ export abstract class ProductBase {
   @Column({ type: 'simple-array', nullable: true })
   secondaryColor: string[];
 
-  @Column({ type: 'simple-enum', enum: Gender, nullable: true })
-  gender: Gender;
-
   @Column()
   category: string;
 
@@ -202,11 +199,9 @@ export abstract class ProductBase {
   @UpdateDateColumn()
   updated_at: Date;
 }
+
 @Entity()
 export class ProductImport extends ProductBase {
-  @Column({ type: 'varchar', nullable: true })
-  product_id: string;
-
   @BeforeInsert()
   generateId() {
     if (!this.product_id) {
@@ -220,20 +215,33 @@ export class ProductImport extends ProductBase {
     secondaryColor: string[];
   };
 
+  @Column({type: "varchar", nullable: true})
+  gender: string
+
   @Column({ type: 'varchar', nullable: true })
   listed_size: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   styles: string[];
 
   @Column({ type: 'varchar', nullable: true })
   condition: string;
 
-  @Column({ type: 'varchar', nullable: true })
-  seller_id: string;
-
   @Column(() => Attributes)
   attributes: Attributes;
+
+  @Column({ type: 'simple-json', nullable: true })
+  image_urls: string[];
+
+      @OneToMany(() => MarketplaceListing, (listing) => listing.product, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+      marketplaceListings: MarketplaceListing[];
+  
+  @ManyToOne(() => Seller, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'user_id' })
+  seller: Seller
 }
 
 @Entity()
@@ -250,6 +258,9 @@ export class Product extends ProductBase {
     secondaryColor: ProductColors[];
   };
 
+    @Column({ type: 'simple-enum', enum: Gender, nullable: true })
+  gender: Gender;
+
   @Column({ type: 'enum', enum: productSizes, nullable: true })
   listed_size: ProductSize;
 
@@ -264,8 +275,15 @@ export class Product extends ProductBase {
 
   @OneToMany(() => Measurement, (measurement) => measurement.product, {
     cascade: true,
+    onDelete: 'CASCADE',
   })
   measurements: Measurement[];
+
+    @OneToMany(() => MarketplaceListing, (listing) => listing.product, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  marketplaceListings: MarketplaceListing[];
 
   @Column(() => Attributes)
   attributes: Attributes;

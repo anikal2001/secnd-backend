@@ -3,11 +3,14 @@ export enum ProductCondition {
   LikeNew = "like_new",
   UsedGood = "used_good",
   UsedFair = "used_fair",
+  NA = "not_applicable",
 }
 
 export enum Gender {
   Menswear = 'Menswear',
   Womenswear = 'Womenswear',
+  Unisex = "Unisex",
+  null = "null",
 }
 
 export enum ProductSize {
@@ -29,6 +32,8 @@ export enum ProductSize {
   XXL = 'XXL',
   XXXL = 'XXXL',
   OneSize = 'OS',
+  NA = 'N/A',
+
 }
 
 export enum Material {
@@ -67,7 +72,8 @@ export enum Material {
   Tweed = "Tweed",
   Velvet = "Velvet",
   Viscose = "Viscose",
-  Wool = "Wool"
+  Wool = "Wool",
+  NA = "Not Applicable",
 }
 
 
@@ -173,6 +179,7 @@ export enum FitTypes {
 }
 
 export enum size_enum {
+  NA = 'N/A',
     XS = 'XS',
     S = 'S',
     M = 'M',
