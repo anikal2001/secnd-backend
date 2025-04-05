@@ -257,10 +257,10 @@ export class ProductController {
       // console.log('Importing products:', req.body);
       req.body.product_id = randomUUID()
       const imports = await ProductController.productService.saveImports(req.body);
-      res.json(imports);
+      res.json({success: true, message: 'Products imported successfully', imports});
     }
     catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
