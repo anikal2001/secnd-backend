@@ -16,6 +16,8 @@ Router.get('/filter', productController.filterProducts);
 Router.post('/save-draft', productController.saveDraft);
 Router.post('/upload-image', productController.uploadImage);
 Router.post('/import', productController.importProducts);
+Router.post('/import-sold', productController.importSoldProducts);
+Router.post('/add-interaction', productController.addProductInteraction);
 // Router.get('/search', productController.searchProducts);
 // Router.get('/categories', productController.getCategories);
 Router.get('/categories/:category', productController.getProductsByCategory);

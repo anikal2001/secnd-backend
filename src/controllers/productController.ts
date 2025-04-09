@@ -106,6 +106,33 @@ export class ProductController {
     }
   };
 
+
+  public addProductInteraction = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Ensure request body is present
+      if (!req.body) {
+        res.status(400).json({ message: 'Request body is required' });
+        return;
+      }
+      if (req.body.length === 0) {
+        res.status(400).json({ message: 'Request body cannot be empty' });
+        return;
+      }
+
+      const interaction = await ProductController.productService.addProductInteraction(req.body);
+
+      if (!interaction) {
+        res.status(400).json({ message: 'Failed to create product interaction' });
+        return;
+      }
+
+      res.status(201).json(interaction);
+    }
+    catch (error: any) {
+      console.error('Add product interaction error:', error);
+    }
+  }
+
   public _handleFileUpload = (fieldName: string, maxCount: number = 10) => {
     return this.upload.array(fieldName, maxCount);
   };
@@ -175,7 +202,8 @@ export class ProductController {
 
   public updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-      const id = req.query.id?.toString();
+      const id = req.body.product_id?.toString();
+      console.log("This is the id", id)
       if (!id) {
         res.status(400).json({ message: 'Product ID is required' });
         return;
@@ -232,14 +260,16 @@ export class ProductController {
       req.body.status = ProductStatus.draft;
 
       // Check if we're updating an existing draft
-      if (req.body.id) {
+      if (req.body.product_id) {
         const existingProduct = await ProductController.productService.getProductById(req.body.id);
         if (!existingProduct) {
           res.status(404).json({ message: 'Draft not found' });
           return;
         }
+        console.log("EXISTING PRODUCT: ", existingProduct)
 
         // Update existing draft - fix: pass product ID as first parameter
+        console.log('Updating draft:');
         const updatedDraft = await ProductController.productService.updateProduct(req.body.id, req.body);
         res.json(updatedDraft);
       } else {
@@ -253,6 +283,29 @@ export class ProductController {
   };
 
   public importProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // console.log('Importing products:', req.body);
+      req.body.product_id = randomUUID()
+      const imports = await ProductController.productService.saveImports(req.body);
+      res.json({success: true, message: 'Products imported successfully', imports});
+    }
+    catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+  public addToImport = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // console.log('Importing products:', req.body);
+      req.body.product_id = randomUUID()
+      const imports = await ProductController.productService.saveImports(req.body);
+      res.json({success: true, message: 'Products imported successfully', imports});
+    }
+    catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+    public importSoldProducts = async (req: Request, res: Response): Promise<void> => {
     try {
       // console.log('Importing products:', req.body);
       req.body.product_id = randomUUID()

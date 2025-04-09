@@ -65,9 +65,6 @@ export abstract class User extends BaseEntity {
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
   
-  @OneToMany(() => ProductInteraction, (interaction) => interaction.user)
-  interactions!: ProductInteraction[];
-
   @Column({ type: "boolean", default: false })
   is_seller!: boolean;
 

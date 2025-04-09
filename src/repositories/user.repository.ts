@@ -22,7 +22,6 @@ export const UserRepository = AppDataSource.getRepository(User).extend({
         avatar: '',
         cart: [],
         transactions: [],
-        interactions: [],
       }])
       .execute();
   },

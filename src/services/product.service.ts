@@ -18,6 +18,7 @@ import { MarketplaceService } from './marketplace.service';
 import { MeasurementService } from './measurement.service';
 import { MarketplaceListing } from '../entity/marketplace.entity';
 import { ProductImportRepository } from '../repositories/productImport.repository';
+import { ProductInteraction } from '../entity/product_interactions.entity';
 import { validate } from 'class-validator';
 import { Gender, Material, ProductColors, ProductStatus, ProductSize, ProductCondition, ProductStyles } from '../utils/products.enums';
 
@@ -28,6 +29,7 @@ export class ProductService {
   private MarketplaceService: MarketplaceService = new MarketplaceService();
   private MeasurementService: MeasurementService = new MeasurementService();
   private GeneratedResponseRepository = AppDataSource.getRepository(GeneratedResponse);
+  private ProductInteractionRepository = AppDataSource.getRepository(ProductInteraction);
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
     // If the id is undefined, it will return all orders
@@ -325,16 +327,14 @@ export class ProductService {
 
   async updateProduct(id: string, productData: Product): Promise<Product | null> {
     try {
-      console.log('Updating product with ID:', id, 'Data:', productData);
-
       // Get existing product (include marketplaceListings for processing removals)
       const existingProduct = await ProductRepository.findOne({
-        where: { product_id: id },
+        where: { product_id: productData.product_id },
         relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
       });
 
       if (!existingProduct) {
-        console.log(`Product with ID ${id} not found`);
+        console.log(`Product with ID ${productData.product_id} not found`);
         return null;
       }
 
@@ -392,6 +392,7 @@ export class ProductService {
       const updatedProduct = await ProductRepository.save({ ...existingProduct, attributes: mappedAttributes });
 
       if (measurements && Array.isArray(measurements) && measurements.length > 0) {
+        console.log('Updating measurements for product:', productData.product_id);
         // Since MeasurementService.updateMeasurementsForProduct deletes and recreates,
         // we just pass the measurements directly
         await this.MeasurementService.updateMeasurementsForProduct(updatedProduct.product_id, measurements);
@@ -416,12 +417,12 @@ export class ProductService {
     }
   }
 
-    async saveImports(importData: any): Promise<any> {     
-    try {       
-      const validateImport = await validate(importData);       
-      if (validateImport.length > 0) {         
-        throw new Error('Validation failed');       
-      }        
+  async saveImports(importData: any): Promise<any> {
+    try {
+      const validateImport = await validate(importData);
+      if (validateImport.length > 0) {
+        throw new Error('Validation failed');
+      }
       console.log('Import data:', importData);
       const { user_id, marketplaceData, ...rest } = importData;
       if (marketplaceData) {
@@ -435,42 +436,49 @@ export class ProductService {
           throw new Error(`Marketplace with ID ${id} already exists`);
         }
       }
-      const seller = await this.SellerService.getSellerById(user_id);       
-      if (!seller) {         
-        throw new Error(`Seller with user_id ${user_id} not found`);       
-      }       
-      importData.seller = seller;       
-      importData.image_urls = importData.pictureIds;        
+      const seller = await this.SellerService.getSellerById(user_id);
+      if (!seller) {
+        throw new Error(`Seller with user_id ${user_id} not found`);
+      }
+      importData.seller = seller;
+      importData.image_urls = importData.pictureIds;
 
-      // Validate the import data       
-      const validatedImport = plainToClass(ProductImport, importData);       
-      const validationErrors = await validate(validatedImport);       
-      if (validationErrors.length > 0) {         
-        console.error('Validation errors:', validationErrors);         
-        throw new Error('Validation failed');       
-      }       
-      const savedImports = await ProductImportRepository.createAndSave(validatedImport);        
+      // Validate the import data
+      const validatedImport = plainToClass(ProductImport, importData);
+      const validationErrors = await validate(validatedImport);
+      if (validationErrors.length > 0) {
+        console.error('Validation errors:', validationErrors);
+        throw new Error('Validation failed');
+      }
+      const savedImports = await ProductImportRepository.createAndSave(validatedImport);
 
       // Convert the import data to a Product using our custom conversion function
       const convertedProduct = await this.convertImportToProduct(validatedImport);
-      
+
       // Log the converted product for debugging
-      console.log('Converted product:', JSON.stringify({
-        gender: convertedProduct.gender,
-        condition: convertedProduct.condition,
-        status: convertedProduct.status,
-      }, null, 2));
-      
+      console.log(
+        'Converted product:',
+        JSON.stringify(
+          {
+            gender: convertedProduct.gender,
+            condition: convertedProduct.condition,
+            status: convertedProduct.status,
+          },
+          null,
+          2,
+        ),
+      );
+
       // Validate the converted product
-      const validatedProduct = await validate(convertedProduct);       
+      const validatedProduct = await validate(convertedProduct);
       if (validatedProduct.length > 0) {
         console.error('Product validation errors:', validatedProduct);
         throw new Error('Product validation failed: ' + JSON.stringify(validatedProduct));
-      }       
-      
+      }
+
       // Save the converted product
       const savedProduct = await ProductRepository.createAndSave(convertedProduct, user_id);
-    
+
       if (savedProduct && importData.marketplaceData && Array.isArray(importData.marketplaceData)) {
         console.log('Marketplace data:', importData.marketplaceData);
         // Process marketplace listings and get marketplace names
@@ -481,18 +489,79 @@ export class ProductService {
       }
 
       // Process image IDs
-      const imageIds = await Promise.all(importData.pictureIds.map(async (image: any) => {         
-        return await this.ImageService.create({           
-          product_id: savedProduct?.product_id,           
-          url: typeof image === 'string' ? image : image.url,         
-        });       
-      }));        
+      const imageIds = await Promise.all(
+        importData.pictureIds.map(async (image: any) => {
+          return await this.ImageService.create({
+            product_id: savedProduct?.product_id,
+            url: typeof image === 'string' ? image : image.url,
+          });
+        }),
+      );
 
-      return savedImports;     
-    } catch (error) {       
-      console.error('Error saving imports:', error);       
-      throw error;     
-    }   
+      return savedImports;
+    } catch (error) {
+      console.error('Error saving imports:', error);
+      throw error;
+    }
+  }
+
+  async saveSoldImports(importData: any): Promise<any> {
+    try {
+      const validateImport = await validate(importData);
+      if (validateImport.length > 0) {
+        throw new Error('Validation failed');
+      }
+      const { user_id, marketplaceData, ...rest } = importData;
+      if (marketplaceData) {
+        const firstValue = Object.values(marketplaceData[0])[0] as { marketplace_id: string };
+        const id = firstValue.marketplace_id;
+        const key = Object.keys(marketplaceData[0])[0] as string;
+
+        // Check if marketplaceID already exists
+        const existingMarketplace = await this.MarketplaceService.findByMarketplaceId(id, key);
+        if (existingMarketplace.length > 0) {
+          throw new Error(`Marketplace with ID ${id} already exists`);
+        }
+      }
+      const seller = await this.SellerService.getSellerById(user_id);
+      if (!seller) {
+        throw new Error(`Seller with user_id ${user_id} not found`);
+      }
+      importData.seller = seller;
+      importData.image_urls = importData.pictureIds;
+      importData.status = ProductStatus.sold;
+
+      // Validate the import data
+      const validatedImport = plainToClass(ProductImport, importData);
+      const validationErrors = await validate(validatedImport);
+      if (validationErrors.length > 0) {
+        console.error('Validation errors:', validationErrors);
+        throw new Error('Validation failed');
+      }
+      const savedImports = await ProductImportRepository.createAndSave(validatedImport);
+
+      // Convert the import data to a Product using our custom conversion function
+      const convertedProduct = await this.convertImportToProduct(validatedImport);
+
+      // Log the converted product for debugging
+      console.log(
+        'Converted product:',
+        JSON.stringify(
+          {
+            gender: convertedProduct.gender,
+            condition: convertedProduct.condition,
+            status: convertedProduct.status,
+          },
+          null,
+          2,
+        ),
+      );
+
+      return savedImports;
+    } catch (error) {
+      console.error('Error saving imports:', error);
+      throw error;
+    }
   }
   async convertImportToProduct(importData: ProductImport): Promise<Product> {
     const convertedProduct = new Product();
@@ -886,6 +955,39 @@ export class ProductService {
       await this.MarketplaceService.deleteListingByProductAndMarketplace(product_id, marketplace);
     } catch (error) {
       console.error('Error removing marketplace listing:', error);
+      throw error;
+    }
+  }
+
+  async addProductInteraction(interactions: any): Promise<any> {
+    try {
+      const savedInteractions = await Promise.all(interactions.map(async (interaction: any) => {
+        // Validate the marketplace id exists in the product table
+        const marketplaceListing = await this.MarketplaceService.findByMarketplaceId(interaction.marketplace_id);
+        if (!marketplaceListing) {
+          throw new Error(`Marketplace with ID ${interaction.marketplace_id} not found`);
+        }
+
+        // Get the product associated to marketplace id
+        const product = await ProductRepository.findOneBy({ product_id: marketplaceListing[0].product.product_id });
+        if (!product) {
+          throw new Error(`Product with ID ${marketplaceListing[0].product.product_id} not found`);
+        }
+
+
+        const newInteraction = plainToClass(ProductInteraction, { ...interaction, product: product });
+        const validationErrors = await validate(newInteraction);
+        if (validationErrors.length > 0) {
+          console.error('Validation errors:', validationErrors);
+          throw new Error('Validation failed');
+        }
+        const savedInteraction = await this.ProductInteractionRepository.save(newInteraction);
+        return savedInteraction;
+      }));
+
+      return savedInteractions
+    } catch (error) {
+      console.error('Error adding product interaction:', error);
       throw error;
     }
   }

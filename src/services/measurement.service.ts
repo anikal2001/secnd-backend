@@ -40,10 +40,8 @@ export class MeasurementService {
         entity.value = measurement.value;
         entity.unit = measurement.unit || "cm";
         entity.product = product;              // Set the relationship
-        
         measurementEntities.push(entity);
         }
-        console.log(measurementEntities)
 
       // Save the measurements
       return await this.MeasurementRepository.saveForProduct(productId, measurementEntities);
@@ -65,10 +63,12 @@ export class MeasurementService {
   async updateMeasurementsForProduct(productId: string, measurements: MeasurementInput[]): Promise<Measurement[]> {
     try {
       // First delete existing measurements
-      await this.MeasurementRepository.delete({ product: { product_id: productId } });
+      const res = await this.MeasurementRepository.deleteByProductId(productId);
+      console.log('Delete result:', res);
+      return await this.createMeasurementsForProduct(productId, measurements);
       
       // Then create new ones
-      return await this.createMeasurementsForProduct(productId, measurements);
+
     } catch (error) {
       console.error('Error updating measurements:', error);
       throw error;
