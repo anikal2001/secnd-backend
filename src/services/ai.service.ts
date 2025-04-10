@@ -344,6 +344,7 @@ Compose a title using the following format:
     - **Predefined Tags Provided:** Use ONLY the following tags as they are highly optimized and context-specific.
     - **Avoid Generating New Tags:** Since tags are predefined, do not generate or infer new tags.
     - **Maintain Tag Consistency:** Ensure tags reflect the product’s key attributes, such as brand, team, material, and era.
+    - **DO NOT USE ANY EXTERNAL TAGS:** Do not use any external tags or keywords that are not part of the provided list.
   `
     : `
     - **Brand/Team:** Prioritize official brands, team names, and associations. Example: Toronto Blue Jays, Levi's, Nike.
