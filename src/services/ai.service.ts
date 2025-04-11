@@ -7,6 +7,7 @@ import { productSizes } from '../utils/product/size';
 import { ChatCompletion } from 'openai/resources/chat';
 import { mens_attributes, womens_attributes } from '../utils/product/features';
 import { features } from '../utils/product/features';
+import { get } from 'http';
 
 /**
  * Interfaces for the template system
@@ -251,6 +252,43 @@ export function processTemplate(template: string, values: Record<string, any>): 
   return processedTemplate;
 }
 
+const getPriceSuggestions = async (title: string) => {
+  const query = `query search2($query: SearchQueryInput!, $nextPageId: String, $count: Int) {\n  search2(query: $query, nextPageId: $nextPageId, count: $count) {\n    results {\n      type\n      product {\n        ...ProductFragment\n      }\n    }\n    nextPageId\n    exactCount\n    partialCount\n    suggestions\n  }\n}\n\nfragment ProductFragment on Product {\n  id\n  source\n  url\n  urlAffiliate\n  available\n  removedDate\n  seller\n  title\n  price\n  priceOriginalNumber\n  priceOriginalCurrency\n  gender\n  countryName\n  images {\n    thumbnail {\n      url\n      width\n      height\n    }\n    full {\n      url\n      width\n      height\n    }\n  }\n  outboundLinkText\n  itemTypeV1\n  sizesV1 {\n    type\n    label\n    values {\n      label\n      value\n      value2\n      unit\n      isMore\n      sizeParam\n      convLabel\n      convValue\n    }\n    notes {\n      icon\n      text\n      action\n    }\n  }\n  isAuction\n  saved\n}`
+  const variables = {
+  "query": {
+    "terms": title
+  },
+  "nextPageId": "eyJ0eXBlIjoiZXhhY3QiLCJzb3J0S2V5IjpbMTAuNzc0ODYsImNhcmhhcnR0LWNhcmhhcnR0LXdpcC12aW50YWdlLXZpbnRhZ2UtNjIzNjUiXX0=",
+  "count": 50
+  }
+  const headers = {
+    Cookie: "currency=CAD; measurements=%7B%22mtsUnits%22%3A%22orig%22%2C%22mtsConvertFlat%22%3Anull%7D; homeImage=13%2C0; sidePanel={%22isOpen%22:false}; _ga=GA1.1.1999525011.1744354020; _ga_49N51MV1DX=GS1.1.1744354019.1.1.1744354090.0.0.0",
+    "Content-Type": "application/json",
+    "Accept": "*/*",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 OPR/117.0.0.0",
+    "Referer": "https://gem.app/"
+  }
+
+  const res = await fetch('https://backend.gem.app/graphql', {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify({
+      query,
+      variables
+    })
+  })
+  const data = await res.json()
+
+  const results = data.data.search2.results.slice(0, 5)
+  const prices = results.map((result: any) => result.product.priceOriginalNumber)
+
+  const sum = prices.reduce((total: number, price: number) => total + price, 0);
+  const average = Math.ceil(sum / prices.length)-0.01;
+
+  return average;
+
+
+}
 /**
  * Creates messages for image analysis with templates
  */
@@ -723,6 +761,11 @@ export class ProductClassifier {
           }
         }
       });
+    }
+
+    const priceSuggestion = await getPriceSuggestions(parsedContent.title);
+    if (priceSuggestion) {
+      parsedContent.price = priceSuggestion;
     }
     
     return ProductResponseSchema.parse(parsedContent);
