@@ -132,6 +132,15 @@ export abstract class ProductBase {
   @Column({ nullable: true })
   made_in: string;
 
+  @Column({ type: 'simple-array',nullable: true })
+  collections: string[];
+  
+  @Column({ type: 'varchar', nullable: true })
+  type: string;
+  
+  @Column({ type: 'varchar', nullable: true })
+    sku: string;
+
   @Column({ type: 'simple-array', nullable: true })
   source: string[]; 
 
