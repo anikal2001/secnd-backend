@@ -21,7 +21,7 @@ import { ProductImportRepository } from '../repositories/productImport.repositor
 import { ProductInteraction } from '../entity/product_interactions.entity';
 import { validate } from 'class-validator';
 import { Gender, Material, ProductColors, ProductStatus, ProductSize, ProductCondition, ProductStyles } from '../utils/products.enums';
-
+import { ProductClassifier } from '../services/ai.service';
 export class ProductService {
   private UserService: UserService = new UserService();
   private ImageService: ImageService = new ImageService();
@@ -30,6 +30,7 @@ export class ProductService {
   private MeasurementService: MeasurementService = new MeasurementService();
   private GeneratedResponseRepository = AppDataSource.getRepository(GeneratedResponse);
   private ProductInteractionRepository = AppDataSource.getRepository(ProductInteraction);
+  private ProductClassifier: ProductClassifier = new ProductClassifier();
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
     // If the id is undefined, it will return all orders
@@ -563,6 +564,7 @@ export class ProductService {
       throw error;
     }
   }
+
   async convertImportToProduct(importData: ProductImport): Promise<Product> {
     const convertedProduct = new Product();
 
@@ -861,6 +863,7 @@ export class ProductService {
     return savedProducts;
   }
 
+  // INFERENCE
   async inferenceImages(
     images: ImageData[],
     titleTemplate?: string,
@@ -925,6 +928,34 @@ export class ProductService {
       console.error('Error during inference:', error);
       return null;
     }
+  }
+
+  async fillMissingFields(product: Partial<Product>, save: boolean): Promise<Product> {
+    // Check if the product has an images property or relation
+    let imageUrls: string[] = [];
+    
+    // Handle case where images might be in imageURLS relation
+    if ((product as any).imageURLS && Array.isArray((product as any).imageURLS)) {
+      imageUrls = (product as any).imageURLS.map((img: any) => img.url);
+    } 
+    // Handle case where images might be directly on the product
+    else if ((product as any).images && Array.isArray((product as any).images)) {
+      imageUrls = (product as any).images.map((img: any) => img.url);
+    }
+    
+    const enrichedProduct = await this.ProductClassifier.inferMissingProductDetails(imageUrls, product);
+
+    // Create a complete product object
+    const completeProduct = new Product();
+    Object.assign(completeProduct, enrichedProduct);
+
+    // if save, save to database
+    if (save) {
+      // Use the global ProductRepository instead of this.productRepository
+      await ProductRepository.save(completeProduct);
+    }
+
+    return completeProduct;
   }
 
   // Marketplace related

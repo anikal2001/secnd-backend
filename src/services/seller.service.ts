@@ -780,7 +780,7 @@ export class SellerService {
       return {};
     }
   }
-  
+
   /**
    * Format category counts into insights for the dashboard
    */
@@ -846,5 +846,45 @@ export class SellerService {
       inventoryPrice: calculateChange(current.averageInventoryPrice, comparison.averageInventoryPrice),
       salePrice: calculateChange(current.averageSalePrice, comparison.averageSalePrice),
     };
+  }
+
+  async searchSellerProducts(params: { sellerId: string; query?: string; page?: number; limit?: number }): Promise<PaginatedProducts> {
+    try {
+      const { sellerId, query, page = 1, limit = 10 } = params;
+
+      const productRepository = AppDataSource.getRepository(Product);
+
+      // Create a single chained query
+      const queryBuilder = productRepository
+        .createQueryBuilder('product')
+        .where('product.user_id = :sellerId', { sellerId })
+        .leftJoinAndSelect('product.imageURLS', 'imageURLS')
+        .orderBy('product.created_at', 'DESC');
+
+      // Add text search if query provided
+      if (query) {
+        queryBuilder.andWhere('(product.title ILIKE :query OR product.description ILIKE :query)', { query: `%${query}%` });
+      }
+
+      // Get total count before pagination
+      const total = await queryBuilder.getCount();
+
+      // Apply pagination and get results
+      const products = await queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany();
+
+      return {
+        products,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      console.error('Error in searchSellerProducts:', error);
+      throw error;
+    }
   }
 }

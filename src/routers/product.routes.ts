@@ -15,8 +15,10 @@ Router.post('/update', productController.updateProduct);
 Router.get('/filter', productController.filterProducts);
 Router.post('/save-draft', productController.saveDraft);
 Router.post('/upload-image', productController.uploadImage);
+
 Router.post('/import', productController.importProducts);
 Router.post('/import-sold', productController.importSoldProducts);
+
 Router.post('/add-interaction', productController.addProductInteraction);
 // Router.get('/search', productController.searchProducts);
 // Router.get('/categories', productController.getCategories);
@@ -28,7 +30,7 @@ Router.get('/trending', productController.getTrendingProducts);
 // Router.get('/sizes', productController.getSizes);
 Router.post('/picture', productController.uploadImage)
 Router.post('/inference', productController.inferenceImages)
-
+Router.post('/fillMissingFields', productController.fillMissingFields);
 Router.post('/delist', productController.delistMarketplaceListing)
 Router.post('/delete-marketplace', productController.deleteMarketplaceListing)
 Router.get('/get-other-marketplace-listings', productController.getOtherMarketplaceListings)

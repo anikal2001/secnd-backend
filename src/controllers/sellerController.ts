@@ -317,4 +317,23 @@ export class SellerController {
       res.status(500).json({ error: 'Failed to get seller dashboard' });
     }
   };
+
+  public searchSellerProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sellerId = req.params.id;
+      const { query, page, limit } = req.query;
+
+      const searchResults = await SellerController.sellerService.searchSellerProducts({
+        sellerId,
+        query: query as string,
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 10,
+      });
+
+      res.json(searchResults);
+    } catch (error) {
+      console.error('Error in searchSellerProducts:', error);
+      res.status(500).json({ error: 'Failed to search seller products' });
+    }
+  };
 }

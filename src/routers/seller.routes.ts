@@ -8,6 +8,7 @@ Router.get('/', sellerController.getAllSellers);
 Router.post('/add', sellerController.addSeller);
 Router.get('/:id', sellerController.getSellerById);
 Router.get('/:id/products', sellerController.getSellerProducts);
+Router.get('/:id/products/search', sellerController.searchSellerProducts);
 
 Router.get('/:id/products/:productId', sellerController.getSellerProductById);
 Router.get('/:id/trending-products', sellerController.getTrendingProducts);

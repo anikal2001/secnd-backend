@@ -106,7 +106,6 @@ export class ProductController {
     }
   };
 
-
   public addProductInteraction = async (req: Request, res: Response): Promise<void> => {
     try {
       // Ensure request body is present
@@ -127,11 +126,10 @@ export class ProductController {
       }
 
       res.status(201).json(interaction);
-    }
-    catch (error: any) {
+    } catch (error: any) {
       console.error('Add product interaction error:', error);
     }
-  }
+  };
 
   public _handleFileUpload = (fieldName: string, maxCount: number = 10) => {
     return this.upload.array(fieldName, maxCount);
@@ -203,7 +201,7 @@ export class ProductController {
   public updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.body.product_id?.toString();
-      console.log("This is the id", id)
+      console.log('This is the id', id);
       if (!id) {
         res.status(400).json({ message: 'Product ID is required' });
         return;
@@ -266,7 +264,7 @@ export class ProductController {
           res.status(404).json({ message: 'Draft not found' });
           return;
         }
-        console.log("EXISTING PRODUCT: ", existingProduct)
+        console.log('EXISTING PRODUCT: ', existingProduct);
 
         // Update existing draft - fix: pass product ID as first parameter
         console.log('Updating draft:');
@@ -282,40 +280,67 @@ export class ProductController {
     }
   };
 
+  // IMPORT ITEMS
   public importProducts = async (req: Request, res: Response): Promise<void> => {
     try {
       // console.log('Importing products:', req.body);
-      req.body.product_id = randomUUID()
+      req.body.product_id = randomUUID();
       const imports = await ProductController.productService.saveImports(req.body);
-      res.json({success: true, message: 'Products imported successfully', imports});
-    }
-    catch (error: any) {
+      res.json({ success: true, message: 'Products imported successfully', imports });
+    } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
-  }
+  };
+
+  public fillMissingFields = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // receive partial product 
+      // receive flag to whether save to backend as well or just return to frontend
+      const { partialProduct, saveToBackend = false } = req.body;
+      
+      if (!partialProduct) {
+        res.status(400).json({ success: false, message: 'No product data provided' });
+        return;
+      }
+      
+      // pass to inference to complete the required listing details
+      const productService = new ProductService();
+      const completeProduct = await productService.fillMissingFields(partialProduct, saveToBackend);
+      
+      // Return the complete product with filled-in missing fields
+      res.status(200).json({ 
+        success: true, 
+        message: 'Product details completed successfully', 
+        product: completeProduct 
+      });
+      
+    } catch (error: any) {
+      console.error('Error in importCrossList:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
   public addToImport = async (req: Request, res: Response): Promise<void> => {
     try {
       // console.log('Importing products:', req.body);
-      req.body.product_id = randomUUID()
+      req.body.product_id = randomUUID();
       const imports = await ProductController.productService.saveImports(req.body);
-      res.json({success: true, message: 'Products imported successfully', imports});
-    }
-    catch (error: any) {
+      res.json({ success: true, message: 'Products imported successfully', imports });
+    } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
-  }
+  };
 
-    public importSoldProducts = async (req: Request, res: Response): Promise<void> => {
+  public importSoldProducts = async (req: Request, res: Response): Promise<void> => {
     try {
       // console.log('Importing products:', req.body);
-      req.body.product_id = randomUUID()
+      req.body.product_id = randomUUID();
       const imports = await ProductController.productService.saveImports(req.body);
-      res.json({success: true, message: 'Products imported successfully', imports});
-    }
-    catch (error: any) {
+      res.json({ success: true, message: 'Products imported successfully', imports });
+    } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
-  }
+  };
 
   // Current Products that have the most wishlist + likes + views
   public getTrendingProducts = async (req: Request, res: Response): Promise<void> => {
