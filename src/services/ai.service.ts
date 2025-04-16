@@ -625,7 +625,7 @@ export class ProductClassifier {
     });
   }
 
-  private async getRagContext(imageUrls: string): Promise<string> {
+  private async getRagContext(imageUrl: string): Promise<string> {
     try {
       // Make API call to your vector database backend
       const response = await fetch(`http://68.183.204.156:8882/api/rag/process_multimodal`, {
@@ -634,7 +634,7 @@ export class ProductClassifier {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image_url: imageUrls,
+          image_url: imageUrl,
           limit: 5,
         }),
       });

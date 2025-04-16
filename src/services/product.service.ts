@@ -455,6 +455,7 @@ export class ProductService {
 
       // Convert the import data to a Product using our custom conversion function
       const convertedProduct = await this.convertImportToProduct(validatedImport);
+      const completeProduct = await this.fillMissingFields(convertedProduct, false);
 
       // Log the converted product for debugging
       console.log(
@@ -471,14 +472,14 @@ export class ProductService {
       );
 
       // Validate the converted product
-      const validatedProduct = await validate(convertedProduct);
+      const validatedProduct = await validate(completeProduct);
       if (validatedProduct.length > 0) {
         console.error('Product validation errors:', validatedProduct);
         throw new Error('Product validation failed: ' + JSON.stringify(validatedProduct));
       }
 
       // Save the converted product
-      const savedProduct = await ProductRepository.createAndSave(convertedProduct, user_id);
+      const savedProduct = await ProductRepository.createAndSave(completeProduct, user_id);
 
       if (savedProduct && importData.marketplaceData && Array.isArray(importData.marketplaceData)) {
         console.log('Marketplace data:', importData.marketplaceData);
