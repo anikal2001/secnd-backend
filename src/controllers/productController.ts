@@ -296,16 +296,16 @@ export class ProductController {
     try {
       // receive partial product 
       // receive flag to whether save to backend as well or just return to frontend
-      const { partialProduct, saveToBackend = false } = req.body;
+      const { product, saveToBackend = false } = req.body;
       
-      if (!partialProduct) {
+      if (!product) {
         res.status(400).json({ success: false, message: 'No product data provided' });
         return;
       }
       
       // pass to inference to complete the required listing details
       const productService = new ProductService();
-      const completeProduct = await productService.fillMissingFields(partialProduct, saveToBackend);
+      const completeProduct = await productService.fillMissingFields(product, saveToBackend);
       
       // Return the complete product with filled-in missing fields
       res.status(200).json({ 

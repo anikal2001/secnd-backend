@@ -792,7 +792,7 @@ export class ProductClassifier {
     - **Title**
     - **Description**
     - **DescriptionHtml**
-    - **Price**
+    - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
     - **Condition** (from: ${ProductConditionsList})
     - **Colors** (from: ${ProductColorsList})
       - **Primary**
@@ -800,7 +800,10 @@ export class ProductClassifier {
     - **Material:** Primary material (from: ${ProductMaterialsList})
     - **Size:** Must match one of the options: ${ProductSizesList} (if possible, provide waist size only)
     - **Gender:** Choose "Menswear" or "Womenswear" (default to "Menswear" for unisex items).
-    - **Category and Subcategory:** Use the following hierarchy: ${CategoryHierarchy}
+    - **Category:** Determined category (e.g., "Tops")
+    - **Subcategory:** Determined subcategory (e.g., "T-Shirts")
+      - **Identify Category and Subcategory:** Use the following hierarchy:
+        ${CategoryHierarchy}
     - **Brand:** Visible brand name, if present
     - **Tags:** Generate 13 SEO-friendly, relevant tags, with the following instructions: ${tagInstructions}
     - **Age:** Inferred age (e.g., "1990s"); use only if you are at least 50% certain, otherwise set as null.
@@ -847,13 +850,6 @@ export class ProductClassifier {
       - Cross-check all extracted details from the title, description, and images.
       - If a detail is present in both the text and images, ensure they are consistent. If there is a conflict, defer to the existing product field; otherwise, use the most reliable source (prefer explicit image evidence over ambiguous text).
       - For ambiguous or missing fields, use your best judgment based on all available context, but leave fields as null if you are not at least 50% certain.
-
-    ### 4. Return JSON Object
-      - Construct a JSON object containing ONLY the fields that were missing in the original product object.
-      - Ensure all required fields are present and valid according to the schema.
-      - For nested objects (like color or attributes), merge inferred values ONLY if the field is missing or incomplete.
-      - Do NOT include fields that were already present in the input product object.
-      - The final output must be a valid JSON object, ready for direct use in the backend.
 
     ## Additional Guidelines
       - **Be concise and accurate:** Avoid verbose, promotional, speculative language in title and description.
