@@ -987,13 +987,22 @@ export class ProductClassifier {
       }
     }
 
+    // Ensure category and subcategory are valid
+    if (product.category === '' || !product.category) {
+      mergedProduct.category = parsedContent?.category || product.category;
+    }
+
+    if (product.subcategory === '' || !product.subcategory) {
+      mergedProduct.subcategory = parsedContent?.subcategory || product.subcategory;
+    }
+
     // Add color information
     mergedProduct.color = {
       primaryColor: parsedContent?.color?.primaryColor || [],
       secondaryColor: parsedContent?.color?.secondaryColor || [],
     };
 
-    if (product.brand && product.brand === 'source-unknown') {
+    if ((product.brand && (product.brand === 'source-unknown')) || !product.brand || product.brand === '') {
       mergedProduct.brand = parsedContent?.brand || product.brand;
     }
 
