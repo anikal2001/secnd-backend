@@ -465,7 +465,9 @@ export class ProductService {
       const validatedProduct = await validate(completeProduct);
       if (validatedProduct.length > 0) {
         console.error('Product validation errors:', validatedProduct);
-        throw new Error('Product validation failed: ' + JSON.stringify(validatedProduct));
+        const err = new Error('Product validation failed: ' + JSON.stringify(validatedProduct));
+        (err as any).status = 400;
+        throw err;
       }
 
       // Save the converted product
@@ -494,7 +496,8 @@ export class ProductService {
       return savedImports;
     } catch (error) {
       console.error('Error saving imports:', error);
-      throw error;
+      const errMsg = error instanceof Error ? error.message : 'Internal server error';
+      throw new Error(errMsg);
     }
   }
 
@@ -539,7 +542,8 @@ export class ProductService {
       return savedImports;
     } catch (error) {
       console.error('Error saving imports:', error);
-      throw error;
+      const errMsg = error instanceof Error ? error.message : 'Internal server error';
+      throw new Error(errMsg);
     }
   }
 
@@ -927,8 +931,14 @@ export class ProductService {
       tags: Array.isArray(enhancedResponse.tags) ? enhancedResponse.tags : [],
       listed_size: enrichedProduct.size,
       color: enrichedProduct.color,
-      primaryColor: enrichedProduct.color.primaryColor,
-      secondaryColor: enrichedProduct.color.secondaryColor,
+      primaryColor:
+        product.primaryColor && product.primaryColor.length > 0
+          ? product.primaryColor
+          : enrichedProduct.color.primaryColor,
+      secondaryColor:
+        product.secondaryColor && product.secondaryColor.length > 0
+          ? product.secondaryColor
+          : enrichedProduct.color.secondaryColor,
     };
 
     // Special handling for attributes
@@ -999,14 +1009,18 @@ export class ProductService {
           // Get the product associated to marketplace id
           const product = await ProductRepository.findOneBy({ product_id: marketplaceListing[0].product.product_id });
           if (!product) {
-            throw new Error(`Product with ID ${marketplaceListing[0].product.product_id} not found`);
+            const err = new Error(`Product with ID ${marketplaceListing[0].product.product_id} not found`);
+            (err as any).status = 404;
+            throw err;
           }
 
           const newInteraction = plainToClass(ProductInteraction, { ...interaction, product: product });
           const validationErrors = await validate(newInteraction);
           if (validationErrors.length > 0) {
             console.error('Validation errors:', validationErrors);
-            throw new Error('Validation failed');
+            const err = new Error('Validation failed');
+            (err as any).status = 400;
+            throw err;
           }
           const savedInteraction = await this.ProductInteractionRepository.save(newInteraction);
           return savedInteraction;

@@ -288,7 +288,15 @@ export class ProductController {
       const imports = await ProductController.productService.saveImports(req.body);
       res.json({ success: true, message: 'Products imported successfully', imports });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      let status = 500;
+      let message = 'Internal server error';
+      if (error instanceof Error) {
+        if (error.message === 'Validation failed') status = 400;
+        else if (error.message === 'Seller with user_id ' + req.body.user_id + ' not found') status = 404;
+        else if (error.message.startsWith('Marketplace with ID')) status = 409;
+        message = error.message;
+      }
+      res.status(status).json({ success: false, message });
     }
   };
 
