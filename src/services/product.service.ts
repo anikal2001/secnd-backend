@@ -484,9 +484,10 @@ export class ProductService {
       }
 
       // Process image IDs
-      const imageIds = await Promise.all(
+      await Promise.all(
         importData.pictureIds.map(async (image: any) => {
           return await this.ImageService.create({
+            ...image,
             product_id: savedProduct?.product_id,
             url: typeof image === 'string' ? image : image.url,
           });
@@ -931,14 +932,8 @@ export class ProductService {
       tags: Array.isArray(enhancedResponse.tags) ? enhancedResponse.tags : [],
       listed_size: enrichedProduct.size,
       color: enrichedProduct.color,
-      primaryColor:
-        product.primaryColor && product.primaryColor.length > 0
-          ? product.primaryColor
-          : enrichedProduct.color.primaryColor,
-      secondaryColor:
-        product.secondaryColor && product.secondaryColor.length > 0
-          ? product.secondaryColor
-          : enrichedProduct.color.secondaryColor,
+      primaryColor: product.primaryColor && product.primaryColor.length > 0 ? product.primaryColor : enrichedProduct.color.primaryColor,
+      secondaryColor: product.secondaryColor && product.secondaryColor.length > 0 ? product.secondaryColor : enrichedProduct.color.secondaryColor,
     };
 
     // Special handling for attributes

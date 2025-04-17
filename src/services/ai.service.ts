@@ -969,14 +969,10 @@ export class ProductClassifier {
     console.log('== Raw JSON ==\n', rawJson);
     const parsedContent = JSON.parse(rawJson);
 
-    // Create a merged product with inferred fields, prioritizing existing values
-    console.log('Parsed content:', parsedContent);
-    console.log('Original product:', product);
     const mergedProduct = {
       ...parsedContent, // First add all inferred fields
       ...product, // Then override with any existing fields from the original product
     };
-    console.log(mergedProduct)
 
     // Ensure tags is an array
     if (!Array.isArray(mergedProduct.tags)) {

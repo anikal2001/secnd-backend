@@ -132,17 +132,17 @@ export abstract class ProductBase {
   @Column({ nullable: true })
   made_in: string;
 
-  @Column({ type: 'simple-array',nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   collections: string[];
-  
+
   @Column({ type: 'varchar', nullable: true })
   type: string;
-  
+
   @Column({ type: 'varchar', nullable: true })
-    sku: string;
+  sku: string;
 
   @Column({ type: 'simple-array', nullable: true })
-  source: string[]; 
+  source: string[];
 
   @Column({ nullable: true })
   fit_type: string;
@@ -224,8 +224,8 @@ export class ProductImport extends ProductBase {
     secondaryColor: string[];
   };
 
-  @Column({type: "varchar", nullable: true})
-  gender: string
+  @Column({ type: 'varchar', nullable: true })
+  gender: string;
 
   @Column({ type: 'varchar', nullable: true })
   listed_size: string;
@@ -242,15 +242,15 @@ export class ProductImport extends ProductBase {
   @Column({ type: 'simple-json', nullable: true })
   image_urls: string[];
 
-      @OneToMany(() => MarketplaceListing, (listing) => listing.product, {
+  @OneToMany(() => MarketplaceListing, (listing) => listing.product, {
     cascade: true,
     onDelete: 'CASCADE',
   })
-      marketplaceListings: MarketplaceListing[];
-  
+  marketplaceListings: MarketplaceListing[];
+
   @ManyToOne(() => Seller, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
-  seller: Seller
+  seller: Seller;
 }
 
 @Entity()
@@ -267,7 +267,7 @@ export class Product extends ProductBase {
     secondaryColor: ProductColors[];
   };
 
-    @Column({ type: 'simple-enum', enum: Gender, nullable: true })
+  @Column({ type: 'simple-enum', enum: Gender, nullable: true })
   gender: Gender;
 
   @Column({ type: 'enum', enum: productSizes, nullable: true })
@@ -288,7 +288,7 @@ export class Product extends ProductBase {
   })
   measurements: Measurement[];
 
-    @OneToMany(() => MarketplaceListing, (listing) => listing.product, {
+  @OneToMany(() => MarketplaceListing, (listing) => listing.product, {
     cascade: true,
     onDelete: 'CASCADE',
   })
