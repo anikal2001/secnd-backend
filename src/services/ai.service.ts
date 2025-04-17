@@ -925,6 +925,8 @@ export class ProductClassifier {
       ${JSON.stringify(product)} 
 
     First, think carefully step by step about what you can infer from the images, then examine through the Product class particularly the title and description to infer properties. Then return a JSON object with all the required properties.
+    DO NOT RETURN ANYTHING ELSE EXCEPT THE JSON OBJECT.
+    Make sure to follow the instructions carefully and do not add any extra information or comments.
     `;
 
     let response: ChatCompletion;
@@ -968,10 +970,13 @@ export class ProductClassifier {
     const parsedContent = JSON.parse(rawJson);
 
     // Create a merged product with inferred fields, prioritizing existing values
+    console.log('Parsed content:', parsedContent);
+    console.log('Original product:', product);
     const mergedProduct = {
       ...parsedContent, // First add all inferred fields
       ...product, // Then override with any existing fields from the original product
     };
+    console.log(mergedProduct)
 
     // Ensure tags is an array
     if (!Array.isArray(mergedProduct.tags)) {
