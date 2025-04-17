@@ -64,7 +64,7 @@ export function findClosestBrandMatch(
   
   // If no match found
   if (extractResult.length === 0) {
-    return null;
+    return {"id":20035,"name":"Source Unknown","slug":"source-unknown"};
   }
   
   // Find the brand object that matches the name
@@ -77,7 +77,7 @@ export function findClosestBrandMatch(
  * @param productData - The product data containing a brand field
  * @returns The enhanced product data with matched brand
  */
-export function enhanceProductWithBrandMatch<T extends { brand: string | null }>(productData: T): T {
+export function enhanceProductWithBrandMatch<T extends { brand: string | null }>(productData: T, returnSlug?: boolean): T {
   if (!productData.brand) return productData;
   
   const matchedBrand = findClosestBrandMatch(productData.brand);
@@ -86,7 +86,7 @@ export function enhanceProductWithBrandMatch<T extends { brand: string | null }>
     // Create a new object to avoid mutating the original
     return {
       ...productData,
-      brand: matchedBrand.name
+      brand: returnSlug ? matchedBrand.slug : matchedBrand.name
     };
   }
   

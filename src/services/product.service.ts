@@ -22,6 +22,7 @@ import { ProductInteraction } from '../entity/product_interactions.entity';
 import { validate } from 'class-validator';
 import { Gender, Material, ProductColors, ProductStatus, ProductSize, ProductCondition, ProductStyles } from '../utils/products.enums';
 import { ProductClassifier } from '../services/ai.service';
+import { productSizes } from '../utils/product/size';
 export class ProductService {
   private UserService: UserService = new UserService();
   private ImageService: ImageService = new ImageService();
@@ -444,6 +445,9 @@ export class ProductService {
       importData.seller = seller;
       importData.image_urls = importData.pictureIds;
 
+      importData.listed_size = importData.size;
+      importData.shippingProfile = importData.shippingProfile;
+
       // Validate the import data
       const validatedImport = plainToClass(ProductImport, importData);
       const validationErrors = await validate(validatedImport);
@@ -457,20 +461,6 @@ export class ProductService {
       const convertedProduct = await this.convertImportToProduct(validatedImport);
       const completeProduct = await this.fillMissingFields(convertedProduct, false);
 
-      // Log the converted product for debugging
-      console.log(
-        'Converted product:',
-        JSON.stringify(
-          {
-            gender: convertedProduct.gender,
-            condition: convertedProduct.condition,
-            status: convertedProduct.status,
-          },
-          null,
-          2,
-        ),
-      );
-
       // Validate the converted product
       const validatedProduct = await validate(completeProduct);
       if (validatedProduct.length > 0) {
@@ -479,6 +469,7 @@ export class ProductService {
       }
 
       // Save the converted product
+      console.log('Saving product:', completeProduct);
       const savedProduct = await ProductRepository.createAndSave(completeProduct, user_id);
 
       if (savedProduct && importData.marketplaceData && Array.isArray(importData.marketplaceData)) {
@@ -544,20 +535,6 @@ export class ProductService {
 
       // Convert the import data to a Product using our custom conversion function
       const convertedProduct = await this.convertImportToProduct(validatedImport);
-
-      // Log the converted product for debugging
-      console.log(
-        'Converted product:',
-        JSON.stringify(
-          {
-            gender: convertedProduct.gender,
-            condition: convertedProduct.condition,
-            status: convertedProduct.status,
-          },
-          null,
-          2,
-        ),
-      );
 
       return savedImports;
     } catch (error) {
@@ -692,21 +669,17 @@ export class ProductService {
     if (importData.listed_size) {
       try {
         // Try direct match first
-        if (Object.values(ProductSize).includes(importData.listed_size as ProductSize)) {
-          convertedProduct.listed_size = importData.listed_size as ProductSize;
+        if (productSizes.includes(importData.listed_size)) {
+          convertedProduct.listed_size = importData.listed_size;
         } else {
           // Try matching by abbreviation or full name (case-insensitive)
-          const sizeKey = Object.keys(ProductSize).find(
-            (key) =>
-              ProductSize[key as keyof typeof ProductSize].toLowerCase() === importData.listed_size.toLowerCase() ||
-              key.toLowerCase() === importData.listed_size.toLowerCase(),
-          );
+          const matchedSize = productSizes.find((size) => size.toLowerCase() === importData.listed_size.toLowerCase());
 
-          if (sizeKey) {
-            convertedProduct.listed_size = ProductSize[sizeKey as keyof typeof ProductSize];
+          if (matchedSize) {
+            convertedProduct.listed_size = matchedSize;
           } else {
-            console.warn(`Size '${importData.listed_size}' not recognized, setting to empty string`);
-            convertedProduct.listed_size = ProductSize.NA;
+            console.warn(`Size '${importData.listed_size}' not recognized, setting to 'M'`);
+            convertedProduct.listed_size = 'M'; // fallback to Medium if not recognized
           }
         }
       } catch (error: any) {
@@ -934,21 +907,43 @@ export class ProductService {
   async fillMissingFields(product: Partial<Product>, save: boolean): Promise<Product> {
     // Check if the product has an images property or relation
     let imageUrls: string[] = [];
-    
+
     // Handle case where images might be in imageURLS relation
     if ((product as any).imageURLS && Array.isArray((product as any).imageURLS)) {
       imageUrls = (product as any).imageURLS.map((img: any) => img.url);
-    } 
+    }
     // Handle case where images might be directly on the product
     else if ((product as any).images && Array.isArray((product as any).images)) {
       imageUrls = (product as any).images.map((img: any) => img.url);
     }
-    
+
     const enrichedProduct = await this.ProductClassifier.inferMissingProductDetails(imageUrls, product);
+    const enhancedResponse = enrichedProduct ? enhanceProductWithBrandMatch(enrichedProduct, true) : enrichedProduct;
+    // Merge the enriched product with the original product
+    const mergedProduct = {
+      ...product,
+      ...enhancedResponse,
+      // Ensure tags is an array
+      tags: Array.isArray(enhancedResponse.tags) ? enhancedResponse.tags : [],
+      listed_size: enrichedProduct.size,
+      color: enrichedProduct.color,
+      primaryColor: enrichedProduct.color.primaryColor,
+      secondaryColor: enrichedProduct.color.secondaryColor,
+    };
+
+    // Special handling for attributes
+    if (enhancedResponse.attributes && !product.attributes) {
+      mergedProduct.attributes = enhancedResponse.attributes;
+    } else if (enhancedResponse.attributes && product.attributes) {
+      mergedProduct.attributes = {
+        ...enhancedResponse.attributes,
+        ...product.attributes,
+      };
+    }
 
     // Create a complete product object
     const completeProduct = new Product();
-    Object.assign(completeProduct, enrichedProduct);
+    Object.assign(completeProduct, mergedProduct);
 
     // if save, save to database
     if (save) {
@@ -993,31 +988,32 @@ export class ProductService {
 
   async addProductInteraction(interactions: any): Promise<any> {
     try {
-      const savedInteractions = await Promise.all(interactions.map(async (interaction: any) => {
-        // Validate the marketplace id exists in the product table
-        const marketplaceListing = await this.MarketplaceService.findByMarketplaceId(interaction.marketplace_id);
-        if (!marketplaceListing) {
-          throw new Error(`Marketplace with ID ${interaction.marketplace_id} not found`);
-        }
+      const savedInteractions = await Promise.all(
+        interactions.map(async (interaction: any) => {
+          // Validate the marketplace id exists in the product table
+          const marketplaceListing = await this.MarketplaceService.findByMarketplaceId(interaction.marketplace_id);
+          if (!marketplaceListing) {
+            throw new Error(`Marketplace with ID ${interaction.marketplace_id} not found`);
+          }
 
-        // Get the product associated to marketplace id
-        const product = await ProductRepository.findOneBy({ product_id: marketplaceListing[0].product.product_id });
-        if (!product) {
-          throw new Error(`Product with ID ${marketplaceListing[0].product.product_id} not found`);
-        }
+          // Get the product associated to marketplace id
+          const product = await ProductRepository.findOneBy({ product_id: marketplaceListing[0].product.product_id });
+          if (!product) {
+            throw new Error(`Product with ID ${marketplaceListing[0].product.product_id} not found`);
+          }
 
+          const newInteraction = plainToClass(ProductInteraction, { ...interaction, product: product });
+          const validationErrors = await validate(newInteraction);
+          if (validationErrors.length > 0) {
+            console.error('Validation errors:', validationErrors);
+            throw new Error('Validation failed');
+          }
+          const savedInteraction = await this.ProductInteractionRepository.save(newInteraction);
+          return savedInteraction;
+        }),
+      );
 
-        const newInteraction = plainToClass(ProductInteraction, { ...interaction, product: product });
-        const validationErrors = await validate(newInteraction);
-        if (validationErrors.length > 0) {
-          console.error('Validation errors:', validationErrors);
-          throw new Error('Validation failed');
-        }
-        const savedInteraction = await this.ProductInteractionRepository.save(newInteraction);
-        return savedInteraction;
-      }));
-
-      return savedInteractions
+      return savedInteractions;
     } catch (error) {
       console.error('Error adding product interaction:', error);
       throw error;

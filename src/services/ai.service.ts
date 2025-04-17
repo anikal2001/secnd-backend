@@ -753,6 +753,21 @@ export class ProductClassifier {
       parsedContent.price = priceSuggestion;
     }
 
+    // Ensure tags is an array
+    if (!Array.isArray(parsedContent.tags)) {
+      if (typeof parsedContent.tags === 'string') {
+        parsedContent.tags = parsedContent.tags.split(',').map((t: string) => t.trim());
+      } else {
+        parsedContent.tags = [];
+      }
+    }
+
+    // Fallback default size to 'M' if unrecognized or missing
+    if (typeof parsedContent.size !== 'string' || !productSizes.includes(parsedContent.size)) {
+      console.warn(`Size '${parsedContent.size}' not recognized, setting to default 'M'`);
+      parsedContent.size = 'M';
+    }
+
     return ProductResponseSchema.parse(parsedContent);
   }
 
@@ -794,9 +809,9 @@ export class ProductClassifier {
     - **DescriptionHtml**
     - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
     - **Condition** (from: ${ProductConditionsList})
-    - **Colors** (from: ${ProductColorsList})
-      - **Primary**
-      - **Secondary**
+    - **Color** (from: ${ProductColorsList})
+      - **Primary Color**
+      - **Secondary Color**
     - **Material:** Primary material (from: ${ProductMaterialsList})
     - **Size:** Must match one of the options: ${ProductSizesList} (if possible, provide waist size only)
     - **Gender:** Choose "Menswear" or "Womenswear" (default to "Menswear" for unisex items).
@@ -958,35 +973,28 @@ export class ProductClassifier {
       ...product, // Then override with any existing fields from the original product
     };
 
-    // Special handling for nested objects like color
-    if (parsedContent.color && !product.color) {
-      mergedProduct.color = parsedContent.color;
-    } else if (parsedContent.color && product.color) {
-      // Merge color objects, prioritizing existing data
-      mergedProduct.color = {
-        ...parsedContent.color,
-        ...product.color,
-      };
+    // Ensure tags is an array
+    if (!Array.isArray(mergedProduct.tags)) {
+      if (typeof mergedProduct.tags === 'string') {
+        mergedProduct.tags = mergedProduct.tags.split(',').map((t: string) => t.trim());
+      } else {
+        mergedProduct.tags = [];
+      }
     }
 
-    // Special handling for attributes
-    if (parsedContent.attributes && !product.attributes) {
-      mergedProduct.attributes = parsedContent.attributes;
-    } else if (parsedContent.attributes && product.attributes) {
-      mergedProduct.attributes = {
-        ...parsedContent.attributes,
-        ...product.attributes,
-      };
+    // Add color information
+    mergedProduct.color = {
+      primaryColor: parsedContent?.color?.primaryColor || [],
+      secondaryColor: parsedContent?.color?.secondaryColor || [],
+    };
+
+    if (product.brand && product.brand === 'source-unknown') {
+      mergedProduct.brand = parsedContent?.brand || product.brand;
     }
 
-    // Validate and return the final product
     return ProductResponseSchema.parse(mergedProduct);
   }
 }
-
-/**
- * Functions for template management
- */
 
 /**
  * Generate a unique ID for templates
