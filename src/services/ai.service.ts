@@ -84,7 +84,7 @@ export const ProductResponseSchema = z
       .enum(Object.values(productSizes) as [string, ...string[]])
       .nullable()
       .catch(null),
-    gender: z.enum([Gender.Menswear, Gender.Womenswear]),
+    gender: z.enum([Gender.Menswear, Gender.Womenswear, Gender.Unisex]),
     category: z.enum(Object.values(Category.getAllTopLevelCategories()) as [string, ...string[]]),
     subcategory: z.enum(Object.values(Category.getAllSubcategories()) as [string, ...string[]]).optional(),
     material: z
