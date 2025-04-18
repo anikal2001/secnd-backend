@@ -538,14 +538,14 @@ export class ProductService {
         }),
       );
 
-      // Process image IDs
       for (let i = 0; i < s3Urls.length; i++) {
-        const image = s3Urls[i];
-        await this.ImageService.create({
+        const payload = {
           product_id: savedProduct?.product_id,
-          url: typeof image === 'string' ? image : image.url,
+          url: s3Urls[i],
           image_type: i,
-        });
+        };
+        console.log('Payload to ImageService.create:', payload);
+        await this.ImageService.create(payload);
       }
       const product = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
