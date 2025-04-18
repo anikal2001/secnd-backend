@@ -541,15 +541,13 @@ export class ProductService {
           return url
         }),
       );
-
-      console.log(s3Urls)
-      // Process image IDs
+      
       await Promise.all(
-        s3Urls.map(async (image: any) => {
+        s3Urls.map(async (image: any, i: number) => {
           return await this.ImageService.create({
-            ...image,
             product_id: savedProduct?.product_id,
             url: typeof image === 'string' ? image : image.url,
+            image_type: i,
           });
         }),
       );
