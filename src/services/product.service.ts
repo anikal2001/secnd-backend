@@ -39,19 +39,21 @@ export class ProductService {
       relations: ['imageURLS', 'seller'],
     });
 
-    const enhancedProducts = await Promise.all(products.map(async (product) => {
-      if (!product.descriptive_sentence) {
-        product.descriptive_sentence = await this.generateDescriptiveSentences(product.imageURLS.map((image) => image.url));
-        console.log('Generated descriptive sentence:', product.descriptive_sentence);
-        this.updateProduct(product.product_id, product);
-      }
-      
-      return product;
-    }));
+    const enhancedProducts = await Promise.all(
+      products.map(async (product) => {
+        if (!product.descriptive_sentence) {
+          product.descriptive_sentence = await this.generateDescriptiveSentences(product.imageURLS.map((image) => image.url));
+          console.log('Generated descriptive sentence:', product.descriptive_sentence);
+          this.updateProduct(product.product_id, product);
+        }
+
+        return product;
+      }),
+    );
     if (!products) {
       return [];
     }
-    
+
     return plainToInstance(Product, enhancedProducts);
   }
 
@@ -138,7 +140,6 @@ export class ProductService {
       return null;
     }
   }
-
 
   async generateDescriptiveSentences(imageURL: string[]): Promise<any> {
     try {
@@ -312,7 +313,7 @@ export class ProductService {
           const imageId = pictureIds[i];
           await this.ImageService.update(imageId, {
             product_id: savedProduct.product_id,
-            image_type: i <= 2 ? i : 3,
+            image_type: i,
           });
         }
       }
