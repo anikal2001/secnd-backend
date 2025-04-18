@@ -23,6 +23,7 @@ import { validate } from 'class-validator';
 import { Gender, Material, ProductColors, ProductStatus, ProductSize, ProductCondition, ProductStyles } from '../utils/products.enums';
 import { ProductClassifier } from '../services/ai.service';
 import { productSizes } from '../utils/product/size';
+import { Readable } from 'stream';
 export class ProductService {
   private UserService: UserService = new UserService();
   private ImageService: ImageService = new ImageService();
@@ -39,19 +40,21 @@ export class ProductService {
       relations: ['imageURLS', 'seller'],
     });
 
-    const enhancedProducts = await Promise.all(products.map(async (product) => {
-      if (!product.descriptive_sentence) {
-        product.descriptive_sentence = await this.generateDescriptiveSentences(product.imageURLS.map((image) => image.url));
-        console.log('Generated descriptive sentence:', product.descriptive_sentence);
-        this.updateProduct(product.product_id, product);
-      }
-      
-      return product;
-    }));
+    const enhancedProducts = await Promise.all(
+      products.map(async (product) => {
+        if (!product.descriptive_sentence) {
+          product.descriptive_sentence = await this.generateDescriptiveSentences(product.imageURLS.map((image) => image.url));
+          console.log('Generated descriptive sentence:', product.descriptive_sentence);
+          this.updateProduct(product.product_id, product);
+        }
+
+        return product;
+      }),
+    );
     if (!products) {
       return [];
     }
-    
+
     return plainToInstance(Product, enhancedProducts);
   }
 
@@ -138,7 +141,6 @@ export class ProductService {
       return null;
     }
   }
-
 
   async generateDescriptiveSentences(imageURL: string[]): Promise<any> {
     try {
@@ -512,10 +514,34 @@ export class ProductService {
       if (!savedProduct) {
         throw new Error('Failed to save product');
       }
+      // Save images to S3 and get our link
 
+      const s3Urls = await Promise.all(
+        importData.pictureIds.map(async (image: any) => {
+          const corsProxyUrl = 'https://corsproxy.io/?';
+          const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
+          const arrayBuffer = await response.arrayBuffer();
+          const blob = new Blob([arrayBuffer], { type: 'image/jpeg' })
+          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' })
+          const multerFile: Express.Multer.File = {
+            fieldname: 'file',
+            originalname: file.name,
+            encoding: '7bit',
+            mimetype: file.type,
+            size: file.size,
+            buffer: Buffer.from(arrayBuffer),
+            stream: Readable.from([]),
+            destination: '',
+            filename: 'image.jpeg',
+            path: ''
+          };
+          const url = this._uploadAndSaveImage(multerFile);
+          return url
+        }),
+      );
       // Process image IDs
       await Promise.all(
-        importData.pictureIds.map(async (image: any) => {
+        s3Urls.map(async (image: any) => {
           return await this.ImageService.create({
             ...image,
             product_id: savedProduct?.product_id,
