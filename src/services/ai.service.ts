@@ -1011,6 +1011,8 @@ export class ProductClassifier {
       mergedProduct.brand = parsedContent?.brand;
     }
 
+    mergedProduct.condition = parsedContent?.condition || "used_good";
+
     return ProductResponseSchema.parse(mergedProduct);
   }
 
