@@ -1027,6 +1027,8 @@ export class ProductClassifier {
       mergedProduct.subcategory = parsedContent?.subcategory || product.subcategory;
     }
 
+    mergedProduct.condition = parsedContent?.condition || "used_good";
+
     return ProductResponseSchema.parse(mergedProduct);
   }
 

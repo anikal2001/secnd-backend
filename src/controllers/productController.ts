@@ -182,12 +182,11 @@ export class ProductController {
         res.status(404).json({ message: 'No products found' });
         return;
       }
-      console.log('Fetched products:', products);
       const formattedProducts = products.map((product) => {
         return {
           ...product,
           seller: product.seller.store_name,
-          key_design_elements: product.descriptive_sentence,
+          key_design_element: product.descriptive_sentence,
           imageURLS: product.imageURLS.map((image) => image.url),
         };
       })
