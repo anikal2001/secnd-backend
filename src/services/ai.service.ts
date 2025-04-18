@@ -71,15 +71,15 @@ export const ProductResponseSchema = z
     price: z.number(),
     color: z.object({
       primaryColor: z
-        .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
-        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)))
-        .nullable()
-        .catch(null),
-      secondaryColor: z
-        .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
-        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)))
-        .nullable()
-        .catch(null),
+        .array(z.string())
+        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors))),
+        secondaryColor: z
+        .array(z.string())
+        .transform((colors) =>
+          colors.filter((color) =>
+            (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)
+          )
+        ),
     }),
     size: z
       .enum(Object.values(productSizes) as [string, ...string[]])
@@ -811,7 +811,7 @@ export class ProductClassifier {
     - **Descriptive Sentence**: A single sentence that summarizes the product, including key features and attributes. This should be a direct, concise, keyword-rich sentence using key e-commerce search terms. Focus on product features, rather than promotional language. Do not include bullet points or additional details. Include synonyms and related terms to capture a broader range of search queries.
     - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
     - **Condition** (from: ${ProductConditionsList})
-    - **Color** (from: ${ProductColorsList})
+    - **Color** (ONLY give the options from: ${ProductColorsList})
       - **Primary Color**
       - **Secondary Color**
     - **Material:** Primary material (from: ${ProductMaterialsList})
@@ -821,7 +821,7 @@ export class ProductClassifier {
     - **Subcategory:** Determined subcategory (e.g., "T-Shirts")
       - **Identify Category and Subcategory:** Use the following hierarchy:
         ${CategoryHierarchy}
-    - **Brand:** Visible brand name, if present
+    - **Brand:** Visible brand name, if present. If sports team, it could be NBA, NHL, NFL. Always guess a brand.
     - **Tags:** Generate 13 SEO-friendly, relevant tags, with the following instructions: ${tagInstructions}
     - **Age:** Inferred age (e.g., "1990s"); use only if you are at least 50% certain, otherwise set as null.
     - **Style:** Overall style (e.g., "vintage")
@@ -873,7 +873,6 @@ export class ProductClassifier {
       - **Respect special rules:** For example, always classify “Vests” under “Tops” (not “Outerwear”).
       - **Use the provided category hierarchy:** Do not create new categories or subcategories and ensure they are consistent with the provided list and are not empty.
       - **Use the provided attribute options:** Do not invent new categories, attributes, or tags.
-      - **If the brand is not visible, set it to source-unknown:** If the brand is not visible in the images or text, set it to source-unknown.
       - **Follow the provided attribute options strictly:** Do not invent new categories, attributes, or tags.
       - **Prioritize user-provided data:** Only supplement missing information; never override or contradict existing data.
       - **If size is available, in the title or description, use that size:** If the size is not available in the title or description, set it to null.
@@ -1007,8 +1006,25 @@ export class ProductClassifier {
       secondaryColor: parsedContent?.color?.secondaryColor || [],
     };
 
-    if ((product.brand && (product.brand === 'source-unknown')) || !product.brand || product.brand === '') {
-      mergedProduct.brand = parsedContent?.brand;
+    if (parsedContent?.brand && parsedContent.brand.trim() !== '') {
+      mergedProduct.brand = parsedContent.brand;
+    } else {
+      mergedProduct.brand = 'source-unknown';
+    }
+
+    // Add color information
+    mergedProduct.color = {
+      primaryColor: parsedContent?.color?.primaryColor || [],
+      secondaryColor: parsedContent?.color?.secondaryColor || [],
+    };
+
+    // Ensure category and subcategory are valid
+    if (product.category === '' || !product.category) {
+      mergedProduct.category = parsedContent?.category || product.category;
+    }
+
+    if (product.subcategory === '' || !product.subcategory) {
+      mergedProduct.subcategory = parsedContent?.subcategory || product.subcategory;
     }
 
     return ProductResponseSchema.parse(mergedProduct);
@@ -1020,16 +1036,17 @@ export class ProductClassifier {
     This should be a direct, concise, keyword-rich sentence using key e-commerce search terms. Focus on product features and noteworthy design elements, rather than promotional language. Do not include bullet points or additional details. Include synonyms and related terms to capture a broader range of search queries.
     Extract the following Attributes and their potential options:
     - **Descriptive Sentence**: A single sentence that summarizes the product, including key features, details,  and attributes. This should be a direct, concise, keyword-rich sentence using key e-commerce search terms. Focus on product features, rather than promotional language. Do not include bullet points or additional details. Include synonyms and related terms to capture a broader range of search queries.
-    and return the sentence as a string. ONLY return the sentence and nothing else.`
+    and return the sentence as a string. ONLY return the sentence and nothing else.`;
 
-        let response: ChatCompletion;
+    let response: ChatCompletion;
     try {
       response = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: 'You are an image captioning assistant that gives SEO Friendly, keyword rich descriptive sentences to truly encapsulate an entire clothing item in one sentence.',
+            content:
+              'You are an image captioning assistant that gives SEO Friendly, keyword rich descriptive sentences to truly encapsulate an entire clothing item in one sentence.',
           },
           {
             role: 'user',
@@ -1053,14 +1070,13 @@ export class ProductClassifier {
       throw new Error('Failed to classify product');
     }
 
-
-  const rawJson = response.choices[0].message?.content?.trim();
+    const rawJson = response.choices[0].message?.content?.trim();
 
     if (!rawJson) {
       throw new Error('No valid JSON received from the model.');
     }
 
-    return rawJson
+    return rawJson;
   }
 }
 

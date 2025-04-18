@@ -1,12 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, ManyToOne, JoinColumn } from "typeorm";
-import { Product } from "./product.entity";
-
-export enum ImageType {
-  FRONT = 0,
-  BACK = 1,
-  LABEL = 2,
-  ADDITIONAL = 3
-}
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, ManyToOne, JoinColumn } from 'typeorm';
+import { Product } from './product.entity';
 
 @Entity()
 class Image {
@@ -16,12 +9,8 @@ class Image {
   @Column('varchar')
   url: string;
 
-  @Column({
-    type: 'enum',
-    enum: ImageType,
-    default: ImageType.ADDITIONAL
-  })
-  image_type: ImageType;
+  @Column('int', { default: 3 })
+  image_type: number;
 
   @Column('varchar', { nullable: true })
   product_id: string | null;
