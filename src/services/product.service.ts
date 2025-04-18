@@ -542,7 +542,7 @@ export class ProductService {
         const payload = {
           product_id: savedProduct?.product_id,
           url: s3Urls[i],
-          image_type: i,
+          image_type: savedProduct?.imageURLS[i].image_type,
         };
         console.log('Payload to ImageService.create:', payload);
         await this.ImageService.create(payload);
