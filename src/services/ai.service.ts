@@ -67,6 +67,7 @@ export const ProductResponseSchema = z
     title: z.string(),
     description: z.string(),
     descriptionHtml: z.string().nullable().optional().catch(null),
+    descriptive_sentence: z.string().nullable().optional().catch(null),
     price: z.number(),
     color: z.object({
       primaryColor: z
@@ -807,6 +808,7 @@ export class ProductClassifier {
     - **Title**
     - **Description**
     - **DescriptionHtml**
+    - **Descriptive Sentence**: A single sentence that summarizes the product, including key features and attributes. This should be a direct, concise, keyword-rich sentence using key e-commerce search terms. Focus on product features, rather than promotional language. Do not include bullet points or additional details. Include synonyms and related terms to capture a broader range of search queries.
     - **Price:** Estimated price as a number (e.g., 25.99), considering condition, brand, and trend.
     - **Condition** (from: ${ProductConditionsList})
     - **Color** (from: ${ProductColorsList})
@@ -878,6 +880,7 @@ export class ProductClassifier {
       "title": "Vintage 1990s Levi\'s 501 High-Waisted Denim Jeans / Grunge / Distressed / Streetwear Essential",
       "description": "Vintage Levi\'s 501 jeans from the 1990s, featuring a high-waisted, straight-leg cut.​",
       "descriptionHtml": "<h2>Iconic 1990s Levi&#39;s 501 High-Waisted Denim Jeans</h2><p>A must-have for vintage and streetwear lovers, featuring classic distressed details for a grunge aesthetic.</p><ul><li><strong>Era &amp; Style:</strong> Authentic 1990s vintage with a grunge and streetwear edge.</li><li><strong>Brand &amp; Material:</strong> Made by Levi&#39;s, crafted from 100% cotton denim.</li></ul>",
+      "descriptive_sentece": "Vintage Levi's 501 jeans from the 1990s, featuring a high-waisted, straight-leg cut. Perfect for grunge and streetwear enthusiasts.",
       "price": 45.99,
       "color": {
         "primaryColor": ["navy"],
@@ -1003,6 +1006,55 @@ export class ProductClassifier {
     }
 
     return ProductResponseSchema.parse(mergedProduct);
+  }
+
+  async inferDescriptiveSentence(imageUrls: string[]): Promise<string> {
+    const instructions = `
+    Your goal is to extract as many details from the image picture and return a keyword-rich sentence with non-generic language. Do not use words like unique, one-of-a-kind, etc.
+    This should be a direct, concise, keyword-rich sentence using key e-commerce search terms. Focus on product features and noteworthy design elements, rather than promotional language. Do not include bullet points or additional details. Include synonyms and related terms to capture a broader range of search queries.
+    Extract the following Attributes and their potential options:
+    - **Descriptive Sentence**: A single sentence that summarizes the product, including key features, details,  and attributes. This should be a direct, concise, keyword-rich sentence using key e-commerce search terms. Focus on product features, rather than promotional language. Do not include bullet points or additional details. Include synonyms and related terms to capture a broader range of search queries.
+    and return the sentence as a string. ONLY return the sentence and nothing else.`
+
+        let response: ChatCompletion;
+    try {
+      response = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an image captioning assistant that gives SEO Friendly, keyword rich descriptive sentences to truly encapsulate an entire clothing item in one sentence.',
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: instructions,
+              },
+              ...imageUrls.map((url) => ({
+                type: 'image_url' as const,
+                image_url: { url },
+              })),
+            ],
+          },
+        ],
+        max_tokens: 1000,
+        temperature: 0,
+      });
+    } catch (error) {
+      console.error('Error during AI inference:', error);
+      throw new Error('Failed to classify product');
+    }
+
+
+  const rawJson = response.choices[0].message?.content?.trim();
+
+    if (!rawJson) {
+      throw new Error('No valid JSON received from the model.');
+    }
+
+    return rawJson
   }
 }
 

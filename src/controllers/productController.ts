@@ -178,7 +178,20 @@ export class ProductController {
   async fetchProducts(req: Request, res: Response): Promise<void> {
     try {
       const products = await ProductController.productService.fetchProducts();
-      res.status(200).json(products);
+      if (!products) {
+        res.status(404).json({ message: 'No products found' });
+        return;
+      }
+      console.log('Fetched products:', products);
+      const formattedProducts = products.map((product) => {
+        return {
+          ...product,
+          seller: product.seller.store_name,
+          imageURLS: product.imageURLS.map((image) => image.url),
+        };
+      })
+        
+      res.status(200).json(formattedProducts);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

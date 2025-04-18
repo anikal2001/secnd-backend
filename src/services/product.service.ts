@@ -35,11 +35,24 @@ export class ProductService {
   // Get Methods
   async fetchProducts(): Promise<Product[]> {
     // If the id is undefined, it will return all orders
-    const products = await ProductRepository.find();
+    const products = await ProductRepository.find({
+      relations: ['imageURLS', 'seller'],
+    });
+
+    const enhancedProducts = await Promise.all(products.map(async (product) => {
+      if (!product.descriptive_sentence) {
+        product.descriptive_sentence = await this.generateDescriptiveSentences(product.imageURLS.map((image) => image.url));
+        console.log('Generated descriptive sentence:', product.descriptive_sentence);
+        this.updateProduct(product.product_id, product);
+      }
+      
+      return product;
+    }));
     if (!products) {
       return [];
     }
-    return plainToInstance(Product, products);
+    
+    return plainToInstance(Product, enhancedProducts);
   }
 
   async getTrendingProducts(): Promise<Product[]> {
@@ -120,6 +133,20 @@ export class ProductService {
       });
       const savedResponse = await this.GeneratedResponseRepository.save(response);
       return savedResponse;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
+
+  async generateDescriptiveSentences(imageURL: string[]): Promise<any> {
+    try {
+      const sentence = this.ProductClassifier.inferDescriptiveSentence(imageURL);
+      if (!sentence) {
+        throw new Error('Failed to generate descriptive sentence');
+      }
+      return sentence;
     } catch (error) {
       console.log(error);
       return null;
