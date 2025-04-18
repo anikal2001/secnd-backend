@@ -535,10 +535,14 @@ export class ProductService {
             filename: 'image.jpeg',
             path: ''
           };
-          const url = this._uploadAndSaveImage(multerFile);
+          console.log(response)
+          const url = await this._uploadAndSaveImage(multerFile);
+          console.log(url)
           return url
         }),
       );
+
+      console.log(s3Urls)
       // Process image IDs
       await Promise.all(
         s3Urls.map(async (image: any) => {
