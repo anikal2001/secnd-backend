@@ -509,6 +509,9 @@ export class ProductService {
         // Save the product again with the updated marketplaces array
         await ProductRepository.save(savedProduct);
       }
+      if (!savedProduct) {
+        throw new Error('Failed to save product');
+      }
 
       // Process image IDs
       await Promise.all(
@@ -521,7 +524,12 @@ export class ProductService {
         }),
       );
 
-      return savedImports;
+      const product = await ProductRepository.findOne({
+        where: { product_id: savedProduct.product_id },
+        relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
+      });
+
+      return product;
     } catch (error) {
       console.error('Error saving imports:', error);
       const errMsg = error instanceof Error ? error.message : 'Internal server error';

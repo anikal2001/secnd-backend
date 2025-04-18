@@ -871,8 +871,14 @@ export class ProductClassifier {
     ## Additional Guidelines
       - **Be concise and accurate:** Avoid verbose, promotional, speculative language in title and description.
       - **Respect special rules:** For example, always classify “Vests” under “Tops” (not “Outerwear”).
+      - **Use the provided category hierarchy:** Do not create new categories or subcategories and ensure they are consistent with the provided list and are not empty.
+      - **Use the provided attribute options:** Do not invent new categories, attributes, or tags.
+      - **If the brand is not visible, set it to source-unknown:** If the brand is not visible in the images or text, set it to source-unknown.
       - **Follow the provided attribute options strictly:** Do not invent new categories, attributes, or tags.
       - **Prioritize user-provided data:** Only supplement missing information; never override or contradict existing data.
+      - **If size is available, in the title or description, use that size:** If the size is not available in the title or description, set it to null.
+      - **If the condition is not available in the title or description, set it to null:** If the condition is not available in the title or description, set it to null.
+      
 
     # Example JSON Output:
     \`\`\`json
@@ -1002,7 +1008,7 @@ export class ProductClassifier {
     };
 
     if ((product.brand && (product.brand === 'source-unknown')) || !product.brand || product.brand === '') {
-      mergedProduct.brand = parsedContent?.brand || product.brand;
+      mergedProduct.brand = parsedContent?.brand;
     }
 
     return ProductResponseSchema.parse(mergedProduct);
