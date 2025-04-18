@@ -245,8 +245,6 @@ export class ProductService {
   // Post Methods
   async createProduct(productData: any): Promise<Product | null> {
     try {
-      console.log('Creating product:', productData);
-
       // Validate required pictureIds
       if (!productData.pictureIds || !Array.isArray(productData.pictureIds)) {
         throw new Error('Picture IDs are required and must be an array');
@@ -521,35 +519,33 @@ export class ProductService {
           const corsProxyUrl = 'https://corsproxy.io/?';
           const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
           const arrayBuffer = await response.arrayBuffer();
-          const blob = new Blob([arrayBuffer], { type: 'image/jpeg' })
-          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' })
+          const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
+          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
           const multerFile: Express.Multer.File = {
             fieldname: 'file',
             originalname: file.name,
             encoding: '7bit',
-            mimetype: file.type,
-            size: file.size,
+            mimetype: file?.type,
+            size: file?.size,
             buffer: Buffer.from(arrayBuffer),
             stream: Readable.from([]),
             destination: '',
             filename: 'image.jpeg',
-            path: ''
+            path: '',
           };
-          console.log(response)
           const url = await this._uploadAndSaveImage(multerFile);
-          console.log(url)
-          return url
+          return url;
         }),
       );
 
-      console.log(s3Urls)
       // Process image IDs
       await Promise.all(
-        s3Urls.map(async (image: any) => {
+        s3Urls.map(async (image: any, i: number) => {
           return await this.ImageService.create({
             ...image,
             product_id: savedProduct?.product_id,
             url: typeof image === 'string' ? image : image.url,
+            image_type: i,
           });
         }),
       );
