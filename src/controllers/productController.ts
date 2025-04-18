@@ -187,6 +187,7 @@ export class ProductController {
         return {
           ...product,
           seller: product.seller.store_name,
+          key_design_elements: product.descriptive_sentence,
           imageURLS: product.imageURLS.map((image) => image.url),
         };
       })
