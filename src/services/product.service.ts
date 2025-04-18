@@ -525,8 +525,8 @@ export class ProductService {
             fieldname: 'file',
             originalname: file.name,
             encoding: '7bit',
-            mimetype: file.type,
-            size: file.size,
+            mimetype: file?.type,
+            size: file?.size,
             buffer: Buffer.from(arrayBuffer),
             stream: Readable.from([]),
             destination: '',
@@ -539,25 +539,14 @@ export class ProductService {
       );
 
       // Process image IDs
-      await Promise.all(
-        s3Urls.map(async (image: any, i: number) => {
-          let payload: any = {
-            product_id: savedProduct?.product_id,
-            image_type: i,
-          };
-          if (typeof image === 'string') {
-            payload.url = image;
-          } else if (typeof image === 'object' && image !== null) {
-            payload = {
-              ...image,
-              ...payload, // this ensures image_type and product_id always overwrite
-              url: image.url ?? image, // fallback if image.url is missing
-            };
-          }
-          return await this.ImageService.create(payload);
-        }),
-      );
-
+      for (let i = 0; i < s3Urls.length; i++) {
+        const image = s3Urls[i];
+        await this.ImageService.create({
+          product_id: savedProduct?.product_id,
+          url: typeof image === 'string' ? image : image.url,
+          image_type: i,
+        });
+      }
       const product = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
         relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
