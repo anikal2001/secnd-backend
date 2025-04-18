@@ -71,15 +71,15 @@ export const ProductResponseSchema = z
     price: z.number(),
     color: z.object({
       primaryColor: z
-        .array(z.string())
-        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors))),
-        secondaryColor: z
-        .array(z.string())
-        .transform((colors) =>
-          colors.filter((color) =>
-            (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)
-          )
-        ),
+        .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
+        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)))
+        .nullable()
+        .catch(null),
+      secondaryColor: z
+        .array(z.enum(Object.values(ProductColors) as [string, ...string[]]))
+        .transform((colors) => colors.filter((color) => (Object.values(ProductColors) as ProductColors[]).includes(color as ProductColors)))
+        .nullable()
+        .catch(null),
     }),
     size: z
       .enum(Object.values(productSizes) as [string, ...string[]])
@@ -1026,8 +1026,6 @@ export class ProductClassifier {
     if (product.subcategory === '' || !product.subcategory) {
       mergedProduct.subcategory = parsedContent?.subcategory || product.subcategory;
     }
-
-    mergedProduct.condition = parsedContent?.condition || "used_good";
 
     return ProductResponseSchema.parse(mergedProduct);
   }
