@@ -541,12 +541,20 @@ export class ProductService {
       // Process image IDs
       await Promise.all(
         s3Urls.map(async (image: any, i: number) => {
-          return await this.ImageService.create({
-            ...image,
+          let payload: any = {
             product_id: savedProduct?.product_id,
-            url: typeof image === 'string' ? image : image.url,
             image_type: i,
-          });
+          };
+          if (typeof image === 'string') {
+            payload.url = image;
+          } else if (typeof image === 'object' && image !== null) {
+            payload = {
+              ...image,
+              ...payload, // this ensures image_type and product_id always overwrite
+              url: image.url ?? image, // fallback if image.url is missing
+            };
+          }
+          return await this.ImageService.create(payload);
         }),
       );
 
