@@ -217,11 +217,6 @@ export class ProductService {
       await S3.send(new PutObjectCommand(params));
       const url = 'https://dq534dzir8764.cloudfront.net/' + filename;
       return url;
-      return {
-        image_id: savedImage.image_id,
-        url: url,
-        image_type: image_type,
-      };
     } catch (error) {
       console.error('Upload error:', error);
       throw new Error('Failed to upload image');
@@ -440,7 +435,7 @@ export class ProductService {
       if (validateImport.length > 0) {
         throw new Error('Validation failed');
       }
-      const { user_id, marketplaceData, ...rest } = importData;
+      const { user_id, marketplaceData } = importData;
       if (marketplaceData) {
         const firstValue = Object.values(marketplaceData[0])[0] as { marketplace_id: string };
         const id = firstValue.marketplace_id;
@@ -467,7 +462,8 @@ export class ProductService {
         console.error('Validation errors:', validationErrors);
         throw new Error('Validation failed');
       }
-      const savedImports = await ProductImportRepository.createAndSave(validatedImport);
+      
+      await ProductImportRepository.createAndSave(validatedImport);
 
       // Convert the import data to a Product using our custom conversion function
       const convertedProduct = await this.convertImportToProduct(validatedImport);
@@ -500,16 +496,14 @@ export class ProductService {
           const corsProxyUrl = 'https://corsproxy.io/?';
           const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
           const arrayBuffer = await response.arrayBuffer();
-          const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
-          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
           const multerFile: Express.Multer.File = {
             fieldname: 'file',
-            originalname: file.name,
+            originalname: 'image.jpg',
             encoding: '7bit',
-            mimetype: file.type,
-            size: file.size,
+            mimetype: 'image/jpeg',
+            size: Buffer.byteLength(arrayBuffer),
             buffer: Buffer.from(arrayBuffer),
-            stream: Readable.from([]),
+            stream: Readable.from(Buffer.from(arrayBuffer)),
             destination: '',
             filename: 'image.jpeg',
             path: '',
