@@ -532,9 +532,7 @@ export class ProductService {
             filename: 'image.jpeg',
             path: '',
           };
-          console.log(response);
-          const url = await this._uploadAndSaveImage(multerFile);
-          console.log(url);
+          const url = await this._uploadAndSaveImage(multerFile, image.image_type);
           return url;
         }),
       );
@@ -547,6 +545,7 @@ export class ProductService {
             ...image,
             product_id: savedProduct?.product_id,
             url: typeof image === 'string' ? image : image.url,
+            image_type: image.image_type,
           });
         }),
       );
