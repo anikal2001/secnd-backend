@@ -25,6 +25,9 @@ import { ProductClassifier } from '../services/ai.service';
 import { productSizes } from '../utils/product/size';
 import { Readable } from 'stream';
 import axios from 'axios';
+import pLimit from 'p-limit';
+const IMAGE_FETCH_CONCURRENCY = parseInt(process.env.IMAGE_FETCH_CONCURRENCY || '5', 10);
+const limit = pLimit(IMAGE_FETCH_CONCURRENCY);
 
 export class ProductService {
   private UserService: UserService = new UserService();
@@ -493,51 +496,51 @@ export class ProductService {
         throw new Error('Failed to save product');
       }
 
-      const s3Urls: { url: string; image_type: number }[] = [];
-      const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
-      for (const image of importData.pictureIds) {
-        // retry fetch buffer up to 3 times
-        let buffer: Buffer | null = null;
-        let contentType = '';
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            const response = await axios.get<ArrayBuffer>(image.url, { responseType: 'arraybuffer' });
-            buffer = Buffer.from(response.data);
-            contentType = response.headers['content-type'] || '';
-            if (!contentType.startsWith('image/')) {
-              throw new Error(`Invalid MIME type: ${contentType}`);
+      // Fetch and upload images with global concurrency limit
+      const s3Urls = (await Promise.all(
+        importData.pictureIds.map((image: any) =>
+          limit(async (): Promise<{ url: string; image_type: number } | null> => {
+            let buffer: Buffer | null = null;
+            let contentType = '';
+            // retry up to 3 times with backoff
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                const response = await axios.get<ArrayBuffer>(image.url, { responseType: 'arraybuffer' });
+                buffer = Buffer.from(response.data);
+                contentType = response.headers['content-type'] || '';
+                if (!contentType.startsWith('image/')) throw new Error(`Invalid MIME type: ${contentType}`);
+                break;
+              } catch (err) {
+                console.error(`Attempt ${attempt} failed fetching ${image.url}:`, err);
+                await new Promise(res => setTimeout(res, 200 * attempt));
+              }
             }
-            break;
-          } catch (err) {
-            console.error(`Attempt ${attempt} failed fetching ${image.url}:`, err);
-            await sleep(200 * attempt);
-          }
-        }
-        if (!buffer) {
-          console.error(`Failed to fetch image after retries: ${image.url}`);
-          continue;
-        }
-        const multerFile: Express.Multer.File = {
-          fieldname: 'file',
-          originalname: image.url.split('/').pop() || 'image.jpg',
-          encoding: '7bit',
-          mimetype: contentType,
-          size: buffer.length,
-          buffer,
-          stream: Readable.from(buffer),
-          destination: '',
-          filename: `${Date.now()}-${Math.random().toString(36).substring(7)}.${contentType.split('/')[1] || 'jpg'}`,
-          path: '',
-        };
-        try {
-          const url = await this._uploadAndSaveImage(multerFile, image.image_type);
-          s3Urls.push({ url, image_type: image.image_type });
-        } catch (err) {
-          console.error(`Upload failed for ${image.url}:`, err);
-        }
-        // small delay to avoid rate limits
-        await sleep(200);
-      }
+            if (!buffer) {
+              console.error(`Failed to fetch image after retries: ${image.url}`);
+              return null;
+            }
+            const multerFile: Express.Multer.File = {
+              fieldname: 'file',
+              originalname: image.url.split('/').pop() || 'image.jpg',
+              encoding: '7bit',
+              mimetype: contentType,
+              size: buffer.length,
+              buffer,
+              stream: Readable.from(buffer),
+              destination: '',
+              filename: `${Date.now()}-${Math.random().toString(36).substring(7)}.${contentType.split('/')[1] || 'jpg'}`,
+              path: '',
+            };
+            try {
+              const url = await this._uploadAndSaveImage(multerFile, image.image_type);
+              return { url, image_type: image.image_type };
+            } catch (err) {
+              console.error(`Upload failed for ${image.url}:`, err);
+              return null;
+            }
+          })
+        )
+      )).filter((item): item is { url: string; image_type: number } => item !== null);
 
       // Process image IDs
       await Promise.all(
