@@ -535,13 +535,14 @@ export class ProductService {
       await Promise.all(
         s3Urls.map(async (image: any) => {
           return await this.ImageService.create({
+            ...image,
             product_id: savedProduct?.product_id,
-            url: image.url,
+            url: typeof image === 'string' ? image : image.url,
             image_type: image.image_type,
           });
         }),
       );
-      
+
       const product = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
         relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
