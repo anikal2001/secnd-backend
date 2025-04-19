@@ -226,7 +226,7 @@ export class ProductService {
       const savedImage = await this.ImageService.create({
         product_id: null,
         url: url,
-        image_type: image_type
+        image_type: image_type,
       });
 
       return {
@@ -512,10 +512,9 @@ export class ProductService {
       if (!savedProduct) {
         throw new Error('Failed to save product');
       }
-      // Save images to S3 and get our link
 
       const s3Urls = await Promise.all(
-        importData.pictureIds.map(async (image: any, i: number) => {
+        importData.pictureIds.map(async (image: any) => {
           const corsProxyUrl = 'https://corsproxy.io/?';
           const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
           const arrayBuffer = await response.arrayBuffer();
@@ -525,27 +524,33 @@ export class ProductService {
             fieldname: 'file',
             originalname: file.name,
             encoding: '7bit',
-            mimetype: file?.type,
-            size: file?.size,
+            mimetype: file.type,
+            size: file.size,
             buffer: Buffer.from(arrayBuffer),
             stream: Readable.from([]),
             destination: '',
             filename: 'image.jpeg',
             path: '',
           };
-          const url = await this._uploadAndSaveImage(multerFile, i);
-          return url
+          console.log(response);
+          const url = await this._uploadAndSaveImage(multerFile);
+          console.log(url);
+          return url;
         }),
       );
 
-      for (let i = 0; i < s3Urls.length; i++) {
-        const payload = {
-          product_id: savedProduct?.product_id,
-          url: s3Urls[i],
-          image_type: i,
-        };
-        await this.ImageService.create(payload);
-      }
+      console.log(s3Urls);
+      // Process image IDs
+      await Promise.all(
+        s3Urls.map(async (image: any) => {
+          return await this.ImageService.create({
+            ...image,
+            product_id: savedProduct?.product_id,
+            url: typeof image === 'string' ? image : image.url,
+          });
+        }),
+      );
+
       const product = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
         relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
