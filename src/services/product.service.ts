@@ -24,6 +24,8 @@ import { Gender, Material, ProductColors, ProductStatus, ProductSize, ProductCon
 import { ProductClassifier } from '../services/ai.service';
 import { productSizes } from '../utils/product/size';
 import { Readable } from 'stream';
+import axios from 'axios';
+
 export class ProductService {
   private UserService: UserService = new UserService();
   private ImageService: ImageService = new ImageService();
@@ -491,27 +493,51 @@ export class ProductService {
         throw new Error('Failed to save product');
       }
 
-      const s3Urls = await Promise.all(
-        importData.pictureIds.map(async (image: any) => {
-          const corsProxyUrl = 'https://corsproxy.io/?';
-          const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
-          const arrayBuffer = await response.arrayBuffer();
-          const multerFile: Express.Multer.File = {
-            fieldname: 'file',
-            originalname: 'image.jpg',
-            encoding: '7bit',
-            mimetype: 'image/jpeg',
-            size: Buffer.byteLength(arrayBuffer),
-            buffer: Buffer.from(arrayBuffer),
-            stream: Readable.from(Buffer.from(arrayBuffer)),
-            destination: '',
-            filename: 'image.jpeg',
-            path: '',
-          };
-          const url = await this._uploadAndSaveImage(multerFile);
-          return { url, image_type: image.image_type };
-        }),
-      );
+      const s3Urls: { url: string; image_type: number }[] = [];
+      const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+      for (const image of importData.pictureIds) {
+        // retry fetch buffer up to 3 times
+        let buffer: Buffer | null = null;
+        let contentType = '';
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const response = await axios.get<ArrayBuffer>(image.url, { responseType: 'arraybuffer' });
+            buffer = Buffer.from(response.data);
+            contentType = response.headers['content-type'] || '';
+            if (!contentType.startsWith('image/')) {
+              throw new Error(`Invalid MIME type: ${contentType}`);
+            }
+            break;
+          } catch (err) {
+            console.error(`Attempt ${attempt} failed fetching ${image.url}:`, err);
+            await sleep(200 * attempt);
+          }
+        }
+        if (!buffer) {
+          console.error(`Failed to fetch image after retries: ${image.url}`);
+          continue;
+        }
+        const multerFile: Express.Multer.File = {
+          fieldname: 'file',
+          originalname: image.url.split('/').pop() || 'image.jpg',
+          encoding: '7bit',
+          mimetype: contentType,
+          size: buffer.length,
+          buffer,
+          stream: Readable.from(buffer),
+          destination: '',
+          filename: `${Date.now()}-${Math.random().toString(36).substring(7)}.${contentType.split('/')[1] || 'jpg'}`,
+          path: '',
+        };
+        try {
+          const url = await this._uploadAndSaveImage(multerFile, image.image_type);
+          s3Urls.push({ url, image_type: image.image_type });
+        } catch (err) {
+          console.error(`Upload failed for ${image.url}:`, err);
+        }
+        // small delay to avoid rate limits
+        await sleep(200);
+      }
 
       // Process image IDs
       await Promise.all(
