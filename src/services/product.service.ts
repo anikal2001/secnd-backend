@@ -526,18 +526,16 @@ export class ProductService {
             filename: 'image.jpeg',
             path: '',
           };
-          const url = await this._uploadAndSaveImage(multerFile, index || image.image_type);
-          return { url, image_type: image.image_type };
+          return await this._uploadAndSaveImage(multerFile, image.image_type);
         }),
       );
 
       // Process image IDs
       await Promise.all(
-        s3Urls.map(async (image: any) => {
+        s3Urls.map(async (image: { url: string; image_type: number }) => {
           return await this.ImageService.create({
-            ...image,
             product_id: savedProduct?.product_id,
-            url: typeof image === 'string' ? image : image.url,
+            url: image.url,
             image_type: image.image_type,
           });
         }),
