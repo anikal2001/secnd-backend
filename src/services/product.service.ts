@@ -197,7 +197,7 @@ export class ProductService {
   //   return imageIDs;
   // }
 
-  async _uploadAndSaveImage(image: Express.Multer.File, image_type?: number): Promise<{ image_id: string; url: string; image_type?: number }> {
+  async _uploadAndSaveImage(image: Express.Multer.File, image_type?: number): Promise<string> {
     try {
       // Create a unique filename with original extension
       const fileExt = image.originalname.split('.').pop();
@@ -215,20 +215,8 @@ export class ProductService {
 
       // Upload to S3
       await S3.send(new PutObjectCommand(params));
-      const command = new GetObjectCommand(params);
       const url = 'https://dq534dzir8764.cloudfront.net/' + filename;
-      // const url = await getSignedUrl(S3, command, { expiresIn: 3600 });
-
-      // // Get a public URL instead of a signed URL
-      // const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${filename}`;
-
-      // Save to database
-      const savedImage = await this.ImageService.create({
-        product_id: null,
-        url: url,
-        image_type: image_type,
-      });
-
+      return url;
       return {
         image_id: savedImage.image_id,
         url: url,
@@ -508,7 +496,7 @@ export class ProductService {
       }
 
       const s3Urls = await Promise.all(
-        importData.pictureIds.map(async (image: any, index: number) => {
+        importData.pictureIds.map(async (image: any) => {
           const corsProxyUrl = 'https://corsproxy.io/?';
           const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
           const arrayBuffer = await response.arrayBuffer();
@@ -526,7 +514,8 @@ export class ProductService {
             filename: 'image.jpeg',
             path: '',
           };
-          return await this._uploadAndSaveImage(multerFile, image.image_type);
+          const url = await this._uploadAndSaveImage(multerFile);
+          return { url, image_type: image.image_type };
         }),
       );
 
