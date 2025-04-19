@@ -537,16 +537,6 @@ export class ProductService {
           return url
         }),
       );
-      
-      await Promise.all(
-        s3Urls.map(async (image: any, i: number) => {
-          return await this.ImageService.create({
-            product_id: savedProduct?.product_id,
-            url: typeof image === 'string' ? image : image.url,
-            image_type: i,
-          });
-        }),
-      );
 
       for (let i = 0; i < s3Urls.length; i++) {
         const payload = {
