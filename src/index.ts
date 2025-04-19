@@ -8,18 +8,16 @@ import { Router as productRouter } from "./routers/product.routes";
 import { Router as SellerRouter } from "./routers/seller.routes";
 import { Router as cartRouter } from "./routers/cart.routes";
 import { Router as orderRouter } from "./routers/order.routes";
+import cors from 'cors'
 
 dotenv.config();
-const cors = require('cors')
 const app = express();
-
 
 app.use(cors())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json());   
 
-
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use("/api/users", userRouter);
