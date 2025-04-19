@@ -517,7 +517,7 @@ export class ProductService {
       // Save images to S3 and get our link
 
       const s3Urls = await Promise.all(
-        importData.pictureIds.map(async (image: any) => {
+        importData.pictureIds.map(async (image: any, i: number) => {
           const corsProxyUrl = 'https://corsproxy.io/?';
           const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
           const arrayBuffer = await response.arrayBuffer();
@@ -535,7 +535,7 @@ export class ProductService {
             filename: 'image.jpeg',
             path: '',
           };
-          const url = await this._uploadAndSaveImage(multerFile, image.image_type);
+          const url = await this._uploadAndSaveImage(multerFile, i);
           return url
         }),
       );
@@ -544,7 +544,7 @@ export class ProductService {
         const payload = {
           product_id: savedProduct?.product_id,
           url: s3Urls[i],
-          image_type: importData.imageURLS[i].image_type,
+          image_type: i,
         };
         await this.ImageService.create(payload);
       }
