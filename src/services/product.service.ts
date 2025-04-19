@@ -184,20 +184,20 @@ export class ProductService {
     return imageUrls;
   }
 
-  async saveImagesToDB(productID: string, imageUrls: string[]): Promise<string[]> {
-    const imageIDs: string[] = [];
-    try {
-      imageUrls.forEach(async (url) => {
-        const imageID = await this.ImageService.create({ product_id: productID, url: url });
-        imageIDs.push(imageID.image_id);
-      });
-    } catch (error) {
-      console.log(error);
-    }
-    return imageIDs;
-  }
+  // async saveImagesToDB(productID: string, imageUrls: string[]): Promise<string[]> {
+  //   const imageIDs: string[] = [];
+  //   try {
+  //     imageUrls.forEach(async (url) => {
+  //       const imageID = await this.ImageService.create({ product_id: productID, url: url });
+  //       imageIDs.push(imageID.image_id);
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  //   return imageIDs;
+  // }
 
-  async _uploadAndSaveImage(image: Express.Multer.File, image_type: number): Promise<{ image_id: string; url: string; image_type: number }> {
+  async _uploadAndSaveImage(image: Express.Multer.File, image_type?: number): Promise<{ image_id: string; url: string; image_type?: number }> {
     try {
       // Create a unique filename with original extension
       const fileExt = image.originalname.split('.').pop();
@@ -302,8 +302,6 @@ export class ProductService {
         activewear_clothing_features: productData?.attributes?.activewear_clothing_features,
         skirt_dress_length_type: productData?.attributes?.skirt_dress_length,
       };
-
-      console.log('Mapped attributes:', mappedAttributes);
 
       // Save the product first to get an ID (without trying to handle relationships yet)
       const savedProduct = await ProductRepository.save(product);

@@ -162,7 +162,7 @@ export class ProductController {
         }
 
         try {
-          const response = await ProductController.productService._uploadAndSaveImage(file);
+          const response = await ProductController.productService._uploadAndSaveImage(file, 0);
           res.status(200).json(response);
         } catch (error: any) {
           console.error('Error saving image:', error);
