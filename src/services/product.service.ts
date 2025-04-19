@@ -452,14 +452,11 @@ export class ProductService {
       if (validateImport.length > 0) {
         throw new Error('Validation failed');
       }
-      console.log('Import data:', importData);
       const { user_id, marketplaceData, ...rest } = importData;
       if (marketplaceData) {
         const firstValue = Object.values(marketplaceData[0])[0] as { marketplace_id: string };
         const id = firstValue.marketplace_id;
         const key = Object.keys(marketplaceData[0])[0] as string;
-        console.log('id', id, key);
-        // Check if marketplaceID already exists
         const existingMarketplace = await this.MarketplaceService.findByMarketplaceId(id, key);
         if (existingMarketplace.length > 0) {
           throw new Error(`Marketplace with ID ${id} already exists`);
@@ -497,12 +494,9 @@ export class ProductService {
         throw err;
       }
 
-      // Save the converted product
-      console.log('Saving product:', completeProduct);
       const savedProduct = await ProductRepository.createAndSave(completeProduct, user_id);
 
       if (savedProduct && importData.marketplaceData && Array.isArray(importData.marketplaceData)) {
-        console.log('Marketplace data:', importData.marketplaceData);
         // Process marketplace listings and get marketplace names
         savedProduct.marketplaces = await this.MarketplaceService.processMarketplaces(savedProduct, importData.marketplaceData);
 
@@ -514,7 +508,7 @@ export class ProductService {
       }
 
       const s3Urls = await Promise.all(
-        importData.pictureIds.map(async (image: any) => {
+        importData.pictureIds.map(async (image: any, index: number) => {
           const corsProxyUrl = 'https://corsproxy.io/?';
           const response = await fetch(corsProxyUrl + 'key=4b119a50&url=' + image.url);
           const arrayBuffer = await response.arrayBuffer();
@@ -532,24 +526,22 @@ export class ProductService {
             filename: 'image.jpeg',
             path: '',
           };
-          const url = await this._uploadAndSaveImage(multerFile, image.image_type);
-          return url;
+          const url = await this._uploadAndSaveImage(multerFile, index || image.image_type);
+          return { url, image_type: image.image_type };
         }),
       );
 
-      console.log(s3Urls);
       // Process image IDs
       await Promise.all(
         s3Urls.map(async (image: any) => {
           return await this.ImageService.create({
-            ...image,
             product_id: savedProduct?.product_id,
-            url: typeof image === 'string' ? image : image.url,
+            url: image.url,
             image_type: image.image_type,
           });
         }),
       );
-
+      
       const product = await ProductRepository.findOne({
         where: { product_id: savedProduct.product_id },
         relations: ['imageURLS', 'seller', 'seller.user', 'marketplaceListings', 'measurements'],
