@@ -64,7 +64,7 @@ export function findClosestBrandMatch(
   
   // If no match found
   if (extractResult.length === 0) {
-    return {"id":20035,"name":"Source Unknown","slug":"source-unknown"};
+    return {"id":30000,"name":"Unbranded","slug":"unbranded"};
   }
   
   // Find the brand object that matches the name

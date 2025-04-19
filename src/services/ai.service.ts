@@ -1009,7 +1009,7 @@ export class ProductClassifier {
     if (parsedContent?.brand && parsedContent.brand.trim() !== '') {
       mergedProduct.brand = parsedContent.brand;
     } else {
-      mergedProduct.brand = 'source-unknown';
+      mergedProduct.brand = 'unbranded';
     }
 
     // Add color information
