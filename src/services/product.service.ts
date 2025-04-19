@@ -197,7 +197,7 @@ export class ProductService {
     return imageIDs;
   }
 
-  async _uploadAndSaveImage(image: Express.Multer.File): Promise<{ image_id: string; url: string }> {
+  async _uploadAndSaveImage(image: Express.Multer.File, image_type: number): Promise<{ image_id: string; url: string; image_type: number }> {
     try {
       // Create a unique filename with original extension
       const fileExt = image.originalname.split('.').pop();
@@ -226,11 +226,13 @@ export class ProductService {
       const savedImage = await this.ImageService.create({
         product_id: null,
         url: url,
+        image_type: image_type
       });
 
       return {
         image_id: savedImage.image_id,
         url: url,
+        image_type: image_type,
       };
     } catch (error) {
       console.error('Upload error:', error);
@@ -533,7 +535,7 @@ export class ProductService {
             filename: 'image.jpeg',
             path: '',
           };
-          const url = await this._uploadAndSaveImage(multerFile);
+          const url = await this._uploadAndSaveImage(multerFile, image.image_type);
           return url
         }),
       );
@@ -542,7 +544,7 @@ export class ProductService {
         const payload = {
           product_id: savedProduct?.product_id,
           url: s3Urls[i],
-          image_type: savedProduct?.imageURLS[i].image_type,
+          image_type: importData.imageURLS[i].image_type,
         };
         await this.ImageService.create(payload);
       }
