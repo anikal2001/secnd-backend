@@ -534,7 +534,17 @@ export class ProductService {
             path: '',
           };
           const url = await this._uploadAndSaveImage(multerFile);
-          return url;
+          return url
+        }),
+      );
+      
+      await Promise.all(
+        s3Urls.map(async (image: any, i: number) => {
+          return await this.ImageService.create({
+            product_id: savedProduct?.product_id,
+            url: typeof image === 'string' ? image : image.url,
+            image_type: i,
+          });
         }),
       );
 
@@ -544,7 +554,6 @@ export class ProductService {
           url: s3Urls[i],
           image_type: savedProduct?.imageURLS[i].image_type,
         };
-        console.log('Payload to ImageService.create:', payload);
         await this.ImageService.create(payload);
       }
       const product = await ProductRepository.findOne({
