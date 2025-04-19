@@ -9,7 +9,7 @@ class Image {
   @Column('varchar')
   url: string;
 
-  @Column('int')
+  @Column('int', { default: 0 })
   image_type: number;
 
   @Column('varchar', { nullable: true })
