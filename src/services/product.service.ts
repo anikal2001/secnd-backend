@@ -200,7 +200,7 @@ export class ProductService {
   //   return imageIDs;
   // }
 
-  async _uploadAndSaveImage(image: Express.Multer.File, image_type?: number): Promise<string> {
+  async _uploadImage(image: Express.Multer.File, image_type?: number): Promise<string> {
     try {
       // Create a unique filename with original extension
       const fileExt = image.originalname.split('.').pop();
@@ -220,6 +220,43 @@ export class ProductService {
       await S3.send(new PutObjectCommand(params));
       const url = 'https://dq534dzir8764.cloudfront.net/' + filename;
       return url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Failed to upload image');
+    }
+  }
+
+  async _uploadAndSaveImage(image: Express.Multer.File): Promise<{ image_id: string; url: string }> {
+    try {
+      // Create a unique filename with original extension
+      const fileExt = image.originalname.split('.').pop();
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      // Set proper content type based on file mimetype
+      const params = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Region: process.env.AWS_REGION,
+        Key: filename,
+        Body: image.buffer,
+        ContentType: image.mimetype,
+        ACL: 'public-read' as ObjectCannedACL,
+      };
+
+      // Upload to S3
+      await S3.send(new PutObjectCommand(params));
+      const command = new GetObjectCommand(params);
+      const url = 'https://dq534dzir8764.cloudfront.net/' + filename;
+
+      // Save to database
+      const savedImage = await this.ImageService.create({
+        product_id: null,
+        url: url,
+      });
+
+      return {
+        image_id: savedImage.image_id,
+        url: url,
+      };
     } catch (error) {
       console.error('Upload error:', error);
       throw new Error('Failed to upload image');
@@ -465,7 +502,7 @@ export class ProductService {
         console.error('Validation errors:', validationErrors);
         throw new Error('Validation failed');
       }
-      
+
       await ProductImportRepository.createAndSave(validatedImport);
 
       // Convert the import data to a Product using our custom conversion function
@@ -511,7 +548,7 @@ export class ProductService {
             break;
           } catch (err) {
             console.error(`Attempt ${attempt} failed fetching ${image.url}:`, err);
-            await new Promise(res => setTimeout(res, 200 * attempt));
+            await new Promise((res) => setTimeout(res, 200 * attempt));
           }
         }
         if (!buffer) {
@@ -531,16 +568,14 @@ export class ProductService {
           path: '',
         };
         try {
-          const url = await this._uploadAndSaveImage(multerFile, image.image_type);
+          const url = await this._uploadImage(multerFile, image.image_type);
           return { url, image_type: image.image_type };
         } catch (err) {
           console.error(`Upload failed for ${image.url}:`, err);
           return null;
         }
       };
-      const results = await Promise.all(
-        importData.pictureIds.map((image: any) => limit(() => fetchAndUpload(image)))
-      );
+      const results = await Promise.all(importData.pictureIds.map((image: any) => limit(() => fetchAndUpload(image))));
       for (const res of results) {
         if (res) s3Urls.push(res);
       }
